@@ -16,7 +16,7 @@ from typing import List, Dict  # <--- ADD THIS LINE FOR THE CHAT DICTIONARY
 os.makedirs("uploads", exist_ok=True)
 
 app = FastAPI(title="2DA Tricycle Ride-Hailing API")
-app.mount("/web", StaticFiles(directory=".", html=True), name="web")
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
 
 # ==========================================
 # 2. DATABASE SETUP
