@@ -43,19 +43,19 @@
     </button>
     
     <div id="menu-dropdown" class="hidden absolute left-0 mt-2 w-48 bg-[#E3BC90] border border-[#c99c6b] rounded-2xl shadow-2xl overflow-hidden p-2 space-y-1">
-        <button onclick="window.location.href='/web/login.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
+        <button onclick="window.location.href='/login.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
             <i class="fa-solid fa-key text-amber-800"></i> Login / Register
         </button>
-        <button onclick="window.location.href='/web/booking.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
+        <button onclick="window.location.href='/booking.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
             <i class="fa-solid fa-mobile-screen text-amber-800"></i> Passenger Dash
         </button>
-        <button onclick="window.location.href='/web/driver_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
+        <button onclick="window.location.href='/driver_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
             <i class="fa-solid fa-motorcycle text-amber-800"></i> Driver Dash
         </button>
-        <button onclick="window.location.href='/web/katoda_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
+        <button onclick="window.location.href='/katoda_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
             <i class="fa-solid fa-shield-halved text-amber-800"></i> KATODA Dash
         </button>
-        <button onclick="window.location.href='/web/admin_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
+        <button onclick="window.location.href='/admin_dashboard.html'" class="w-full text-left px-4 py-2.5 rounded-xl font-bold text-amber-950 hover:bg-amber-900/10 transition flex items-center gap-2 text-sm">
             <i class="fa-solid fa-vault text-amber-800"></i> Admin Dash
         </button>
     </div>
@@ -353,7 +353,7 @@
 
     function logout() {
       document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      window.location.href = "/web/login.html";
+      window.location.href = "/login.html";
     }
 
     // ==========================================
