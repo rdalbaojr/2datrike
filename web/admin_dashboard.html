@@ -1,0 +1,244 @@
+<!-- ==================== THE LOGIN MODAL ==================== -->
+<div id="masterLoginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+    <div style="background: #E3BC90; border: 1px solid #c99c6b; width: 100%; max-width: 380px; border-radius: 24px; padding: 32px; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box;">
+        
+        <button onclick="document.getElementById('masterLoginModal').style.display='none'" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; color: #78350f; cursor: pointer;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div style="display: inline-flex; justify-content: center; align-items: center; width: 48px; height: 48px; background: #78350f; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 10px 15px -3px rgba(120, 53, 15, 0.3);">
+                <i class="fa-solid fa-key" style="color: white; font-size: 18px;"></i>
+            </div>
+            <h2 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0;">Master Unlock</h2>
+            <p style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #78350f; margin-top: 4px; letter-spacing: 0.05em;">Enter admin credentials</p>
+        </div>
+
+        <!-- Master Credentials Pre-filled -->
+        <form onsubmit="handleMasterLogin(event)" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+                <input type="text" id="masterUser" value="masterom" required placeholder="Username" style="width: 100%; background: #F5E6D3; border: 1px solid #d4aa7c; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: bold; color: #0f172a; outline: none; box-sizing: border-box;">
+            </div>
+            <div>
+                <input type="password" id="masterPass" value="qZ822118@@" required placeholder="Password" style="width: 100%; background: #F5E6D3; border: 1px solid #d4aa7c; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: bold; color: #0f172a; outline: none; box-sizing: border-box;">
+            </div>
+            <button type="submit" style="width: 100%; padding: 14px; background: #78350f; color: white; font-weight: bold; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(120, 53, 15, 0.3); font-size: 14px;">
+                Unlock Dashboard
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== SYSTEM FARE CONFIGURATION PANEL ==================== -->
+<div style="width: 100%; max-width: 1152px; margin: 24px auto; padding: 0 16px; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif;">
+    
+    <!-- MAIN CONTAINER -->
+    <div style="position: relative; background-color: #E3BC90; border: 1px solid #c99c6b; border-radius: 24px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); box-sizing: border-box; overflow: hidden;">
+        
+        <!-- ==================== THE GATEKEEPER OVERLAY ==================== -->
+        <div id="lockOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(227, 188, 144, 0.85); backdrop-filter: blur(8px); z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <div style="background: #F5E6D3; padding: 32px; border-radius: 24px; border: 1px solid #c99c6b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); max-width: 400px;">
+                <i class="fa-solid fa-lock" style="font-size: 48px; color: #78350f; margin-bottom: 16px;"></i>
+                <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">Dashboard Secured</h3>
+                <p style="font-size: 13px; font-weight: 600; color: #78350f; margin: 0 0 24px 0;">Master Access is required to view and modify system configuration rules.</p>
+                <button onclick="document.getElementById('masterLoginModal').style.display='flex'" style="background-color: #78350f; color: white; font-weight: bold; padding: 14px 24px; border-radius: 12px; border: none; box-shadow: 0 10px 15px -3px rgba(120, 53, 15, 0.3); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+                    <i class="fa-solid fa-key"></i> Click to Login
+                </button>
+            </div>
+        </div>
+        <!-- ================================================================ -->
+
+        <!-- Header with Logout/Lock Button -->
+        <div style="display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid rgba(212, 170, 124, 0.5); gap: 16px;">
+            <div>
+                <h2 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0;">
+                    System Fare & Category Configuration
+                </h2>
+                <p style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #78350f; margin: 4px 0 0 0;">Manage base rates, categories, and revenue sharing percentages</p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <!-- Logout Button -->
+                <button onclick="lockDashboard()" style="background: none; border: 1px solid #78350f; color: #78350f; font-weight: bold; padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;">
+                    <i class="fa-solid fa-lock"></i> Lock Settings
+                </button>
+                <div style="display: inline-flex; align-items: center; gap: 8px; background-color: #F5E6D3; padding: 8px 16px; border-radius: 12px; border: 1px solid #d4aa7c; color: #78350f; font-weight: bold; font-size: 12px;">
+                    <i class="fa-solid fa-calculator"></i> Dynamic Math Active (17% / 3%)
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuration Form Grid -->
+        <form id="fareConfigForm" onsubmit="updateFareSettings(event)" style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- CATEGORY BASE FARES -->
+            <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #78350f; margin: 32px 0 16px 0;">Category Base Fares</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+                
+                <!-- Pasundo -->
+                <div style="background-color: #F5E6D3; padding: 20px; border-radius: 16px; border: 1px solid #d4aa7c; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <label style="display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #78350f; margin-bottom: 12px; letter-spacing: 0.05em;">Pasundo (₱)</label>
+                    <div style="position: relative; width: 100%;">
+                        <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #0f172a; font-size: 18px;">₱</span>
+                        <input type="number" id="cfg-pasundo" required style="width: 100%; background-color: rgba(227, 188, 144, 0.5); border: 1px solid #c99c6b; border-radius: 12px; padding: 14px 16px 14px 44px; font-size: 20px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box; transition: 0.2s;">
+                    </div>
+                </div>
+
+                <!-- Pabili -->
+                <div style="background-color: #F5E6D3; padding: 20px; border-radius: 16px; border: 1px solid #d4aa7c; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <label style="display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #78350f; margin-bottom: 12px; letter-spacing: 0.05em;">Pabili (₱)</label>
+                    <div style="position: relative; width: 100%;">
+                        <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #0f172a; font-size: 18px;">₱</span>
+                        <input type="number" id="cfg-pabili" required style="width: 100%; background-color: rgba(227, 188, 144, 0.5); border: 1px solid #c99c6b; border-radius: 12px; padding: 14px 16px 14px 44px; font-size: 20px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box; transition: 0.2s;">
+                    </div>
+                </div>
+
+                <!-- Papickup/Deliver -->
+                <div style="background-color: #F5E6D3; padding: 20px; border-radius: 16px; border: 1px solid #d4aa7c; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                    <label style="display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #78350f; margin-bottom: 12px; letter-spacing: 0.05em;">Papickup/Deliver (₱)</label>
+                    <div style="position: relative; width: 100%;">
+                        <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 900; color: #0f172a; font-size: 18px;">₱</span>
+                        <input type="number" id="cfg-deliver" required style="width: 100%; background-color: rgba(227, 188, 144, 0.5); border: 1px solid #c99c6b; border-radius: 12px; padding: 14px 16px 14px 44px; font-size: 20px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box; transition: 0.2s;">
+                    </div>
+                </div>
+
+            </div>
+            <!-- Revenue Sharing -->
+            <div>
+                <h3 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #78350f; margin: 0 0 16px 0;">Revenue Sharing Rules</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                    
+                    <div style="background-color: #F5E6D3; padding: 16px; border-radius: 16px; border: 1px solid #d4aa7c; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #78350f;">Platform Share</label>
+                            <span style="font-size: 12px; color: #334155;">Deduction percentage</span>
+                        </div>
+                        <div style="position: relative; width: 120px;">
+                            <input type="number" id="platformShareInput" value="17" step="0.1" required style="width: 100%; background-color: rgba(227, 188, 144, 0.5); border: 1px solid #c99c6b; border-radius: 12px; padding: 10px 28px 10px 12px; font-size: 16px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box; text-align: right;">
+                            <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #78350f;">%</span>
+                        </div>
+                    </div>
+
+                    <div style="background-color: #F5E6D3; padding: 16px; border-radius: 16px; border: 1px solid #d4aa7c; display: flex; align-items: center; justify-content: space-between;">
+                        <div>
+                            <label style="display: block; font-size: 12px; font-weight: bold; text-transform: uppercase; color: #78350f;">KATODA Share</label>
+                            <span style="font-size: 12px; color: #334155;">Deduction percentage</span>
+                        </div>
+                        <div style="position: relative; width: 120px;">
+                            <input type="number" id="katodaShareInput" value="3" step="0.1" required style="width: 100%; background-color: rgba(227, 188, 144, 0.5); border: 1px solid #c99c6b; border-radius: 12px; padding: 10px 28px 10px 12px; font-size: 16px; font-weight: 800; color: #0f172a; outline: none; box-sizing: border-box; text-align: right;">
+                            <span style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #78350f;">%</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div style="display: flex; justify-content: flex-end; padding-top: 16px; border-top: 1px solid rgba(212, 170, 124, 0.5);">
+                <button type="submit" style="background-color: #78350f; color: white; font-weight: bold; padding: 14px 32px; border-radius: 12px; border: none; box-shadow: 0 10px 15px -3px rgba(120, 53, 15, 0.3); font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-floppy-disk"></i> Save & Apply Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== SECURITY & LOGIC SCRIPT ==================== -->
+<script>
+    // STRICT Master Login Check using sessionStorage (Works offline and locally)
+    function handleMasterLogin(event) {
+        event.preventDefault();
+        const u = document.getElementById('masterUser').value;
+        const p = document.getElementById('masterPass').value;
+        
+        if (u === 'masterom' && p === 'qZ822118@@') {
+            // Save state to sessionStorage
+            sessionStorage.setItem("admin_session", "masterom_active");
+            
+            document.getElementById('masterLoginModal').style.display = 'none';
+            
+            const overlay = document.getElementById('lockOverlay');
+            overlay.style.transition = "opacity 0.3s ease";
+            overlay.style.opacity = "0";
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            
+        } else {
+            alert("❌ Invalid master credentials. Access denied.");
+        }
+    }
+
+    // Function to manually lock the dashboard and clear session
+    function lockDashboard() {
+        sessionStorage.removeItem("admin_session");
+        const overlay = document.getElementById('lockOverlay');
+        overlay.style.display = 'flex';
+        setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+    }
+
+    // Check Security State on Page Load
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Read from sessionStorage instead of cookies
+        const isMaster = sessionStorage.getItem('admin_session') === 'masterom_active';
+        const overlay = document.getElementById('lockOverlay');
+        
+        if (isMaster) {
+            overlay.style.display = 'none';
+        } else {
+            overlay.style.display = 'flex';
+            overlay.style.opacity = '1';
+        }
+
+        // Fetch live configuration from the database
+        try {
+            const response = await fetch('/api/admin/config');
+            if (response.ok) {
+                const config = await response.json();
+                
+                // Load database values into the new inputs
+                document.getElementById('cfg-pasundo').value = config.pasundo_price;
+                document.getElementById('cfg-pabili').value = config.pabili_price;
+                document.getElementById('cfg-deliver').value = config.deliver_price;
+                document.getElementById('platformShareInput').value = config.platform_share;
+                document.getElementById('katodaShareInput').value = config.katoda_share;
+            }
+        } catch (error) {
+            console.error("Error loading config from server:", error);
+        }
+    });
+
+    // Handle Saving Data to Database
+    async function updateFareSettings(event) {
+        event.preventDefault();
+        
+        const btn = document.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
+        
+        const payload = {
+            pasundo_price: parseInt(document.getElementById('cfg-pasundo').value) || 50,
+            pabili_price: parseInt(document.getElementById('cfg-pabili').value) || 50,
+            deliver_price: parseInt(document.getElementById('cfg-deliver').value) || 50,
+            platform_share: parseFloat(document.getElementById('platformShareInput').value) || 17,
+            katoda_share: parseFloat(document.getElementById('katodaShareInput').value) || 3
+        };
+
+        try {
+            const response = await fetch('/api/admin/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (response.ok) {
+                alert("✅ Configuration successfully saved to the database! Live metrics across Passenger and Driver dashboards will now compute using these updated values.");
+            } else {
+                alert("⚠️ Failed to save settings to the server.");
+            }
+        } catch (error) {
+            alert("⚠️ Network error. Could not connect to the database.");
+        } finally {
+            btn.innerHTML = originalText;
+        }
+    }
+</script>

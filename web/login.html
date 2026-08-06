@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#C87F37]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2DA | Secure Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: #E3BC90;
+            border: 1px solid #c99c6b;
+            box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4);
+        }
+        .input-field {
+            background-color: #F5E6D3;
+            border-color: #d4aa7c;
+            color: #0f172a; 
+        }
+        .input-field:focus {
+            border-color: #78350f; /* amber-900 */
+        }
+        .input-field::placeholder {
+            color: #92400e; 
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="min-h-full text-slate-900 antialiased flex flex-col justify-center items-center py-10 px-4 relative bg-[#C87F37]">
+
+    <!-- ==================== QUICK NAV MENU (Caramel Theme) ==================== -->
+    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
+            <i class="fa-solid fa-bars mr-1"></i> Menu
+        </button>
+        <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🔑 Login / Register
+            </a>
+            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                📱 Passenger Dash
+            </a>
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🏍️ Driver Dash
+            </a>
+            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-lock mr-1"></i> Admin Dash
+            </a>
+        </div>
+    </div>
+    <script>
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            const button = menu.previousElementSibling;
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+    </script>
+    <!-- ==================================================================== -->
+
+    <!-- Main Container -->
+    <div class="w-full max-w-md glass-card rounded-3xl p-8 relative z-10 shadow-2xl mt-12">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-900 rounded-2xl mb-4 shadow-lg shadow-amber-900/30 border border-amber-950/20">
+                <i class="fa-solid fa-motorcycle text-3xl text-white"></i>
+            </div>
+            <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">
+                Welcome to 2DA
+            </h1>
+            <p class="text-xs font-extrabold uppercase tracking-widest text-amber-900 mt-2">Please log in to your account</p>
+        </div>
+
+        <!-- Login Form -->
+        <form action="/login" method="POST" class="space-y-5">
+            
+            <!-- Username -->
+            <div>
+                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Username or Name</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-user text-amber-800 opacity-70"></i>
+                    </div>
+                    <input type="text" name="username" required placeholder="Enter your username" 
+                           class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div>
+                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <i class="fa-solid fa-lock text-amber-800 opacity-70"></i>
+                    </div>
+                    <input type="password" name="password" required placeholder="Enter your password" 
+                           class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full py-4 mt-4 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-300 flex justify-center items-center gap-2">
+                Log In <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <!-- Register Link Footer -->
+        <div class="text-center mt-8 pt-6 border-t border-[#c99c6b]">
+            <p class="text-sm font-bold text-slate-700">Don't have an account yet? <br>
+                <a href="index.html" class="text-amber-900 hover:text-amber-800 underline transition mt-1 inline-block">Click here to register</a>
+            </p>
+        </div>
+
+    </div>
+
+</body>
+</html>

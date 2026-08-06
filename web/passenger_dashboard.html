@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#C87F37]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2DA - Passenger Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: #E3BC90;
+            border: 1px solid #c99c6b;
+            box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-full text-slate-900 antialiased flex flex-col justify-center items-center py-10 px-4 relative bg-[#C87F37]">
+
+    <!-- ==================== QUICK NAV MENU ==================== -->
+    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
+            <i class="fa-solid fa-bars mr-1"></i> Menu
+        </button>
+        <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🔑 Login / Register
+            </a>
+            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
+                📱 Passenger Dash
+            </a>
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
+                🏍️ Driver Dash
+            </a>
+        </div>
+    </div>
+    <!-- ==================================================================== -->
+
+    <div class="w-full max-w-md glass-card rounded-3xl p-6 sm:p-8 relative z-10">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h2 id="passenger-welcome-name" class="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">Passenger Portal</h2>
+            <p class="text-xs text-green-800 font-bold"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> Online</p>
+        </div>
+        
+        <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
+
+        <h3 class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-4">My Rides & Requests</h3>
+        
+        <!-- This is where the JavaScript will inject the active and past rides -->
+        <div id="my-rides-container" class="space-y-4">
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-4">Loading your history...</p>
+        </div>
+        
+    </div>
+
+    <!-- ==================== IN-APP CHAT MODAL ==================== -->
+    <div id="chat-modal" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-opacity">
+        <div class="bg-[#F5E6D3] w-full max-w-md h-[70vh] sm:h-[500px] sm:rounded-2xl flex flex-col overflow-hidden shadow-2xl relative rounded-t-3xl">
+            <!-- Chat Header -->
+            <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
+                <h3 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-regular fa-comment-dots"></i> 2DA Secure Chat
+                </h3>
+                <button onclick="closeChat()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex justify-center items-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Chat Messages Area -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col">
+                <div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>
+            </div>
+
+            <!-- Type Message Area -->
+            <div class="bg-white p-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex gap-2 items-center">
+                <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-[#175d33] transition" placeholder="Type a message...">
+                <button onclick="sendMessage()" class="bg-[#175d33] text-white w-11 h-11 rounded-full flex justify-center items-center shadow-md hover:bg-[#114626] transition shrink-0">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript to automatically fetch the passenger's rides & handle chat -->
+    <script>
+        // --- Quick Menu Toggle ---
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            const button = menu.previousElementSibling;
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        // 1. Get the current passenger's name
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return decodeURIComponent(match[2]);
+            return "Guest"; // Fallback to ensure it works for testing
+        }
+
+        const currentPassenger = getCookie("passenger_name");
+
+        // Automatically set the passenger's name on load
+        document.addEventListener("DOMContentLoaded", () => {
+            const welcomeHeader = document.getElementById('passenger-welcome-name');
+            if (welcomeHeader && currentPassenger !== "Guest") {
+                welcomeHeader.innerText = `Welcome, ${currentPassenger}`;
+            }
+        });
+
+        // 2. Fetch and Display My Rides
+        async function fetchMyRides() {
+            try {
+                // Fetch all rides from the backend
+                const response = await fetch('/pending-rides/');
+                const allRides = await response.json();
+                
+                // The container where rides are displayed
+                const container = document.getElementById('my-rides-container');
+                if (!container) return; // Failsafe
+                
+                // Filter logic: Show ONLY rides belonging to THIS passenger that are NOT paid yet
+                const myRides = allRides.filter(ride => 
+                    ride.passenger_name === currentPassenger && 
+                    ride.status !== 'paid'
+                );
+
+                if (myRides.length === 0) {
+                    container.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-4">You have no active or past requests right now.</p>';
+                    return;
+                }
+
+                container.innerHTML = ''; 
+
+                myRides.reverse().forEach(ride => {
+                    const rideBox = document.createElement('div');
+                    rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-5 shadow-md";
+                    
+                    let statusHtml = "";
+
+                    // STATE 1: Pending
+                    if (ride.status === 'pending' || !ride.status) {
+                        statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
+                    } 
+                    // STATE 2: Accepted (Driver is on the way)
+                    else if (ride.status === 'accepted') {
+                        statusHtml = `
+                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">
+                                    ✅ Driver ${ride.driver_name} has accepted your ride and is on the way!
+                                </p>
+                                
+                                <!-- Updated: Call and Chat Buttons for Passenger -->
+                                <div class="flex gap-3 mt-2">
+                                    <a href="tel:${ride.driver_mobile || '#'}" class="flex-1 bg-white border border-amber-900 text-amber-900 py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                        <i class="fa-solid fa-phone"></i> Call
+                                    </a>
+                                    
+                                    <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                        <i class="fa-regular fa-comment-dots"></i> Chat
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    // STATE 3: Completed (Driver arrived, time to pay)
+                    else if (ride.status === 'completed') {
+                        statusHtml = `
+                            <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-blue-800 text-sm font-bold m-0">
+                                    📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.
+                                </p>
+                            </div>
+                        `;
+                    }
+
+                    // Build the Card HTML matching the Caramel/Beige Theme
+                    rideBox.innerHTML = `
+                        <div class="flex justify-between items-center mb-3">
+                            <strong class="text-amber-900 text-sm tracking-wider uppercase font-extrabold">${ride.service_type || 'Passenger'}</strong>
+                        </div>
+                        <p class="text-slate-700 text-sm mb-1 font-medium"><strong class="text-slate-900">Pick-up:</strong> ${ride.pickup_location}</p>
+                        <p class="text-slate-700 text-sm font-medium"><strong class="text-slate-900">Drop-off:</strong> ${ride.dropoff_location}</p>
+                        
+                        <hr class="border-0 border-t border-dashed border-[#d4aa7c] my-3">
+                        
+                        ${statusHtml}
+                    `;
+                    
+                    container.appendChild(rideBox);
+                });
+            } catch (error) {
+                console.error("Error fetching rides:", error);
+            }
+        }
+
+        // Start the radar! Load immediately, then check every 3 seconds
+        fetchMyRides();
+        setInterval(fetchMyRides, 3000);
+
+        // ==========================================
+        // WEBSOCKET CHAT LOGIC FOR PASSENGER
+        // ==========================================
+        let chatSocket = null;
+        let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
+
+        function openChat(rideId) {
+            document.getElementById('chat-modal').classList.remove('hidden');
+            document.getElementById('chat-messages').innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+            
+            const wsUrl = `ws://${window.location.host}/ws/chat/${rideId}`;
+            chatSocket = new WebSocket(wsUrl);
+            
+            chatSocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                displayMessage(data.sender, data.text);
+            };
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.add('hidden');
+            if(chatSocket) {
+                chatSocket.close();
+            }
+        }
+
+        function handleEnter(event) {
+            if(event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            
+            if (messageText !== '' && chatSocket) {
+                const payload = {
+                    sender: currentChatUser,
+                    text: messageText
+                };
+                chatSocket.send(JSON.stringify(payload));
+                input.value = ''; // Clear the input box
+            }
+        }
+
+        function displayMessage(sender, text) {
+            const messageContainer = document.getElementById('chat-messages');
+            const isMe = sender === currentChatUser;
+            
+            const alignClass = isMe ? 'self-end' : 'self-start';
+            const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-slate-800 rounded-bl-none';
+            
+            const messageHTML = `
+                <div class="flex flex-col ${alignClass} max-w-[80%]">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-amber-900 mb-1 ml-1">${sender}</span>` : ''}
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            
+            messageContainer.innerHTML += messageHTML;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+@echo off
+echo Opening Driver Dashboard...
+start http://127.0.0.1:8000/web/driver_dashboard.html

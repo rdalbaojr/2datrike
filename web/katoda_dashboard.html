@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#C87F37]">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2DA Master Testing Environment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .glass-card {
+            background: #E3BC90;
+            border: 1px solid #c99c6b;
+            box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4);
+        }
+        .driver-scroll::-webkit-scrollbar { width: 6px; }
+        .driver-scroll::-webkit-scrollbar-track { background: transparent; }
+        .driver-scroll::-webkit-scrollbar-thumb { background-color: #c99c6b; border-radius: 20px; }
+    </style>
+</head>
+<body class="min-h-full text-slate-900 antialiased relative bg-[#C87F37]">
+
+    <!-- ==================== MASTER TEST MENU ==================== -->
+    <nav class="bg-amber-950 p-4 shadow-xl sticky top-0 z-50 border-b border-amber-700">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-center items-center gap-3">
+            
+            <button onclick="switchDashboard('katoda-dashboard')" class="bg-[#E3BC90] text-amber-950 hover:bg-[#d4aa7c] px-5 py-2 rounded-xl font-extrabold transition shadow-md flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-shield-halved"></i> KATODA Portal
+            </button>
+            <button onclick="switchDashboard('driver-dashboard')" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+                <i class="fa-solid fa-motorcycle"></i> Driver App
+            </button>
+            <button onclick="switchDashboard('passenger-dashboard')" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+                <i class="fa-solid fa-mobile-screen"></i> Passenger App
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== ADMIN DASHBOARD (PLACEHOLDER) ==================== -->
+    <div id="admin-dashboard" class="dashboard-view hidden py-10 px-4">
+        <h1 class="text-center text-white text-2xl font-bold">Admin Vault will go here</h1>
+    </div>
+
+    <!-- ==================== KATODA DASHBOARD ==================== -->
+    <div id="katoda-dashboard" class="dashboard-view py-10 px-4">
+        
+        <!-- KATODA LOGIN SECTION -->
+        <div id="katoda-login-section" class="w-full max-w-sm glass-card rounded-3xl p-8 relative z-10 mt-10 mx-auto">
+            <div class="text-center mb-8">
+                <div class="bg-amber-900 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-900">KATODA Portal</h1>
+                <p class="text-sm text-amber-900 font-medium mt-1">Authorized Personnel Only</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase mb-1">Katoda ID</label>
+                    <input type="text" id="k-user" placeholder="Enter ID" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 outline-none focus:border-amber-700 transition font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase mb-1">Passcode</label>
+                    <input type="password" id="k-pass" placeholder="••••••••" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 outline-none focus:border-amber-700 transition font-medium">
+                </div>
+                <button onclick="loginKatoda()" class="w-full bg-amber-900 hover:bg-amber-800 text-white py-3.5 rounded-xl font-bold transition shadow-lg mt-2">
+                    Secure Login
+                </button>
+                <p id="katoda-login-error" class="text-red-600 text-xs font-bold text-center mt-2 hidden">Invalid Credentials. Try admin / 1234</p>
+            </div>
+        </div>
+
+        <!-- KATODA MAIN DASHBOARD -->
+        <div id="katoda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-10">
+            <!-- Header -->
+            <div class="glass-card rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-amber-900 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-users-gear text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-extrabold text-slate-900">KATODA Command Center</h1>
+                        <p class="text-sm text-amber-900 font-medium">Monitoring & Member Management</p>
+                    </div>
+                </div>
+                <button onclick="logoutKatoda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+                </button>
+            </div>
+
+            <!-- Financial Growth -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-day"></i></div>
+                    <p class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Today's Share</p>
+                    <h3 id="fin-today" class="text-2xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-week"></i></div>
+                    <p class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">This Week</p>
+                    <h3 id="fin-week" class="text-2xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-days"></i></div>
+                    <p class="text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">This Month</p>
+                    <h3 id="fin-month" class="text-2xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-amber-900 border border-amber-800 rounded-2xl p-5 shadow-sm text-white relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-white/10 text-6xl"><i class="fa-solid fa-vault"></i></div>
+                    <p class="text-xs font-bold text-amber-200 uppercase tracking-wider mb-1">YTD Earnings (3%)</p>
+                    <h3 id="fin-ytd" class="text-2xl font-extrabold">₱0.00</h3>
+                </div>
+            </div>
+
+            <!-- Moderation Tools -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card rounded-3xl p-6 md:col-span-1 h-fit">
+                    <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-bullhorn text-amber-800"></i> Broadcast
+                    </h2>
+                    <p class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all KATODA members.</p>
+                    <textarea id="broadcast-msg" rows="4" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 outline-none focus:border-amber-700 text-sm font-medium resize-none mb-3" placeholder="Type your message here..."></textarea>
+                    <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md">
+                        <i class="fa-regular fa-paper-plane"></i> Send to All Drivers
+                    </button>
+                </div>
+
+                <div class="glass-card rounded-3xl p-0 md:col-span-2 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-6 border-b border-[#d4aa7c] bg-[#e8cda8] flex justify-between items-center">
+                        <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
+                            <i class="fa-solid fa-id-card-clip text-amber-800"></i> Member Roster
+                        </h2>
+                    </div>
+                    <div class="overflow-y-auto driver-scroll p-4 flex-1 bg-[#F5E6D3]" id="driver-list">
+                        <!-- Drivers dynamically injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DRIVER DASHBOARD (PLACEHOLDER) ==================== -->
+    <div id="driver-dashboard" class="dashboard-view hidden py-10 px-4">
+        <h1 class="text-center text-white text-2xl font-bold">Driver App will go here</h1>
+    </div>
+
+    <!-- ==================== PASSENGER DASHBOARD (PLACEHOLDER) ==================== -->
+    <div id="passenger-dashboard" class="dashboard-view hidden py-10 px-4">
+        <h1 class="text-center text-white text-2xl font-bold">Passenger App will go here</h1>
+    </div>
+
+    <!-- ==================== ALL JAVASCRIPT ==================== -->
+    <script>
+        // --- 1. Master Menu Logic ---
+        function switchDashboard(targetId) {
+            const allDashboards = document.querySelectorAll('.dashboard-view');
+            allDashboards.forEach(dashboard => {
+                dashboard.classList.add('hidden');
+            });
+            document.getElementById(targetId).classList.remove('hidden');
+            
+            if(targetId === 'katoda-dashboard') {
+                logoutKatoda(); 
+            }
+        }
+
+        // --- 2. KATODA Login Logic ---
+        function loginKatoda() {
+            const user = document.getElementById('k-user').value;
+            const pass = document.getElementById('k-pass').value;
+            
+            if(user === 'admin' && pass === '1234') {
+                document.getElementById('katoda-login-section').classList.add('hidden');
+                document.getElementById('katoda-main-section').classList.remove('hidden');
+                
+                // Load live data immediately and poll every 5 seconds
+                loadLiveKatodaData();
+                setInterval(loadLiveKatodaData, 5000); 
+            } else {
+                document.getElementById('katoda-login-error').classList.remove('hidden');
+            }
+        }
+
+        function logoutKatoda() {
+            document.getElementById('k-user').value = '';
+            document.getElementById('k-pass').value = '';
+            document.getElementById('katoda-main-section').classList.add('hidden');
+            document.getElementById('katoda-login-error').classList.add('hidden');
+            document.getElementById('katoda-login-section').classList.remove('hidden');
+        }
+
+        // --- 3. Live Backend Fetching ---
+        async function loadLiveKatodaData() {
+            try {
+                // Fetch drivers and financial data in parallel
+                const [driverRes, financeRes] = await Promise.all([
+                    fetch('/api/katoda/drivers'),
+                    fetch('/api/katoda/finances')
+                ]);
+                
+                const drivers = await driverRes.json();
+                const finances = await financeRes.json();
+
+                // === UPDATE FINANCES ===
+                document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
+                document.getElementById('fin-week').innerText = `₱${finances.week.toFixed(2)}`;
+                document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
+                document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
+                
+                // === UPDATE ROSTER ===
+                const container = document.getElementById('driver-list');
+                container.innerHTML = '';
+
+                if (!drivers || drivers.length === 0) {
+                    container.innerHTML = '<p class="text-center text-amber-900/70 text-sm font-medium italic py-6">No registered drivers found.</p>';
+                    return;
+                }
+
+                drivers.sort((a, b) => (a.status === 'online' ? -1 : 1));
+
+                drivers.forEach(driver => {
+                    const isOnline = driver.status === 'online';
+                    const statusDot = isOnline ? 'text-green-600 animate-pulse' : 'text-red-500';
+                    const statusText = isOnline ? 'Online' : 'Offline';
+                    const isLowRating = driver.rating < 4.0;
+                    const starColor = isLowRating ? 'text-red-600' : 'text-yellow-500';
+                    const ratingClass = isLowRating ? 'bg-red-100 text-red-800 border-red-300' : 'bg-white text-slate-800 border-[#d4aa7c]';
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white/60 border border-[#d4aa7c] rounded-xl p-4 mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:bg-white/80";
+                    
+                    card.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-amber-900/10 border border-amber-900/20 flex items-center justify-center text-amber-900 font-bold uppercase">
+                                ${driver.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-md capitalize">${driver.name} <span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md ml-1">ID: ${driver.id}</span></h4>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <p class="text-xs font-bold text-slate-600 flex items-center gap-1">
+                                        <i class="fa-solid fa-circle text-[8px] ${statusDot}"></i> ${statusText}
+                                    </p>
+                                    <span class="text-xs text-slate-400">|</span>
+                                    <p class="text-xs font-medium text-slate-600">${driver.totalRides || 0} Rides</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                            <div class="flex flex-col items-center justify-center px-3 py-1 border rounded-lg ${ratingClass}">
+                                <div class="flex items-center gap-1 text-sm font-extrabold">
+                                    ${(driver.rating || 5.0).toFixed(1)} <i class="fa-solid fa-star text-[10px] ${starColor}"></i>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="warnDriver('${driver.name}')" class="bg-amber-500 hover:bg-amber-600 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Issue Warning">
+                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                </button>
+                                <button onclick="suspendDriver('${driver.name}')" class="bg-red-700 hover:bg-red-800 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Suspend Account">
+                                    <i class="fa-solid fa-ban text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Error loading live KATODA data:", error);
+            }
+        }
+
+        // --- 4. Moderation Actions ---
+        async function sendBroadcast() {
+            const msg = document.getElementById('broadcast-msg').value;
+            if(!msg.trim()) return alert("Please type a message first.");
+
+            try {
+                const response = await fetch('/api/katoda/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+
+                if (response.ok) {
+                    alert(`✅ BROADCAST SENT TO ALL DRIVERS:\n\n"${msg}"`);
+                    document.getElementById('broadcast-msg').value = '';
+                } else {
+                    alert("Failed to transmit broadcast to the server.");
+                }
+            } catch (error) {
+                console.error("Broadcast network error:", error);
+                alert("Network error while sending broadcast.");
+            }
+        }
+    </script>
+</body>
+</html>
