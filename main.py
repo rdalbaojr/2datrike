@@ -8,7 +8,7 @@ from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, Column, Integer, String, func
-from typing import List, Dict  # <--- ADD THIS LINE FOR THE CHAT DICTIONARY
+from typing import List, Dict
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -16,7 +16,6 @@ from typing import List, Dict  # <--- ADD THIS LINE FOR THE CHAT DICTIONARY
 os.makedirs("uploads", exist_ok=True)
 
 app = FastAPI(title="2DA Tricycle Ride-Hailing API")
-app.mount("/", StaticFiles(directory="web", html=True), name="web")
 
 # ==========================================
 # 2. DATABASE SETUP
@@ -84,6 +83,7 @@ class RideRequestCreate(BaseModel):
 
 class AcceptRideSchema(BaseModel):
     driver_name: str
+    
 # ==========================================
 # ADMIN SYSTEM CONFIGURATION
 # ==========================================
@@ -134,12 +134,14 @@ def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)
     config.katoda_share = data.katoda_share
     db.commit()
     return {"status": "success", "message": "System configuration updated."}
+    
 # ==========================================
 # 5. API ENDPOINTS
 # ==========================================
 @app.get("/")
 def read_root():
-    return RedirectResponse(url="/web/booking.html")
+    # FIXED: Removed /web
+    return RedirectResponse(url="/booking.html")
 
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
@@ -159,7 +161,8 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     if username == "masterom" and password == "qZ82118@@":
-        response = RedirectResponse(url="/web/admin_dashboard.html", status_code=303)
+        # FIXED: Removed /web
+        response = RedirectResponse(url="/admin_dashboard.html", status_code=303)
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
         return response
 
@@ -167,8 +170,9 @@ def login_user(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
+    # FIXED: Removed /web
     response = RedirectResponse(
-        url="/web/driver_dashboard.html" if user.role == "driver" else "/web/booking.html", 
+        url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", 
         status_code=303
     )
     
@@ -216,7 +220,8 @@ def register_account(
     db.add(new_user)
     db.commit()
     
-    return RedirectResponse(url="/web/login.html", status_code=303)
+    # FIXED: Removed /web
+    return RedirectResponse(url="/login.html", status_code=303)
 
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
@@ -269,11 +274,9 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
     
     driver_list = []
     for driver in all_drivers:
-        # Get name and clean it up (remove extra spaces and accidental double quotes)
         name = driver.full_name if driver.full_name else driver.username
         clean_name = name.strip().replace('"', '').replace("'", "")
         
-        # Use .ilike() for a flexible, case-insensitive match
         ride_count = db.query(RideRequest).filter(
             RideRequest.driver_name.ilike(f"%{clean_name}%"),
             RideRequest.status.in_(['completed', 'paid'])
@@ -281,13 +284,14 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
         
         driver_list.append({
             "id": driver.id,
-            "name": clean_name, # Send cleaned name back to the roster
+            "name": clean_name,
             "status": "online",
             "rating": 5.0,
             "totalRides": ride_count 
         })
         
     return driver_list
+
 @app.get("/ride-status/{ride_id}")
 def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -306,11 +310,8 @@ def get_available_rides(db: Session = Depends(get_db)):
 # ==========================================
 # 6. IN-APP TEXT CHAT (WEBSOCKETS)
 # ==========================================
-
 class ConnectionManager:
     def __init__(self):
-        # Stores active chat connections organized by ride_id
-        # Example: { "15": [passenger_socket, driver_socket] }
         self.active_connections: Dict[str, List[WebSocket]] = {}
 
     async def connect(self, websocket: WebSocket, ride_id: str):
@@ -322,17 +323,14 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket, ride_id: str):
         if ride_id in self.active_connections:
             self.active_connections[ride_id].remove(websocket)
-            # Clean up the dictionary if the chat room is empty
             if len(self.active_connections[ride_id]) == 0:
                 del self.active_connections[ride_id]
 
     async def broadcast_to_ride(self, message: str, ride_id: str):
-        # Sends the message only to the people in this specific ride
         if ride_id in self.active_connections:
             for connection in self.active_connections[ride_id]:
                 await connection.send_text(message)
 
-# Initialize the chat controller
 chat_manager = ConnectionManager()
 
 @app.websocket("/ws/chat/{ride_id}")
@@ -340,15 +338,12 @@ async def websocket_chat_endpoint(websocket: WebSocket, ride_id: str):
     await chat_manager.connect(websocket, ride_id)
     try:
         while True:
-            # Wait for a message from the HTML frontend
             data = await websocket.receive_text()
-            
-            # Instantly broadcast it to both passenger and driver
             await chat_manager.broadcast_to_ride(data, ride_id)
             
     except WebSocketDisconnect:
-        # If someone closes the app or completes the ride, disconnect them
         chat_manager.disconnect(websocket, ride_id)
+
 # ==========================================
 # KATODA Broadcast System Endpoints
 # ==========================================
@@ -366,9 +361,9 @@ def send_broadcast(data: BroadcastSchema):
 @app.get("/api/driver/broadcast")
 def get_driver_broadcast():
     return latest_broadcast
+
 @app.get('/api/katoda/finances')
 def get_katoda_finances(db: Session = Depends(get_db)):
-    # Grab all rides that are completed or paid
     completed_rides = db.query(RideRequest).filter(
         RideRequest.status.in_(['completed', 'paid'])
     ).all()
@@ -376,20 +371,23 @@ def get_katoda_finances(db: Session = Depends(get_db)):
     total_gross = 0.0
     for ride in completed_rides:
         if ride.fare:
-            # Strip out the peso sign and commas to convert string to float (e.g. "₱156.00" -> 156.00)
             clean_fare = ride.fare.replace('₱', '').replace(',', '').strip()
             try:
                 total_gross += float(clean_fare)
             except ValueError:
                 pass
                 
-    # Calculate the 3% KATODA share
     katoda_share = total_gross * 0.03
     
-    # Returning the same value for all until a timestamp column is added to the database
     return {
         "today": katoda_share,
         "week": katoda_share,
         "month": katoda_share,
         "ytd": katoda_share
     }
+
+# ==========================================
+# 7. STATIC FILES MOUNT (MUST BE AT THE BOTTOM)
+# ==========================================
+# FIXED: Moved to the absolute bottom so it doesn't block your API routes!
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
