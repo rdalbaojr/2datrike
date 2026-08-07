@@ -85,7 +85,20 @@
             </div>
         </div>
     </div>
-
+ <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (Untouched) -->
+    <script>
+        // --- Quick Menu Toggle ---
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            const button = menu.previousElementSibling;
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
     <!-- JavaScript to automatically fetch the passenger's rides & handle chat -->
     <script>
         // --- Quick Menu Toggle ---
