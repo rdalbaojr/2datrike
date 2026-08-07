@@ -110,7 +110,14 @@
             </button>
         </form>
     </div>
-
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mt-6">
+    <h3 class="text-lg font-bold text-slate-800 mb-2">Automated Payouts</h3>
+    <p class="text-sm text-slate-500 mb-4">Calculate all unpaid driver earnings and generate a batch file for BPI BizLink.</p>
+    
+    <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all inline-flex items-center gap-2">
+        <i class="fa-solid fa-file-csv"></i> Download BizLink Payout File
+    </a>
+</div>
     <!-- SECURITY & LOGIC SCRIPT -->
     <script>
         function handleMasterLogin(event) {
