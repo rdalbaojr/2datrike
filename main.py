@@ -109,6 +109,7 @@ class SystemConfig(Base):
     deliver_price = Column(Integer, default=50)
     platform_share = Column(Integer, default=17)
     katoda_share = Column(Integer, default=3)
+    katoda_account = Column(String, default="")  # <-- NEW LINE
 
 # Force create the new table if it doesn't exist yet
 SystemConfig.__table__.create(bind=engine, checkfirst=True)
@@ -127,8 +128,9 @@ class ConfigUpdateSchema(BaseModel):
     pasundo_price: int
     pabili_price: int
     deliver_price: int
-    platform_share: int
-    katoda_share: int
+    platform_share: float
+    katoda_share: float
+    katoda_account: str = ""  # <-- NEW LINE
 
 @app.get("/api/admin/config")
 def get_system_config(db: Session = Depends(get_db)):
@@ -146,6 +148,7 @@ def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)
     config.deliver_price = data.deliver_price
     config.platform_share = data.platform_share
     config.katoda_share = data.katoda_share
+    config.katoda_account = data.katoda_account  # <-- NEW LINE
     db.commit()
     return {"status": "success", "message": "System configuration updated."}
     
@@ -423,15 +426,15 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
             "2DA Daily Driver Payout"
         ])
 
-    # Add KATODA row
+   # Add KATODA row
     if total_katoda_payout > 0:
+        katoda_acct = config.katoda_account if config and config.katoda_account else "MISSING_KATODA_ACCOUNT"
         writer.writerow([
-            "KATODA_BPI_ACCOUNT", 
+            katoda_acct, 
             "KATODA Organization", 
             f"{total_katoda_payout:.2f}", 
             "2DA Daily Katoda Share"
         ])
-
     output.seek(0)
     
     # 5. Return as a downloadable CSV file
@@ -443,6 +446,13 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+    katoda_acct = config.katoda_account if config and config.katoda_account else "Not Configured"
+    return {
+        "drivers": list(payouts.values()),
+        "total_katoda": total_katoda,
+        "total_platform": total_platform,
+        "katoda_account": katoda_acct  # <-- NEW LINE
+    }
 # ==========================================
 # 6. IN-APP TEXT CHAT (WEBSOCKETS + DATABASE)
 # ==========================================
