@@ -293,13 +293,18 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
             RideRequest.status.in_(['completed', 'paid'])
         ).count()
         
+        # --- NEW CODE INSERTED HERE ---
+        # Fallback to DB ID if the driver left the toda_number field blank
+        display_id = driver.toda_number if driver.toda_number else driver.id
+
         driver_list.append({
-            "id": driver.id,
+            "id": display_id, 
             "name": clean_name,
             "status": "online",
             "rating": 5.0,
             "totalRides": ride_count 
         })
+        # ------------------------------
         
     return driver_list
 
