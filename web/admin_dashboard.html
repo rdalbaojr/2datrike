@@ -103,7 +103,93 @@
                     </div>
                 </div>
             </div>
+<!-- BATCH PAYOUT SUMMARY TABLE -->
+<div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-8">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Driver & KATODA Payouts</h2>
+            <p class="text-sm text-slate-500 font-medium mt-1">Real-time collective settlement calculation</p>
+        </div>
+        
+        <!-- The Download Button -->
+        <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md transition flex items-center gap-2">
+            <i class="fa-solid fa-download"></i> Export for BizLink
+        </a>
+    </div>
 
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
+                    <th class="py-3 px-3">Driver Name</th>
+                    <th class="py-3 px-3">Account / GCash</th>
+                    <th class="py-3 px-3 text-center">Rides</th>
+                    <th class="py-3 px-3 text-right">Gross Total</th>
+                    <th class="py-3 px-3 text-right text-[#175d33]">Driver Net</th>
+                    <th class="py-3 px-3 text-right">KATODA (3%)</th>
+                    <th class="py-3 px-3 text-right">Platform (17%)</th>
+                </tr>
+            </thead>
+            <tbody id="payout-table-body" class="divide-y divide-slate-100 font-medium text-slate-900">
+                <tr>
+                    <td colspan="7" class="py-8 text-center italic text-slate-400">Loading payouts data...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function loadPayoutSummary() {
+    try {
+        const response = await fetch('/api/admin/payout-summary');
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const tbody = document.getElementById('payout-table-body');
+        tbody.innerHTML = '';
+
+        if (data.drivers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center italic text-slate-400">No pending payouts at this time.</td></tr>';
+            return;
+        }
+
+        data.drivers.forEach(driver => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="py-4 px-3 font-bold">${driver.driver_name}</td>
+                <td class="py-4 px-3 text-xs font-mono text-slate-500">${driver.account_number}</td>
+                <td class="py-4 px-3 text-center font-bold">${driver.ride_count}</td>
+                <td class="py-4 px-3 text-right">₱${driver.total_gross.toFixed(2)}</td>
+                <td class="py-4 px-3 text-right font-bold text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                <td class="py-4 px-3 text-right text-amber-600">₱${driver.katoda_share.toFixed(2)}</td>
+                <td class="py-4 px-3 text-right text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Append a total KATODA row at the bottom
+        const totalRow = document.createElement('tr');
+        totalRow.className = "bg-slate-50 border-t-2 border-slate-200";
+        totalRow.innerHTML = `
+            <td class="py-4 px-3 font-extrabold text-[#0f172a]">KATODA TOTAL</td>
+            <td class="py-4 px-3 text-xs italic text-slate-400">Group Account</td>
+            <td class="py-4 px-3 text-center">--</td>
+            <td class="py-4 px-3 text-right">--</td>
+            <td class="py-4 px-3 text-right">--</td>
+            <td class="py-4 px-3 text-right font-extrabold text-amber-700">₱${data.total_katoda.toFixed(2)}</td>
+            <td class="py-4 px-3 text-right font-extrabold text-slate-500">₱${data.total_platform.toFixed(2)}</td>
+        `;
+        tbody.appendChild(totalRow);
+
+    } catch (error) {
+        console.error("Error loading payouts summary:", error);
+    }
+}
+
+// Load data when page opens
+document.addEventListener("DOMContentLoaded", loadPayoutSummary);
+</script>
             <!-- Action Button -->
             <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                 <i class="fa-solid fa-floppy-disk"></i> Save & Apply
