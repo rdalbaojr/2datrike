@@ -370,7 +370,74 @@ def get_payout_summary(db: Session = Depends(get_db)):
         "total_katoda": total_katoda,
         "total_platform": total_platform
     }   
+@app.get("/api/admin/generate-bizlink-payout")
+def generate_bizlink_payout(db: Session = Depends(get_db)):
+    # 1. Fetch the system configuration (percentages)
+    config = db.query(SystemConfig).first()
+    platform_pct = (config.platform_share if config else 17) / 100
+    katoda_pct = (config.katoda_share if config else 3) / 100
+    driver_pct = 1.0 - (platform_pct + katoda_pct)
 
+    # 2. Find all rides paid by passengers
+    unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
+
+    # 3. Collective Calculations Dictionary
+    driver_payouts = {}
+    total_katoda_payout = 0.0
+
+    for ride in unsettled_rides:
+        if not ride.driver_name or not ride.fare:
+            continue
+            
+        clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
+        
+        driver_cut = clean_fare * driver_pct
+        katoda_cut = clean_fare * katoda_pct
+        
+        if ride.driver_name in driver_payouts:
+            driver_payouts[ride.driver_name] += driver_cut
+        else:
+            driver_payouts[ride.driver_name] = driver_cut
+            
+        total_katoda_payout += katoda_cut
+
+    # 4. Generate the BPI BizLink Batch CSV format
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
+
+    # Add Driver rows
+    for driver_name, amount in driver_payouts.items():
+        driver_user = db.query(User).filter(User.username == driver_name).first()
+        account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
+        
+        writer.writerow([
+            account_number,
+            driver_name,
+            f"{amount:.2f}",
+            "2DA Daily Driver Payout"
+        ])
+
+    # Add KATODA row
+    if total_katoda_payout > 0:
+        writer.writerow([
+            "KATODA_BPI_ACCOUNT", 
+            "KATODA Organization", 
+            f"{total_katoda_payout:.2f}", 
+            "2DA Daily Katoda Share"
+        ])
+
+    output.seek(0)
+    
+    # 5. Return as a downloadable CSV file
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    filename = f"BizLink_Payout_{current_date}.csv"
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 # ==========================================
 # 6. IN-APP TEXT CHAT (WEBSOCKETS + DATABASE)
 # ==========================================
