@@ -10,25 +10,21 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        /* Hide scrollbar for cleaner app look */
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<!-- Centers the card and applies the background -->
-<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
+<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
 
-    <!-- Floating Menu Space (if you add your menu back here) -->
-
-    <!-- ==================== MAIN FLOATING APP CARD ==================== -->
-    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <!-- ==================== MAIN ADMIN CONTAINER ==================== -->
+    <div class="w-full max-w-[900px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
         <!-- ==================== THE GATEKEEPER OVERLAY ==================== -->
         <div id="lockOverlay" class="absolute inset-0 bg-[#E3BC90]/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-6">
             <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
             <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
-            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed">Master Access is required to view and modify system configuration rules.</p>
+            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Master Access is required to view and modify system configuration rules.</p>
             
-            <form onsubmit="handleMasterLogin(event)" class="w-full flex flex-col gap-3">
+            <form onsubmit="handleMasterLogin(event)" class="w-full max-w-[320px] flex flex-col gap-3">
                 <input type="text" id="masterUser" value="masterom" required placeholder="Username" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 <input type="password" id="masterPass" value="qZ82118@@" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
@@ -39,173 +35,121 @@
         <!-- ================================================================ -->
 
         <!-- Header -->
-        <div class="flex flex-col items-start pb-5 border-b border-[#d4aa7c]/50 mb-5 relative">
-            <button onclick="lockDashboard()" class="absolute top-0 right-0 text-[#78350f] hover:scale-110 transition">
+        <div class="flex flex-col items-start pb-5 border-b border-[#d4aa7c]/50 mb-6 relative">
+            <button onclick="lockDashboard()" class="absolute top-0 right-0 text-[#78350f] bg-[#d4aa7c]/40 p-3 rounded-full hover:bg-[#d4aa7c] hover:scale-105 transition">
                 <i class="fa-solid fa-lock text-lg"></i>
             </button>
-            <h2 class="text-[22px] font-extrabold text-[#0f172a] leading-tight pr-8">Fare Config</h2>
-            <p class="text-[10px] font-bold uppercase text-[#78350f] mt-1 tracking-wider">Dynamic Math Active</p>
+            <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight pr-8">2DA Master Admin</h2>
+            <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
         </div>
 
-        <!-- Configuration Form Grid -->
-        <form id="fareConfigForm" onsubmit="updateFareSettings(event)" class="flex flex-col gap-5">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- CATEGORY BASE FARES -->
-            <div>
-                <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Base Fares</h3>
-                <div class="flex flex-col gap-3">
-                    
-                    <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between">
-                        <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pasundo</label>
-                        <div class="relative w-28">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
-                            <input type="number" id="cfg-pasundo" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right">
+            <!-- LEFT COLUMN: FARE CONFIGURATION -->
+            <div class="lg:col-span-1">
+                <h2 class="text-xl font-extrabold text-[#0f172a] mb-4">Fare Config</h2>
+                
+                <form id="fareConfigForm" onsubmit="updateFareSettings(event)" class="flex flex-col gap-5">
+                    <!-- CATEGORY BASE FARES -->
+                    <div>
+                        <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Base Fares</h3>
+                        <div class="flex flex-col gap-3">
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pasundo</label>
+                                <div class="relative w-28">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
+                                    <input type="number" id="cfg-pasundo" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                </div>
+                            </div>
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pabili</label>
+                                <div class="relative w-28">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
+                                    <input type="number" id="cfg-pabili" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                </div>
+                            </div>
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Papickup</label>
+                                <div class="relative w-28">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
+                                    <input type="number" id="cfg-deliver" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between">
-                        <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pabili</label>
-                        <div class="relative w-28">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
-                            <input type="number" id="cfg-pabili" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right">
+                    <!-- REVENUE SHARING -->
+                    <div>
+                        <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Revenue Sharing</h3>
+                        <div class="flex flex-col gap-3">
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Platform</label>
+                                <div class="relative w-24">
+                                    <input type="number" id="platformShareInput" value="17" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
+                                </div>
+                            </div>
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA</label>
+                                <div class="relative w-24">
+                                    <input type="number" id="katodaShareInput" value="3" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                    <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between">
-                        <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Papickup</label>
-                        <div class="relative w-28">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
-                            <input type="number" id="cfg-deliver" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right">
+                    <!-- Action Button -->
+                    <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Apply
+                    </button>
+                </form>
+            </div>
+
+            <!-- RIGHT COLUMN: PAYOUT TABLE -->
+            <div class="lg:col-span-2">
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-3xl p-6 shadow-sm h-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Payouts</h2>
+                            <p class="text-xs text-[#78350f] font-bold mt-1">Real-time collective settlement</p>
                         </div>
+                        
+                        <!-- The Download Button -->
+                        <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
+                            <i class="fa-solid fa-download"></i> Export for BizLink
+                        </a>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-[#c99c6b]">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-[#E3BC90]/50">
+                                <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3 px-4">Driver Name</th>
+                                    <th class="py-3 px-4">Account Number</th>
+                                    <th class="py-3 px-4 text-center">Rides</th>
+                                    <th class="py-3 px-4 text-right">Gross</th>
+                                    <th class="py-3 px-4 text-right text-[#175d33]">Net (80%)</th>
+                                    <th class="py-3 px-4 text-right">KATODA</th>
+                                    <th class="py-3 px-4 text-right">Platform</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a] bg-white/40">
+                                <tr>
+                                    <td colspan="7" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Revenue Sharing -->
-            <div>
-                <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Revenue Sharing</h3>
-                <div class="flex flex-col gap-3">
-                    
-                    <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between">
-                        <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Platform</label>
-                        <div class="relative w-24">
-                            <input type="number" id="platformShareInput" value="17" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right">
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between">
-                        <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA</label>
-                        <div class="relative w-24">
-                            <input type="number" id="katodaShareInput" value="3" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right">
-                            <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-<!-- BATCH PAYOUT SUMMARY TABLE -->
-<div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-8">
-    <div class="flex justify-between items-center mb-6">
-        <div>
-            <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Driver & KATODA Payouts</h2>
-            <p class="text-sm text-slate-500 font-medium mt-1">Real-time collective settlement calculation</p>
         </div>
-        
-        <!-- The Download Button -->
-        <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-sm shadow-md transition flex items-center gap-2">
-            <i class="fa-solid fa-download"></i> Export for BizLink
-        </a>
     </div>
 
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider">
-                    <th class="py-3 px-3">Driver Name</th>
-                    <th class="py-3 px-3">Account / GCash</th>
-                    <th class="py-3 px-3 text-center">Rides</th>
-                    <th class="py-3 px-3 text-right">Gross Total</th>
-                    <th class="py-3 px-3 text-right text-[#175d33]">Driver Net</th>
-                    <th class="py-3 px-3 text-right">KATODA (3%)</th>
-                    <th class="py-3 px-3 text-right">Platform (17%)</th>
-                </tr>
-            </thead>
-            <tbody id="payout-table-body" class="divide-y divide-slate-100 font-medium text-slate-900">
-                <tr>
-                    <td colspan="7" class="py-8 text-center italic text-slate-400">Loading payouts data...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<script>
-async function loadPayoutSummary() {
-    try {
-        const response = await fetch('/api/admin/payout-summary');
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        const tbody = document.getElementById('payout-table-body');
-        tbody.innerHTML = '';
-
-        if (data.drivers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center italic text-slate-400">No pending payouts at this time.</td></tr>';
-            return;
-        }
-
-        data.drivers.forEach(driver => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="py-4 px-3 font-bold">${driver.driver_name}</td>
-                <td class="py-4 px-3 text-xs font-mono text-slate-500">${driver.account_number}</td>
-                <td class="py-4 px-3 text-center font-bold">${driver.ride_count}</td>
-                <td class="py-4 px-3 text-right">₱${driver.total_gross.toFixed(2)}</td>
-                <td class="py-4 px-3 text-right font-bold text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                <td class="py-4 px-3 text-right text-amber-600">₱${driver.katoda_share.toFixed(2)}</td>
-                <td class="py-4 px-3 text-right text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
-            `;
-            tbody.appendChild(row);
-        });
-        
-        // Append a total KATODA row at the bottom
-        const totalRow = document.createElement('tr');
-        totalRow.className = "bg-slate-50 border-t-2 border-slate-200";
-        totalRow.innerHTML = `
-            <td class="py-4 px-3 font-extrabold text-[#0f172a]">KATODA TOTAL</td>
-            <td class="py-4 px-3 text-xs italic text-slate-400">Group Account</td>
-            <td class="py-4 px-3 text-center">--</td>
-            <td class="py-4 px-3 text-right">--</td>
-            <td class="py-4 px-3 text-right">--</td>
-            <td class="py-4 px-3 text-right font-extrabold text-amber-700">₱${data.total_katoda.toFixed(2)}</td>
-            <td class="py-4 px-3 text-right font-extrabold text-slate-500">₱${data.total_platform.toFixed(2)}</td>
-        `;
-        tbody.appendChild(totalRow);
-
-    } catch (error) {
-        console.error("Error loading payouts summary:", error);
-    }
-}
-
-// Load data when page opens
-document.addEventListener("DOMContentLoaded", loadPayoutSummary);
-</script>
-            <!-- Action Button -->
-            <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
-                <i class="fa-solid fa-floppy-disk"></i> Save & Apply
-            </button>
-        </form>
-    </div>
-<div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mt-6">
-    <h3 class="text-lg font-bold text-slate-800 mb-2">Automated Payouts</h3>
-    <p class="text-sm text-slate-500 mb-4">Calculate all unpaid driver earnings and generate a batch file for BPI BizLink.</p>
-    
-    <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-6 py-3 rounded-lg font-bold shadow-md transition-all inline-flex items-center gap-2">
-        <i class="fa-solid fa-file-csv"></i> Download BizLink Payout File
-    </a>
-</div>
-    <!-- SECURITY & LOGIC SCRIPT -->
+    <!-- ==================== COMBINED SCRIPTS ==================== -->
     <script>
+        // --- 1. GATEKEEPER LOGIC ---
         function handleMasterLogin(event) {
             event.preventDefault();
             const u = document.getElementById('masterUser').value;
@@ -229,10 +173,11 @@ document.addEventListener("DOMContentLoaded", loadPayoutSummary);
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
         }
 
+        // --- 2. LOAD DATA ON PAGE START ---
         document.addEventListener("DOMContentLoaded", async () => {
+            // Check Lock
             const isMaster = sessionStorage.getItem('admin_session') === 'masterom_active';
             const overlay = document.getElementById('lockOverlay');
-            
             if (isMaster) {
                 overlay.style.display = 'none';
             } else {
@@ -240,6 +185,7 @@ document.addEventListener("DOMContentLoaded", loadPayoutSummary);
                 overlay.style.opacity = '1';
             }
 
+            // Load Config
             try {
                 const response = await fetch('/api/admin/config');
                 if (response.ok) {
@@ -253,11 +199,15 @@ document.addEventListener("DOMContentLoaded", loadPayoutSummary);
             } catch (error) {
                 console.error("Error loading config from server:", error);
             }
+
+            // Load Payouts Table
+            loadPayoutSummary();
         });
 
+        // --- 3. SAVE CONFIGURATION LOGIC ---
         async function updateFareSettings(event) {
             event.preventDefault();
-            const btn = document.querySelector('button[type="submit"]');
+            const btn = document.querySelector('#fareConfigForm button[type="submit"]');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
             
@@ -278,6 +228,7 @@ document.addEventListener("DOMContentLoaded", loadPayoutSummary);
                 
                 if (response.ok) {
                     alert("✅ Configuration successfully saved!");
+                    loadPayoutSummary(); // Refresh table to reflect new percentages
                 } else {
                     alert("⚠️ Failed to save settings.");
                 }
@@ -285,6 +236,54 @@ document.addEventListener("DOMContentLoaded", loadPayoutSummary);
                 alert("⚠️ Network error. Could not connect to the database.");
             } finally {
                 btn.innerHTML = originalText;
+            }
+        }
+
+        // --- 4. LOAD PAYOUTS TABLE LOGIC ---
+        async function loadPayoutSummary() {
+            try {
+                const response = await fetch('/api/admin/payout-summary');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const tbody = document.getElementById('payout-table-body');
+                tbody.innerHTML = '';
+
+                if (data.drivers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center italic text-[#78350f]/70">No pending payouts at this time.</td></tr>';
+                    return;
+                }
+
+                data.drivers.forEach(driver => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
+                        <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
+                        <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
+                        <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Append a total KATODA row at the bottom
+                const totalRow = document.createElement('tr');
+                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
+                totalRow.innerHTML = `
+                    <td class="py-4 px-4 font-black text-[#0f172a] uppercase">KATODA TOTAL</td>
+                    <td class="py-4 px-4 text-xs italic text-[#78350f]/70">Group Account</td>
+                    <td class="py-4 px-4 text-center">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
+                `;
+                tbody.appendChild(totalRow);
+
+            } catch (error) {
+                console.error("Error loading payouts summary:", error);
             }
         }
     </script>
