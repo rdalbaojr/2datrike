@@ -41,8 +41,8 @@
             </a>
             <a href="/driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
                 🏍️ Driver Dash
-            </a
-              <a href="/katoda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+            </a>  
+            <a href="/katoda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
                 🏍️ Katoda Dash
             </a>  
             <a href="/admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
@@ -457,14 +457,33 @@
             } catch (error) { alert("⚠️ Network error."); }
         }
 
-        // WEBSOCKET CHAT LOGIC FOR PASSENGER
+        // WEBSOCKET CHAT LOGIC FOR PASSENGER (WITH DATABASE HISTORY LOAD)
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
 
-        function openChat(rideId) {
+        async function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-messages').innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+            const messagesContainer = document.getElementById('chat-messages');
             
+            // Show loading state while fetching history from the database
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            // Fetch past chat messages
+            try {
+                const response = await fetch(`/api/chat/${rideId}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text);
+                    });
+                }
+            } catch (error) {
+                console.error("Could not load chat history:", error);
+            }
+
+            // Start WebSocket connection for live messages
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
