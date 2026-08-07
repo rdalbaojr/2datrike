@@ -9,6 +9,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, Column, Integer, String, func
 from typing import List, Dict
+import json
+from fastapi import WebSocket, Depends
+from sqlalchemy.orm import Session
+# from database import get_db
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -306,6 +310,13 @@ def get_pending_rides(db: Session = Depends(get_db)):
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     return db.query(RideRequest).all()
+ @app.get("/api/chat/{ride_id}")
+def get_chat_history(ride_id: int, db: Session = Depends(get_db)):
+    # Fetch all messages for this ride, ordered from oldest to newest
+    messages = db.query(ChatMessage).filter(ChatMessage.ride_id == ride_id).order_by(ChatMessage.timestamp.asc()).all()
+    
+    # Return them as a list of dictionaries
+    return [{"sender": msg.sender, "text": msg.text} for msg in messages]   
 
 # ==========================================
 # 6. IN-APP TEXT CHAT (WEBSOCKETS)
@@ -343,6 +354,29 @@ async def websocket_chat_endpoint(websocket: WebSocket, ride_id: str):
             
     except WebSocketDisconnect:
         chat_manager.disconnect(websocket, ride_id)
+@app.websocket("/ws/chat/{ride_id}")
+async def websocket_chat(websocket: WebSocket, ride_id: int, db: Session = Depends(get_db)):
+    await manager.connect(websocket, ride_id)
+    try:
+        while True:
+            # 1. Receive the message from the frontend
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            # 2. SAVE TO DATABASE BEFORE BROADCASTING
+            new_message = ChatMessage(
+                ride_id=ride_id,
+                sender=message_data["sender"],
+                text=message_data["text"]
+            )
+            db.add(new_message)
+            db.commit()
+
+            # 3. Broadcast it to the other person
+            await manager.broadcast(data, ride_id)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, ride_id)     
 
 # ==========================================
 # KATODA Broadcast System Endpoints
