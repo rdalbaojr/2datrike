@@ -226,7 +226,40 @@
         // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
-
+        async function openChat(rideId) {
+    document.getElementById('chat-modal').classList.remove('hidden');
+    const messagesContainer = document.getElementById('chat-messages');
+    
+    // Show a loading state
+    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+    
+    // 1. FETCH CHAT HISTORY FROM DATABASE
+    try {
+        const response = await fetch(`/api/chat/${rideId}`);
+        if (response.ok) {
+            const history = await response.json();
+            
+            // Clear the loading text and set the header
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+            
+            // Loop through past messages and display them
+            history.forEach(msg => {
+                displayMessage(msg.sender, msg.text);
+            });
+        }
+    } catch (error) {
+        console.error("Could not load chat history.");
+    }
+    
+    // 2. START THE LIVE WEBSOCKET CONNECTION
+    const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+    chatSocket = new WebSocket(wsUrl);
+    
+    chatSocket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        displayMessage(data.sender, data.text);
+    };
+}
         function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
             document.getElementById('chat-messages').innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
