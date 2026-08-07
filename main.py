@@ -1,18 +1,16 @@
 import os
 import shutil
+import json
+from datetime import datetime
+
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import create_engine, Column, Integer, String, func
 from typing import List, Dict
-import json
-from fastapi import WebSocket, Depends
-from sqlalchemy.orm import Session
-# from database import get_db
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -59,6 +57,14 @@ class RideRequest(Base):
     fare = Column(String, nullable=True)         
     status = Column(String, default="pending")
     driver_name = Column(String, nullable=True)
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(Integer, index=True)
+    sender = Column(String(50))
+    text = Column(Text)
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
 # Initialize Database
 Base.metadata.create_all(bind=engine)
@@ -144,7 +150,6 @@ def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)
 # ==========================================
 @app.get("/")
 def read_root():
-    # FIXED: Removed /web
     return RedirectResponse(url="/booking.html")
 
 @app.post("/api/login")
@@ -165,7 +170,6 @@ def login_user(
     db: Session = Depends(get_db)
 ):
     if username == "masterom" and password == "qZ82118@@":
-        # FIXED: Removed /web
         response = RedirectResponse(url="/admin_dashboard.html", status_code=303)
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
         return response
@@ -174,7 +178,6 @@ def login_user(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
-    # FIXED: Removed /web
     response = RedirectResponse(
         url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", 
         status_code=303
@@ -224,7 +227,6 @@ def register_account(
     db.add(new_user)
     db.commit()
     
-    # FIXED: Removed /web
     return RedirectResponse(url="/login.html", status_code=303)
 
 @app.post("/request-ride/")
@@ -310,16 +312,9 @@ def get_pending_rides(db: Session = Depends(get_db)):
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     return db.query(RideRequest).all()
- @app.get("/api/chat/{ride_id}")
-def get_chat_history(ride_id: int, db: Session = Depends(get_db)):
-    # Fetch all messages for this ride, ordered from oldest to newest
-    messages = db.query(ChatMessage).filter(ChatMessage.ride_id == ride_id).order_by(ChatMessage.timestamp.asc()).all()
-    
-    # Return them as a list of dictionaries
-    return [{"sender": msg.sender, "text": msg.text} for msg in messages]   
 
 # ==========================================
-# 6. IN-APP TEXT CHAT (WEBSOCKETS)
+# 6. IN-APP TEXT CHAT (WEBSOCKETS + DATABASE)
 # ==========================================
 class ConnectionManager:
     def __init__(self):
@@ -333,7 +328,8 @@ class ConnectionManager:
 
     def disconnect(self, websocket: WebSocket, ride_id: str):
         if ride_id in self.active_connections:
-            self.active_connections[ride_id].remove(websocket)
+            if websocket in self.active_connections[ride_id]:
+                self.active_connections[ride_id].remove(websocket)
             if len(self.active_connections[ride_id]) == 0:
                 del self.active_connections[ride_id]
 
@@ -344,19 +340,14 @@ class ConnectionManager:
 
 chat_manager = ConnectionManager()
 
+@app.get("/api/chat/{ride_id}")
+def get_chat_history(ride_id: int, db: Session = Depends(get_db)):
+    messages = db.query(ChatMessage).filter(ChatMessage.ride_id == ride_id).order_by(ChatMessage.timestamp.asc()).all()
+    return [{"sender": msg.sender, "text": msg.text} for msg in messages]   
+
 @app.websocket("/ws/chat/{ride_id}")
-async def websocket_chat_endpoint(websocket: WebSocket, ride_id: str):
+async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depends(get_db)):
     await chat_manager.connect(websocket, ride_id)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            await chat_manager.broadcast_to_ride(data, ride_id)
-            
-    except WebSocketDisconnect:
-        chat_manager.disconnect(websocket, ride_id)
-@app.websocket("/ws/chat/{ride_id}")
-async def websocket_chat(websocket: WebSocket, ride_id: int, db: Session = Depends(get_db)):
-    await manager.connect(websocket, ride_id)
     try:
         while True:
             # 1. Receive the message from the frontend
@@ -365,18 +356,18 @@ async def websocket_chat(websocket: WebSocket, ride_id: int, db: Session = Depen
             
             # 2. SAVE TO DATABASE BEFORE BROADCASTING
             new_message = ChatMessage(
-                ride_id=ride_id,
-                sender=message_data["sender"],
-                text=message_data["text"]
+                ride_id=int(ride_id),
+                sender=message_data.get("sender", "Unknown"),
+                text=message_data.get("text", "")
             )
             db.add(new_message)
             db.commit()
 
-            # 3. Broadcast it to the other person
-            await manager.broadcast(data, ride_id)
+            # 3. Broadcast it to both users
+            await chat_manager.broadcast_to_ride(data, ride_id)
             
     except WebSocketDisconnect:
-        manager.disconnect(websocket, ride_id)     
+        chat_manager.disconnect(websocket, ride_id)
 
 # ==========================================
 # KATODA Broadcast System Endpoints
@@ -423,5 +414,4 @@ def get_katoda_finances(db: Session = Depends(get_db)):
 # ==========================================
 # 7. STATIC FILES MOUNT (MUST BE AT THE BOTTOM)
 # ==========================================
-# FIXED: Moved to the absolute bottom so it doesn't block your API routes!
 app.mount("/", StaticFiles(directory="web", html=True), name="web")
