@@ -10,7 +10,15 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        ::-webkit-scrollbar { display: none; }
+        
+        /* Only hide the main page scrollbar, but keep it for elements that need it! */
+        body::-webkit-scrollbar { display: none; }
+        
+        /* Create a custom, slim scrollbar just for the table */
+        .table-scroll::-webkit-scrollbar { height: 8px; }
+        .table-scroll::-webkit-scrollbar-track { background: #F5E6D3; border-radius: 8px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #c99c6b; border-radius: 8px; }
+        .table-scroll::-webkit-scrollbar-thumb:hover { background: #a35c27; }
     </style>
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
