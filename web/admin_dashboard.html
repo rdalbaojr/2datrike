@@ -106,7 +106,12 @@
                             </div>
                         </div>
                     </div>
-
+<div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA Acct #</label>
+                                <div class="relative w-36">
+                                    <input type="text" id="katodaAccountInput" placeholder="Bank/GCash" class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                </div>
+                            </div>
                     <!-- Action Button -->
                     <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                         <i class="fa-solid fa-floppy-disk"></i> Save & Apply
@@ -202,7 +207,8 @@
                     document.getElementById('cfg-pabili').value = config.pabili_price;
                     document.getElementById('cfg-deliver').value = config.deliver_price;
                     document.getElementById('platformShareInput').value = config.platform_share;
-                    document.getElementById('katodaShareInput').value = config.katoda_share;
+                    // Add this inside the "if (response.ok)" block
+                    document.getElementById('katodaAccountInput').value = config.katoda_account || "";
                 }
             } catch (error) {
                 console.error("Error loading config from server:", error);
@@ -219,12 +225,14 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
             
+            // Add katoda_account to your payload
             const payload = {
                 pasundo_price: parseInt(document.getElementById('cfg-pasundo').value) || 50,
                 pabili_price: parseInt(document.getElementById('cfg-pabili').value) || 50,
                 deliver_price: parseInt(document.getElementById('cfg-deliver').value) || 50,
                 platform_share: parseFloat(document.getElementById('platformShareInput').value) || 17,
-                katoda_share: parseFloat(document.getElementById('katodaShareInput').value) || 3
+                katoda_share: parseFloat(document.getElementById('katodaShareInput').value) || 3,
+                katoda_account: document.getElementById('katodaAccountInput').value.trim() // <-- NEW LINE
             };
 
             try {
@@ -263,18 +271,18 @@
                 }
 
                 data.drivers.forEach(driver => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
-                        <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
-                        <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
-                        <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
+                    // Append a total KATODA row at the bottom
+                const totalRow = document.createElement('tr');
+                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
+                totalRow.innerHTML = `
+                    <td class="py-4 px-4 font-black text-[#0f172a] uppercase">KATODA TOTAL</td>
+                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
+                    <td class="py-4 px-4 text-center">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
+                `;
                 
                 // Append a total KATODA row at the bottom
                 const totalRow = document.createElement('tr');
