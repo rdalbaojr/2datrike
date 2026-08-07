@@ -14,7 +14,6 @@ from typing import List, Dict
 import csv
 from io import StringIO
 from fastapi.responses import StreamingResponse
-from datetime import datetime
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -50,6 +49,11 @@ class User(Base):
     toda_number = Column(String, nullable=True)
     gcash_account = Column(String, nullable=True)
     toda_id_path = Column(String, nullable=True)
+    
+    # Status & Timestamps (ADDED FOR KATODA DASHBOARD)
+    status = Column(String, default="offline")
+    last_online = Column(DateTime, nullable=True)
+    last_offline = Column(DateTime, nullable=True)
 
 class RideRequest(Base):
     __tablename__ = "ride_requests"
@@ -109,7 +113,7 @@ class SystemConfig(Base):
     deliver_price = Column(Integer, default=50)
     platform_share = Column(Integer, default=17)
     katoda_share = Column(Integer, default=3)
-    katoda_account = Column(String, default="")  # <-- NEW LINE
+    katoda_account = Column(String, default="")  
 
 # Force create the new table if it doesn't exist yet
 SystemConfig.__table__.create(bind=engine, checkfirst=True)
@@ -130,7 +134,7 @@ class ConfigUpdateSchema(BaseModel):
     deliver_price: int
     platform_share: float
     katoda_share: float
-    katoda_account: str = ""  # <-- NEW LINE
+    katoda_account: str = ""  
 
 @app.get("/api/admin/config")
 def get_system_config(db: Session = Depends(get_db)):
@@ -148,7 +152,7 @@ def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)
     config.deliver_price = data.deliver_price
     config.platform_share = data.platform_share
     config.katoda_share = data.katoda_share
-    config.katoda_account = data.katoda_account  # <-- NEW LINE
+    config.katoda_account = data.katoda_account  
     db.commit()
     return {"status": "success", "message": "System configuration updated."}
     
@@ -186,6 +190,12 @@ def login_user(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
+    # --- UPDATE STATUS AND TIME TO ONLINE ---
+    user.status = "online"
+    user.last_online = datetime.now()
+    db.commit()
+    # ----------------------------------------
+    
     response = RedirectResponse(
         url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", 
         status_code=303
@@ -197,6 +207,16 @@ def login_user(
         response.set_cookie(key="driver_name", value=display_name)
         
     return response
+
+# --- NEW LOGOUT ROUTE ---
+@app.post("/api/logout/{username}")
+def logout_user(username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if user:
+        user.status = "offline"
+        user.last_offline = datetime.now()
+        db.commit()
+    return {"message": "Logged out"}
 
 @app.post("/register-account/")
 def register_account(
@@ -296,18 +316,24 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
             RideRequest.status.in_(['completed', 'paid'])
         ).count()
         
-        # --- NEW CODE INSERTED HERE ---
-        # Fallback to DB ID if the driver left the toda_number field blank
         display_id = driver.toda_number if driver.toda_number else driver.id
+        gcash = driver.gcash_account if driver.gcash_account else "Not Provided"
+
+        time_str = "--:--"
+        if driver.status == 'online' and driver.last_online:
+            time_str = driver.last_online.strftime("%I:%M %p")
+        elif driver.status == 'offline' and driver.last_offline:
+            time_str = driver.last_offline.strftime("%I:%M %p")
 
         driver_list.append({
             "id": display_id, 
             "name": clean_name,
-            "status": "online",
+            "status": driver.status,
+            "status_time": time_str,
+            "gcash": gcash,
             "rating": 5.0,
             "totalRides": ride_count 
         })
-        # ------------------------------
         
     return driver_list
 
@@ -325,6 +351,7 @@ def get_pending_rides(db: Session = Depends(get_db)):
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     return db.query(RideRequest).all()
+
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
@@ -332,7 +359,6 @@ def get_payout_summary(db: Session = Depends(get_db)):
     katoda_pct = (config.katoda_share if config else 3) / 100
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
-    # Fetch rides that are paid by passengers
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
 
     payouts = {}
@@ -373,23 +399,24 @@ def get_payout_summary(db: Session = Depends(get_db)):
         payouts[driver_name]["katoda_share"] += katoda_cut
         payouts[driver_name]["platform_share"] += platform_cut
 
+    katoda_acct = config.katoda_account if config and config.katoda_account else "Not Configured"
+    
     return {
         "drivers": list(payouts.values()),
         "total_katoda": total_katoda,
-        "total_platform": total_platform
+        "total_platform": total_platform,
+        "katoda_account": katoda_acct
     }   
+
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(db: Session = Depends(get_db)):
-    # 1. Fetch the system configuration (percentages)
     config = db.query(SystemConfig).first()
     platform_pct = (config.platform_share if config else 17) / 100
     katoda_pct = (config.katoda_share if config else 3) / 100
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
-    # 2. Find all rides paid by passengers
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
 
-    # 3. Collective Calculations Dictionary
     driver_payouts = {}
     total_katoda_payout = 0.0
 
@@ -409,12 +436,10 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
             
         total_katoda_payout += katoda_cut
 
-    # 4. Generate the BPI BizLink Batch CSV format
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
-    # Add Driver rows
     for driver_name, amount in driver_payouts.items():
         driver_user = db.query(User).filter(User.username == driver_name).first()
         account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
@@ -426,7 +451,6 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
             "2DA Daily Driver Payout"
         ])
 
-   # Add KATODA row
     if total_katoda_payout > 0:
         katoda_acct = config.katoda_account if config and config.katoda_account else "MISSING_KATODA_ACCOUNT"
         writer.writerow([
@@ -435,9 +459,9 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
             f"{total_katoda_payout:.2f}", 
             "2DA Daily Katoda Share"
         ])
+        
     output.seek(0)
     
-    # 5. Return as a downloadable CSV file
     current_date = datetime.now().strftime("%Y-%m-%d")
     filename = f"BizLink_Payout_{current_date}.csv"
     
@@ -446,13 +470,7 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-    katoda_acct = config.katoda_account if config and config.katoda_account else "Not Configured"
-    return {
-        "drivers": list(payouts.values()),
-        "total_katoda": total_katoda,
-        "total_platform": total_platform,
-        "katoda_account": katoda_acct  # <-- NEW LINE
-    }
+
 # ==========================================
 # 6. IN-APP TEXT CHAT (WEBSOCKETS + DATABASE)
 # ==========================================
@@ -490,11 +508,9 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
     await chat_manager.connect(websocket, ride_id)
     try:
         while True:
-            # 1. Receive the message from the frontend
             data = await websocket.receive_text()
             message_data = json.loads(data)
             
-            # 2. SAVE TO DATABASE BEFORE BROADCASTING
             new_message = ChatMessage(
                 ride_id=int(ride_id),
                 sender=message_data.get("sender", "Unknown"),
@@ -503,7 +519,6 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
             db.add(new_message)
             db.commit()
 
-            # 3. Broadcast it to both users
             await chat_manager.broadcast_to_ride(data, ride_id)
             
     except WebSocketDisconnect:
