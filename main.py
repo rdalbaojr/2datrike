@@ -110,7 +110,7 @@ class SystemConfig(Base):
     deliver_price = Column(Integer, default=50)
     platform_share = Column(Integer, default=17)
     katoda_share = Column(Integer, default=3)
-    katoda_bank = Column(String, default="GCash") # <-- NEW: KATODA Bank Provider
+    katoda_bank = Column(String, default="GCash")
     katoda_account = Column(String, default="")  
 
 SystemConfig.__table__.create(bind=engine, checkfirst=True)
@@ -239,9 +239,7 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id}
-@app.get("/pending-rides/")
-def get_pending_rides(db: Session = Depends(get_db)):
-    return db.query(RideRequest).all()
+
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -318,7 +316,11 @@ def get_payout_summary(db: Session = Depends(get_db)):
         total_platform += platform_cut
 
         if driver_name not in payouts:
+            # FIX: Check BOTH username and full_name so it successfully matches!
             driver_user = db.query(User).filter(User.username == driver_name).first()
+            if not driver_user:
+                driver_user = db.query(User).filter(User.full_name == driver_name).first()
+
             if driver_user and driver_user.gcash_account:
                 b_name = driver_user.bank_name if driver_user.bank_name else "GCash"
                 acc_num = driver_user.gcash_account
@@ -328,8 +330,8 @@ def get_payout_summary(db: Session = Depends(get_db)):
             
             payouts[driver_name] = {
                 "driver_name": driver_name,
-                "bank_name": b_name,            # Separate bank name
-                "account_number": acc_num,      # Separate account number
+                "bank_name": b_name,            
+                "account_number": acc_num,      
                 "ride_count": 0,
                 "total_gross": 0.0,
                 "driver_share": 0.0,
@@ -382,7 +384,11 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
     for driver_name, amount in driver_payouts.items():
+        # FIX: Also added the fallback query to the BizLink CSV export!
         driver_user = db.query(User).filter(User.username == driver_name).first()
+        if not driver_user:
+            driver_user = db.query(User).filter(User.full_name == driver_name).first()
+
         account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
         bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
         writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout ({bank_provider})"])
@@ -395,6 +401,41 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     output.seek(0)
     current_date = datetime.now().strftime("%Y-%m-%d")
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_Payout_{current_date}.csv"})
+
+@app.get("/pending-rides/")
+def get_pending_rides(db: Session = Depends(get_db)):
+    rides = db.query(RideRequest).all()
+    return [{
+        "id": r.id,
+        "passenger_name": r.passenger_name,
+        "pickup_location": r.pickup_location,
+        "dropoff_location": r.dropoff_location,
+        "service_type": r.service_type,
+        "fare": r.fare,
+        "status": r.status,
+        "driver_name": r.driver_name
+    } for r in rides]
+
+@app.get("/api/rides")
+def get_available_rides(db: Session = Depends(get_db)):
+    rides = db.query(RideRequest).all()
+    return [{
+        "id": r.id,
+        "passenger_name": r.passenger_name,
+        "pickup_location": r.pickup_location,
+        "dropoff_location": r.dropoff_location,
+        "service_type": r.service_type,
+        "fare": r.fare,
+        "status": r.status,
+        "driver_name": r.driver_name
+    } for r in rides]
+
+@app.get("/ride-status/{ride_id}")
+def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    return {"status": ride.status, "driver_name": ride.driver_name}
 
 # ==========================================
 # 6. IN-APP TEXT CHAT & KATODA BROADCAST
