@@ -48,9 +48,10 @@ class User(Base):
     # Driver-Only Fields
     toda_number = Column(String, nullable=True)
     gcash_account = Column(String, nullable=True)
+    bank_name = Column(String, nullable=True, default="GCash") # <-- NEW FIELD FOR PAYOUT PROVIDER
     toda_id_path = Column(String, nullable=True)
     
-    # Status & Timestamps (ADDED FOR KATODA DASHBOARD)
+    # Status & Timestamps
     status = Column(String, default="offline")
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
@@ -190,11 +191,9 @@ def login_user(
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
-    # --- UPDATE STATUS AND TIME TO ONLINE ---
     user.status = "online"
     user.last_online = datetime.now()
     db.commit()
-    # ----------------------------------------
     
     response = RedirectResponse(
         url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", 
@@ -208,7 +207,6 @@ def login_user(
         
     return response
 
-# --- NEW LOGOUT ROUTE ---
 @app.post("/api/logout/{username}")
 def logout_user(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
@@ -228,6 +226,7 @@ def register_account(
     whatsapp_number: str = Form(...),
     toda_number: str = Form(None),
     gcash_account: str = Form(None),
+    bank_name: str = Form("GCash"), # <-- NEW: Captures Bank/E-Wallet Name
     toda_id: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
@@ -250,6 +249,7 @@ def register_account(
         whatsapp_number=whatsapp_number,
         toda_number=toda_number,
         gcash_account=gcash_account,
+        bank_name=bank_name, # <-- NEW: Saves to DB
         toda_id_path=file_path
     )
     db.add(new_user)
@@ -381,7 +381,12 @@ def get_payout_summary(db: Session = Depends(get_db)):
 
         if driver_name not in payouts:
             driver_user = db.query(User).filter(User.username == driver_name).first()
-            acc = driver_user.gcash_account if (driver_user and driver_user.gcash_account) else "Not Provided"
+            if driver_user and driver_user.gcash_account:
+                # <-- NEW: Merges Bank Name and Account for the Table
+                b_name = driver_user.bank_name if driver_user.bank_name else "GCash"
+                acc = f"{b_name} - {driver_user.gcash_account}" 
+            else:
+                acc = "Not Provided"
             
             payouts[driver_name] = {
                 "driver_name": driver_name,
@@ -444,11 +449,14 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
         driver_user = db.query(User).filter(User.username == driver_name).first()
         account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
         
+        # <-- NEW: Appends Bank Name to the CSV Remarks
+        bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
+        
         writer.writerow([
             account_number,
             driver_name,
             f"{amount:.2f}",
-            "2DA Daily Driver Payout"
+            f"2DA Payout ({bank_provider})" 
         ])
 
     if total_katoda_payout > 0:
