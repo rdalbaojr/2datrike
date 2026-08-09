@@ -239,7 +239,9 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id}
-
+@app.get("/pending-rides/")
+def get_pending_rides(db: Session = Depends(get_db)):
+    return db.query(RideRequest).all()
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
