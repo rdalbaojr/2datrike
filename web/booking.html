@@ -123,6 +123,7 @@
             </div>
             <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
             <p class="text-sm text-[#78350f] font-medium">Notifying 2DA drivers nearby.</p>
+            <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline">Cancel Search</button>
         </div>
 
         <!-- MY ACTIVE RIDES (RADAR) -->
@@ -232,7 +233,8 @@
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("welcome-name").innerText = `${currentPassenger}`;
             try {
-                const res = await fetch('/api/admin/config');
+                // ADDED CACHE BUSTER TO CONFIG FETCH
+                const res = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
                 if (res.ok) {
                     const config = await res.json();
                     platformPrices.pasundo = config.pasundo_price;
@@ -314,16 +316,13 @@
                 });
 
                 if (response.ok) {
-                    setTimeout(() => {
-                        document.getElementById('searching-state').classList.add('hidden');
-                        document.getElementById('booking-form').classList.remove('hidden');
-                        document.getElementById('pickup').value = '';
-                        document.getElementById('dropoff').value = '';
-                        document.getElementById('fare-estimate').classList.add('hidden');
-                        document.getElementById('submit-btn').classList.remove('hidden');
-                        document.getElementById('confirm-btn').classList.add('hidden');
-                        fetchMyRides();
-                    }, 2000); 
+                    // Removed the 2-second form reset so it stays searching!
+                    document.getElementById('pickup').value = '';
+                    document.getElementById('dropoff').value = '';
+                    document.getElementById('fare-estimate').classList.add('hidden');
+                    document.getElementById('submit-btn').classList.remove('hidden');
+                    document.getElementById('confirm-btn').classList.add('hidden');
+                    fetchMyRides();
                 } else {
                     alert("Error requesting ride from server.");
                     window.location.reload();
@@ -334,6 +333,12 @@
             }
         });
 
+        // Added functionality to cancel search manually
+        function cancelSearch() {
+            document.getElementById('searching-state').classList.add('hidden');
+            document.getElementById('booking-form').classList.remove('hidden');
+        }
+
         function logout() {
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = "/login.html";
@@ -341,7 +346,8 @@
 
         async function fetchMyRides() {
             try {
-                const response = await fetch('/pending-rides/');
+                // ADDED CACHE BUSTER TO PREVENT BROWSER FREEZING THE DATA
+                const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
                 const allRides = await response.json();
                 const container = document.getElementById('my-rides-container');
                 if (!container) return;
@@ -352,6 +358,9 @@
 
                 if (myRides.length === 0) {
                     container.innerHTML = '<p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>';
+                    // If no rides are active, turn off searching state
+                    document.getElementById('searching-state').classList.add('hidden');
+                    document.getElementById('booking-form').classList.remove('hidden');
                     return;
                 }
 
@@ -364,8 +373,15 @@
                     let statusHtml = "";
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-[#78350f] text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1 animate-pulse"></i> Looking for a driver...</p>`;
+                        // Keep searching state ON if there is a pending ride
+                        document.getElementById('booking-form').classList.add('hidden');
+                        document.getElementById('searching-state').classList.remove('hidden');
                     } 
                     else if (ride.status === 'accepted') {
+                        // Driver found! Turn off searching state
+                        document.getElementById('searching-state').classList.add('hidden');
+                        document.getElementById('booking-form').classList.remove('hidden');
+                        
                         statusHtml = `
                             <div class="bg-green-900/10 border border-green-800/30 rounded-xl p-3 mt-4">
                                 <p class="text-green-800 text-sm font-bold m-0">
@@ -465,12 +481,11 @@
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
             
-            // Show loading state while fetching history from the database
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
-            // Fetch past chat messages
             try {
-                const response = await fetch(`/api/chat/${rideId}`);
+                // ADDED CACHE BUSTER HERE TOO
+                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const history = await response.json();
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
@@ -483,7 +498,6 @@
                 console.error("Could not load chat history:", error);
             }
 
-            // Start WebSocket connection for live messages
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
