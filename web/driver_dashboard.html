@@ -173,7 +173,7 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (Untouched) -->
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
         // --- Quick Menu Toggle ---
         function toggleQuickMenu() {
@@ -236,6 +236,12 @@
                 const response = await fetch('/pending-rides/');
                 const allRides = await response.json();
                 
+                // CRASH PROTECTION: Ensure the backend actually sent an Array
+                if (!Array.isArray(allRides)) {
+                    console.warn("Radar Sync: Backend did not return a valid list of rides.");
+                    return;
+                }
+                
                 let currentDriverName = getCookie("driver_name");
                 if (currentDriverName === "Unknown Driver") currentDriverName = getCookie("passenger_name");
                 
@@ -261,11 +267,11 @@
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-green-800 font-extrabold text-lg">${ride.fare}</span>
+                                <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
                             </div>
                             <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
                                 <p class="text-[#0f172a] text-sm mb-2 font-medium"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
-                                <p class="text-[#0f172a] text-sm font-medium leading-tight"><i class="fa-solid fa-location-dot text-rose-600 mr-2 w-4"></i> ${ride.pickup_location}</p>
+                                <p class="text-[#0f172a] text-sm font-medium leading-tight"><i class="fa-solid fa-location-dot text-rose-600 mr-2 w-4"></i> ${ride.pickup_location || 'Location Not Provided'}</p>
                             </div>
                             <button onclick="acceptRide(${ride.id})" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-amber-900/20">
                                 Accept Order
@@ -289,9 +295,6 @@
                         const passFullName = ride.passenger_name || "Passenger";
                         const passengerFirstName = passFullName.split(' ')[0];
                         
-                        const passMobile = ride.passenger_mobile || "#"; 
-                        let waPassNumber = passMobile.startsWith('0') ? '63' + passMobile.substring(1) : passMobile;
-
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
                             actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
@@ -313,12 +316,12 @@
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-[#0f172a] font-extrabold text-lg">${ride.fare}</span>
+                                <span class="text-[#0f172a] font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
                             </div>
                             
                             <!-- CALL AND CHAT BUTTONS HERE -->
                             <div class="flex gap-3 mb-3 mt-4">
-                                <a href="tel:${waPassNumber}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                <a href="tel:0" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                     <i class="fa-solid fa-phone"></i> Call
                                 </a>
                                 
@@ -388,18 +391,24 @@
         // DYNAMIC ADMIN SETTINGS INJECTION
         // ==========================================
         async function updateEarningsTable(allRides, driverName) {
+            if (!Array.isArray(allRides)) return;
+
             let config = { pasundo_price: 50, pabili_price: 50, deliver_price: 50, platform_share: 17, katoda_share: 3 };
             try {
                 const res = await fetch('/api/admin/config');
                 if (res.ok) {
-                    config = await res.json();
+                    const fetchedConfig = await res.json();
+                    // CRASH PROTECTION: Ensure config is not null
+                    if (fetchedConfig && typeof fetchedConfig === 'object') {
+                        config = { ...config, ...fetchedConfig };
+                    }
                 }
             } catch (error) {
                 console.log("Could not fetch admin config, using defaults.");
             }
 
-            const platformPct = config.platform_share;
-            const katodaPct = config.katoda_share;
+            const platformPct = config.platform_share || 17;
+            const katodaPct = config.katoda_share || 3;
 
             document.getElementById('label-platform').innerText = `Platform (${platformPct}%):`;
             document.getElementById('label-katoda').innerText = `KATODA (${katodaPct}%):`;
@@ -422,9 +431,9 @@
                 else data.pasundo.qty++; // fallback
             });
 
-            const pasundoBase = data.pasundo.qty * config.pasundo_price;
-            const pabiliBase = data.pabili.qty * config.pabili_price;
-            const deliverBase = data.deliver.qty * config.deliver_price;
+            const pasundoBase = data.pasundo.qty * (config.pasundo_price || 50);
+            const pabiliBase = data.pabili.qty * (config.pabili_price || 50);
+            const deliverBase = data.deliver.qty * (config.deliver_price || 50);
 
             const totalBase = pasundoBase + pabiliBase + deliverBase;
 
@@ -459,45 +468,34 @@
         // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('driver_name') !== "Unknown Driver" ? getCookie('driver_name') : 'Driver';
+        
         async function openChat(rideId) {
-    document.getElementById('chat-modal').classList.remove('hidden');
-    const messagesContainer = document.getElementById('chat-messages');
-    
-    // Show a loading state
-    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
-    
-    // 1. FETCH CHAT HISTORY FROM DATABASE
-    try {
-        const response = await fetch(`/api/chat/${rideId}`);
-        if (response.ok) {
-            const history = await response.json();
-            
-            // Clear the loading text and set the header
-            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-            
-            // Loop through past messages and display them
-            history.forEach(msg => {
-                displayMessage(msg.sender, msg.text);
-            });
-        }
-    } catch (error) {
-        console.error("Could not load chat history.");
-    }
-    
-    // 2. START THE LIVE WEBSOCKET CONNECTION
-    const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
-    chatSocket = new WebSocket(wsUrl);
-    
-    chatSocket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        displayMessage(data.sender, data.text);
-    };
-}
-        function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-messages').innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+            const messagesContainer = document.getElementById('chat-messages');
             
-            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`; // Changed to wss:// for secure deployment
+            // Show a loading state
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            // 1. FETCH CHAT HISTORY FROM DATABASE
+            try {
+                const response = await fetch(`/api/chat/${rideId}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    
+                    // Clear the loading text and set the header
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    
+                    // Loop through past messages and display them
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text);
+                    });
+                }
+            } catch (error) {
+                console.error("Could not load chat history.");
+            }
+            
+            // 2. START THE LIVE WEBSOCKET CONNECTION
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
             chatSocket.onmessage = function(event) {
