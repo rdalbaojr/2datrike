@@ -39,18 +39,15 @@ class User(Base):
     password = Column(String)
     role = Column(String)  # 'passenger' or 'driver'
     
-    # Shared Fields
     full_name = Column(String)
     address = Column(String)
     whatsapp_number = Column(String)
     
-    # Driver-Only Fields
     toda_number = Column(String, nullable=True)
     gcash_account = Column(String, nullable=True)
     bank_name = Column(String, nullable=True, default="GCash")
     toda_id_path = Column(String, nullable=True)
     
-    # Status & Timestamps
     status = Column(String, default="offline")
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
@@ -74,7 +71,6 @@ class ChatMessage(Base):
     text = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
-# Initialize Database
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -85,7 +81,7 @@ def get_db():
         db.close()
 
 # ==========================================
-# 4. PYDANTIC SCHEMAS & CONFIG
+# 4. PYDANTIC SCHEMAS
 # ==========================================
 class LoginRequest(BaseModel):
     username: str
@@ -101,7 +97,13 @@ class RideRequestCreate(BaseModel):
 
 class AcceptRideSchema(BaseModel):
     driver_name: str
-    
+
+class ProfileUpdateSchema(BaseModel):
+    display_name: str
+    bank_name: str
+    gcash_account: str
+    whatsapp_number: str
+
 class SystemConfig(Base):
     __tablename__ = "system_config"
     id = Column(Integer, primary_key=True, index=True)
@@ -134,31 +136,9 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
-@app.get("/api/admin/config")
-def get_system_config(db: Session = Depends(get_db)):
-    return db.query(SystemConfig).first()
-
-@app.post("/api/admin/config")
-def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)):
-    config = db.query(SystemConfig).first()
-    if not config:
-        config = SystemConfig()
-        db.add(config)
-        
-    config.pasundo_price = data.pasundo_price
-    config.pabili_price = data.pabili_price
-    config.deliver_price = data.deliver_price
-    config.platform_share = data.platform_share
-    config.katoda_share = data.katoda_share
-    config.katoda_bank = data.katoda_bank
-    config.katoda_account = data.katoda_account  
-    db.commit()
-    return {"status": "success", "message": "System configuration updated."}
-    
 # ==========================================
 # 5. API ENDPOINTS
 # ==========================================
-
 @app.get("/")
 def read_root():
     return RedirectResponse(url="/booking.html")
@@ -228,6 +208,39 @@ def register_account(
     db.commit()
     return RedirectResponse(url="/login.html", status_code=303)
 
+# --- NEW: PROFILE MANAGEMENT ENDPOINTS ---
+@app.get("/api/profile/{display_name}")
+def get_profile(display_name: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == display_name).first()
+    if not user:
+        user = db.query(User).filter(User.full_name == display_name).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "full_name": user.full_name,
+        "whatsapp_number": user.whatsapp_number,
+        "bank_name": user.bank_name if user.bank_name else "GCash",
+        "gcash_account": user.gcash_account if user.gcash_account else ""
+    }
+
+@app.post("/api/update-profile")
+def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == data.display_name).first()
+    if not user:
+        user = db.query(User).filter(User.full_name == data.display_name).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.bank_name = data.bank_name
+    user.gcash_account = data.gcash_account
+    user.whatsapp_number = data.whatsapp_number
+    db.commit()
+    
+    return {"status": "success", "message": "Profile updated successfully"}
+
+# ----------------------------------------
+
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     new_ride = RideRequest(
@@ -290,6 +303,26 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
         driver_list.append({"id": display_id, "name": clean_name, "status": driver.status, "status_time": time_str, "gcash": gcash, "rating": 5.0, "totalRides": ride_count})
     return driver_list
 
+@app.get("/api/admin/config")
+def get_system_config(db: Session = Depends(get_db)):
+    return db.query(SystemConfig).first()
+
+@app.post("/api/admin/config")
+def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)):
+    config = db.query(SystemConfig).first()
+    if not config:
+        config = SystemConfig()
+        db.add(config)
+    config.pasundo_price = data.pasundo_price
+    config.pabili_price = data.pabili_price
+    config.deliver_price = data.deliver_price
+    config.platform_share = data.platform_share
+    config.katoda_share = data.katoda_share
+    config.katoda_bank = data.katoda_bank
+    config.katoda_account = data.katoda_account  
+    db.commit()
+    return {"status": "success"}
+
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
@@ -316,7 +349,6 @@ def get_payout_summary(db: Session = Depends(get_db)):
         total_platform += platform_cut
 
         if driver_name not in payouts:
-            # FIX: Check BOTH username and full_name so it successfully matches!
             driver_user = db.query(User).filter(User.username == driver_name).first()
             if not driver_user:
                 driver_user = db.query(User).filter(User.full_name == driver_name).first()
@@ -384,7 +416,6 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
     for driver_name, amount in driver_payouts.items():
-        # FIX: Also added the fallback query to the BizLink CSV export!
         driver_user = db.query(User).filter(User.username == driver_name).first()
         if not driver_user:
             driver_user = db.query(User).filter(User.full_name == driver_name).first()
@@ -406,35 +437,24 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
 def get_pending_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
     return [{
-        "id": r.id,
-        "passenger_name": r.passenger_name,
-        "pickup_location": r.pickup_location,
-        "dropoff_location": r.dropoff_location,
-        "service_type": r.service_type,
-        "fare": r.fare,
-        "status": r.status,
-        "driver_name": r.driver_name
+        "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
+        "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
+        "status": r.status, "driver_name": r.driver_name
     } for r in rides]
 
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
     return [{
-        "id": r.id,
-        "passenger_name": r.passenger_name,
-        "pickup_location": r.pickup_location,
-        "dropoff_location": r.dropoff_location,
-        "service_type": r.service_type,
-        "fare": r.fare,
-        "status": r.status,
-        "driver_name": r.driver_name
+        "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
+        "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
+        "status": r.status, "driver_name": r.driver_name
     } for r in rides]
 
 @app.get("/ride-status/{ride_id}")
 def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
+    if not ride: raise HTTPException(status_code=404, detail="Ride not found")
     return {"status": ride.status, "driver_name": ride.driver_name}
 
 # ==========================================
