@@ -10,11 +10,7 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        /* Only hide the main page scrollbar, but keep it for elements that need it! */
         body::-webkit-scrollbar { display: none; }
-        
-        /* Create a custom, slim scrollbar just for the table */
         .table-scroll::-webkit-scrollbar { height: 8px; }
         .table-scroll::-webkit-scrollbar-track { background: #F5E6D3; border-radius: 8px; }
         .table-scroll::-webkit-scrollbar-thumb { background: #c99c6b; border-radius: 8px; }
@@ -23,10 +19,8 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
 
-    <!-- ==================== MAIN ADMIN CONTAINER ==================== -->
-    <div class="w-full max-w-[900px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <div class="w-full max-w-[1000px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
-        <!-- ==================== THE GATEKEEPER OVERLAY ==================== -->
         <div id="lockOverlay" class="absolute inset-0 bg-[#E3BC90]/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-6">
             <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
             <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
@@ -40,9 +34,7 @@
                 </button>
             </form>
         </div>
-        <!-- ================================================================ -->
 
-        <!-- Header -->
         <div class="flex flex-col items-start pb-5 border-b border-[#d4aa7c]/50 mb-6 relative">
             <button onclick="lockDashboard()" class="absolute top-0 right-0 text-[#78350f] bg-[#d4aa7c]/40 p-3 rounded-full hover:bg-[#d4aa7c] hover:scale-105 transition">
                 <i class="fa-solid fa-lock text-lg"></i>
@@ -52,13 +44,9 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            <!-- LEFT COLUMN: FARE CONFIGURATION -->
             <div class="lg:col-span-1">
                 <h2 class="text-xl font-extrabold text-[#0f172a] mb-4">Fare Config</h2>
-                
                 <form id="fareConfigForm" onsubmit="updateFareSettings(event)" class="flex flex-col gap-5">
-                    <!-- CATEGORY BASE FARES -->
                     <div>
                         <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Base Fares</h3>
                         <div class="flex flex-col gap-3">
@@ -86,9 +74,8 @@
                         </div>
                     </div>
 
-                    <!-- REVENUE SHARING -->
                     <div>
-                        <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Revenue Sharing</h3>
+                        <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Revenue Sharing & Payouts</h3>
                         <div class="flex flex-col gap-3">
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
                                 <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Platform</label>
@@ -104,16 +91,21 @@
                                     <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
                                 </div>
                             </div>
-                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
-                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA Acct #</label>
-                                <div class="relative w-36">
-                                    <input type="text" id="katodaAccountInput" placeholder="Bank/GCash" class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                            
+                            <!-- UPDATED: KATODA BANK & ACCOUNT SELECTOR -->
+                            <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex flex-col gap-2 shadow-sm">
+                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA Payout Acct</label>
+                                <div class="flex gap-2">
+                                    <select id="katodaBankInput" class="w-1/3 bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 px-2 text-xs font-extrabold text-[#0f172a] outline-none focus:border-[#78350f] cursor-pointer">
+                                        <option value="GCash">GCash</option>
+                                        <option value="Maya">Maya</option>
+                                    </select>
+                                    <input type="text" id="katodaAccountInput" placeholder="Account #" class="w-2/3 bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Action Button -->
                     <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                         <i class="fa-solid fa-floppy-disk"></i> Save & Apply
                     </button>
@@ -128,8 +120,6 @@
                             <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Payouts</h2>
                             <p class="text-xs text-[#78350f] font-bold mt-1">Real-time collective settlement</p>
                         </div>
-                        
-                        <!-- The Download Button -->
                         <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
                             <i class="fa-solid fa-download"></i> Export for BizLink
                         </a>
@@ -138,8 +128,10 @@
                     <div class="overflow-x-auto rounded-xl border border-[#c99c6b] table-scroll pb-2">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-[#E3BC90]/50">
+                                <!-- UPDATED HEADERS -->
                                 <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
-                                    <th class="py-3 px-4">Driver Name</th>
+                                    <th class="py-3 px-4">Entity / Driver</th>
+                                    <th class="py-3 px-4">Provider</th>
                                     <th class="py-3 px-4">Account Number</th>
                                     <th class="py-3 px-4 text-center">Rides</th>
                                     <th class="py-3 px-4 text-right">Gross</th>
@@ -150,7 +142,7 @@
                             </thead>
                             <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a] bg-white/40">
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
+                                    <td colspan="8" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -161,9 +153,7 @@
         </div>
     </div>
 
-    <!-- ==================== COMBINED SCRIPTS ==================== -->
     <script>
-        // --- 1. GATEKEEPER LOGIC ---
         function handleMasterLogin(event) {
             event.preventDefault();
             const u = document.getElementById('masterUser').value;
@@ -187,7 +177,6 @@
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
         }
 
-        // --- 2. LOAD DATA ON PAGE START ---
         document.addEventListener("DOMContentLoaded", async () => {
             const isMaster = sessionStorage.getItem('admin_session') === 'masterom_active';
             const overlay = document.getElementById('lockOverlay');
@@ -198,7 +187,6 @@
                 overlay.style.opacity = '1';
             }
 
-            // Load Config
             try {
                 const response = await fetch('/api/admin/config');
                 if (response.ok) {
@@ -208,17 +196,16 @@
                     document.getElementById('cfg-deliver').value = config.deliver_price;
                     document.getElementById('platformShareInput').value = config.platform_share;
                     document.getElementById('katodaShareInput').value = config.katoda_share || 3;
+                    document.getElementById('katodaBankInput').value = config.katoda_bank || "GCash";
                     document.getElementById('katodaAccountInput').value = config.katoda_account || "";
                 }
             } catch (error) {
                 console.error("Error loading config from server:", error);
             }
 
-            // Load Payouts Table
             loadPayoutSummary();
         });
 
-        // --- 3. SAVE CONFIGURATION LOGIC ---
         async function updateFareSettings(event) {
             event.preventDefault();
             const btn = document.querySelector('#fareConfigForm button[type="submit"]');
@@ -231,6 +218,7 @@
                 deliver_price: parseInt(document.getElementById('cfg-deliver').value) || 50,
                 platform_share: parseFloat(document.getElementById('platformShareInput').value) || 17,
                 katoda_share: parseFloat(document.getElementById('katodaShareInput').value) || 3,
+                katoda_bank: document.getElementById('katodaBankInput').value,
                 katoda_account: document.getElementById('katodaAccountInput').value.trim()
             };
 
@@ -254,7 +242,6 @@
             }
         }
 
-        // --- 4. LOAD PAYOUTS TABLE LOGIC ---
         async function loadPayoutSummary() {
             try {
                 const response = await fetch('/api/admin/payout-summary');
@@ -265,15 +252,16 @@
                 tbody.innerHTML = '';
 
                 if (data.drivers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center italic text-[#78350f]/70">No pending payouts at this time.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts at this time.</td></tr>';
                     return;
                 }
 
-                // Render each driver row properly
+                // Render DRIVER Rows
                 data.drivers.forEach(driver => {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
+                        <td class="py-4 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
                         <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
                         <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
                         <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
@@ -284,11 +272,12 @@
                     tbody.appendChild(row);
                 });
                 
-                // Append a single, clean KATODA total row at the bottom with the dynamic account number
+                // Render KATODA Total Row
                 const totalRow = document.createElement('tr');
                 totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
                 totalRow.innerHTML = `
                     <td class="py-4 px-4 font-black text-[#0f172a] uppercase">KATODA TOTAL</td>
+                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank}</td>
                     <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
                     <td class="py-4 px-4 text-center">--</td>
                     <td class="py-4 px-4 text-right">--</td>
