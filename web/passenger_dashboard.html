@@ -85,21 +85,8 @@
             </div>
         </div>
     </div>
- <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (Untouched) -->
-    <script>
-        // --- Quick Menu Toggle ---
-        function toggleQuickMenu() {
-            const menu = document.getElementById('quickMenu');
-            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
-        }
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('quickMenu');
-            const button = menu.previousElementSibling;
-            if (!menu.contains(event.target) && !button.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
-    <!-- JavaScript to automatically fetch the passenger's rides & handle chat -->
+
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
         // --- Quick Menu Toggle ---
         function toggleQuickMenu() {
@@ -134,8 +121,8 @@
         // 2. Fetch and Display My Rides
         async function fetchMyRides() {
             try {
-                // Fetch all rides from the backend
-                const response = await fetch('/pending-rides/');
+                // ADDED CACHE-BUSTER: Prevents the browser from freezing on old data
+                const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
                 const allRides = await response.json();
                 
                 // The container where rides are displayed
@@ -173,7 +160,6 @@
                                     ✅ Driver ${ride.driver_name} has accepted your ride and is on the way!
                                 </p>
                                 
-                                <!-- Updated: Built-in Native Chat for Passenger -->
                                 <div class="flex gap-3 mt-2">
                                     <a href="tel:${ride.driver_mobile || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                         <i class="fa-solid fa-phone"></i> Call
@@ -226,45 +212,33 @@
         // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
+        
         async function openChat(rideId) {
-    document.getElementById('chat-modal').classList.remove('hidden');
-    const messagesContainer = document.getElementById('chat-messages');
-    
-    // Show a loading state
-    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
-    
-    // 1. FETCH CHAT HISTORY FROM DATABASE
-    try {
-        const response = await fetch(`/api/chat/${rideId}`);
-        if (response.ok) {
-            const history = await response.json();
-            
-            // Clear the loading text and set the header
-            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-            
-            // Loop through past messages and display them
-            history.forEach(msg => {
-                displayMessage(msg.sender, msg.text);
-            });
-        }
-    } catch (error) {
-        console.error("Could not load chat history.");
-    }
-    
-    // 2. START THE LIVE WEBSOCKET CONNECTION
-    const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
-    chatSocket = new WebSocket(wsUrl);
-    
-    chatSocket.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        displayMessage(data.sender, data.text);
-    };
-}
-        function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-messages').innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+            const messagesContainer = document.getElementById('chat-messages');
             
-            // USING SECURE wss:// FOR RENDER
+            // Show a loading state
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            // 1. FETCH CHAT HISTORY FROM DATABASE (WITH CACHE-BUSTER)
+            try {
+                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    
+                    // Clear the loading text and set the header
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    
+                    // Loop through past messages and display them
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text);
+                    });
+                }
+            } catch (error) {
+                console.error("Could not load chat history.");
+            }
+            
+            // 2. START THE LIVE WEBSOCKET CONNECTION
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
