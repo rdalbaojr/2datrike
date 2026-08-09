@@ -19,7 +19,6 @@ from fastapi.responses import StreamingResponse
 # 1. INITIALIZE APP & FOLDERS
 # ==========================================
 os.makedirs("uploads", exist_ok=True)
-
 app = FastAPI(title="2DA Tricycle Ride-Hailing API")
 
 # ==========================================
@@ -48,7 +47,7 @@ class User(Base):
     # Driver-Only Fields
     toda_number = Column(String, nullable=True)
     gcash_account = Column(String, nullable=True)
-    bank_name = Column(String, nullable=True, default="GCash") # <-- NEW FIELD FOR PAYOUT PROVIDER
+    bank_name = Column(String, nullable=True, default="GCash")
     toda_id_path = Column(String, nullable=True)
     
     # Status & Timestamps
@@ -86,7 +85,7 @@ def get_db():
         db.close()
 
 # ==========================================
-# 4. PYDANTIC SCHEMAS
+# 4. PYDANTIC SCHEMAS & CONFIG
 # ==========================================
 class LoginRequest(BaseModel):
     username: str
@@ -103,9 +102,6 @@ class RideRequestCreate(BaseModel):
 class AcceptRideSchema(BaseModel):
     driver_name: str
     
-# ==========================================
-# ADMIN SYSTEM CONFIGURATION
-# ==========================================
 class SystemConfig(Base):
     __tablename__ = "system_config"
     id = Column(Integer, primary_key=True, index=True)
@@ -114,9 +110,9 @@ class SystemConfig(Base):
     deliver_price = Column(Integer, default=50)
     platform_share = Column(Integer, default=17)
     katoda_share = Column(Integer, default=3)
+    katoda_bank = Column(String, default="GCash") # <-- NEW: KATODA Bank Provider
     katoda_account = Column(String, default="")  
 
-# Force create the new table if it doesn't exist yet
 SystemConfig.__table__.create(bind=engine, checkfirst=True)
 
 @app.on_event("startup")
@@ -135,6 +131,7 @@ class ConfigUpdateSchema(BaseModel):
     deliver_price: int
     platform_share: float
     katoda_share: float
+    katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
 @app.get("/api/admin/config")
@@ -153,6 +150,7 @@ def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)
     config.deliver_price = data.deliver_price
     config.platform_share = data.platform_share
     config.katoda_share = data.katoda_share
+    config.katoda_bank = data.katoda_bank
     config.katoda_account = data.katoda_account  
     db.commit()
     return {"status": "success", "message": "System configuration updated."}
@@ -168,20 +166,13 @@ def read_root():
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
     if request.username == "masterom" and request.password == "qZ82118@@":
-        response = JSONResponse(content={
-            "status": "success", 
-            "redirect": "admin_dashboard.html"
-        })
+        response = JSONResponse(content={"status": "success", "redirect": "admin_dashboard.html"})
         response.set_cookie(key="admin_session", value="masterom_active")
         return response
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @app.post("/login")
-def login_user(
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
-):
+def login_user(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     if username == "masterom" and password == "qZ82118@@":
         response = RedirectResponse(url="/admin_dashboard.html", status_code=303)
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
@@ -195,16 +186,11 @@ def login_user(
     user.last_online = datetime.now()
     db.commit()
     
-    response = RedirectResponse(
-        url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", 
-        status_code=303
-    )
-    
+    response = RedirectResponse(url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", status_code=303)
     display_name = user.full_name if user.full_name else user.username
     response.set_cookie(key="passenger_name", value=display_name)
     if user.role == "driver":
         response.set_cookie(key="driver_name", value=display_name)
-        
     return response
 
 @app.post("/api/logout/{username}")
@@ -218,17 +204,10 @@ def logout_user(username: str, db: Session = Depends(get_db)):
 
 @app.post("/register-account/")
 def register_account(
-    role: str = Form(...),
-    username: str = Form(...),
-    password: str = Form(...),
-    full_name: str = Form(...),
-    address: str = Form(...),
-    whatsapp_number: str = Form(...),
-    toda_number: str = Form(None),
-    gcash_account: str = Form(None),
-    bank_name: str = Form("GCash"), # <-- NEW: Captures Bank/E-Wallet Name
-    toda_id: UploadFile = File(None),
-    db: Session = Depends(get_db)
+    role: str = Form(...), username: str = Form(...), password: str = Form(...),
+    full_name: str = Form(...), address: str = Form(...), whatsapp_number: str = Form(...),
+    toda_number: str = Form(None), gcash_account: str = Form(None), bank_name: str = Form("GCash"),
+    toda_id: UploadFile = File(None), db: Session = Depends(get_db)
 ):
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
@@ -241,31 +220,20 @@ def register_account(
             shutil.copyfileobj(toda_id.file, buffer)
 
     new_user = User(
-        username=username, 
-        password=password, 
-        role=role, 
-        full_name=full_name,
-        address=address,
-        whatsapp_number=whatsapp_number,
-        toda_number=toda_number,
-        gcash_account=gcash_account,
-        bank_name=bank_name, # <-- NEW: Saves to DB
-        toda_id_path=file_path
+        username=username, password=password, role=role, full_name=full_name,
+        address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
+        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path
     )
     db.add(new_user)
     db.commit()
-    
     return RedirectResponse(url="/login.html", status_code=303)
 
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     new_ride = RideRequest(
-        passenger_name=request.passenger_name,
-        pickup_location=request.pickup_location,
-        dropoff_location=request.dropoff_location,
-        service_type=request.service_type,
-        fare=request.fare,
-        status="pending"
+        passenger_name=request.passenger_name, pickup_location=request.pickup_location,
+        dropoff_location=request.dropoff_location, service_type=request.service_type,
+        fare=request.fare, status="pending"
     )
     db.add(new_ride)
     db.commit()
@@ -277,7 +245,6 @@ def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(g
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
-        
     ride.status = "accepted"
     ride.driver_name = request.driver_name
     db.commit()
@@ -305,16 +272,11 @@ def pay_ride(ride_id: int, db: Session = Depends(get_db)):
 @app.get('/api/katoda/drivers')
 def get_katoda_drivers(db: Session = Depends(get_db)):
     all_drivers = db.query(User).filter(User.role == 'driver').all()
-    
     driver_list = []
     for driver in all_drivers:
         name = driver.full_name if driver.full_name else driver.username
         clean_name = name.strip().replace('"', '').replace("'", "")
-        
-        ride_count = db.query(RideRequest).filter(
-            RideRequest.driver_name.ilike(f"%{clean_name}%"),
-            RideRequest.status.in_(['completed', 'paid'])
-        ).count()
+        ride_count = db.query(RideRequest).filter(RideRequest.driver_name.ilike(f"%{clean_name}%"), RideRequest.status.in_(['completed', 'paid'])).count()
         
         display_id = driver.toda_number if driver.toda_number else driver.id
         gcash = driver.gcash_account if driver.gcash_account else "Not Provided"
@@ -325,32 +287,8 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
         elif driver.status == 'offline' and driver.last_offline:
             time_str = driver.last_offline.strftime("%I:%M %p")
 
-        driver_list.append({
-            "id": display_id, 
-            "name": clean_name,
-            "status": driver.status,
-            "status_time": time_str,
-            "gcash": gcash,
-            "rating": 5.0,
-            "totalRides": ride_count 
-        })
-        
+        driver_list.append({"id": display_id, "name": clean_name, "status": driver.status, "status_time": time_str, "gcash": gcash, "rating": 5.0, "totalRides": ride_count})
     return driver_list
-
-@app.get("/ride-status/{ride_id}")
-def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    return {"status": ride.status, "driver_name": ride.driver_name}
-
-@app.get("/pending-rides/")
-def get_pending_rides(db: Session = Depends(get_db)):
-    return db.query(RideRequest).all()
-
-@app.get("/api/rides")
-def get_available_rides(db: Session = Depends(get_db)):
-    return db.query(RideRequest).all()
 
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(db: Session = Depends(get_db)):
@@ -360,14 +298,12 @@ def get_payout_summary(db: Session = Depends(get_db)):
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
-
     payouts = {}
     total_katoda = 0.0
     total_platform = 0.0
 
     for ride in unsettled_rides:
-        if not ride.driver_name or not ride.fare:
-            continue
+        if not ride.driver_name or not ride.fare: continue
             
         clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
         driver_name = ride.driver_name
@@ -382,15 +318,16 @@ def get_payout_summary(db: Session = Depends(get_db)):
         if driver_name not in payouts:
             driver_user = db.query(User).filter(User.username == driver_name).first()
             if driver_user and driver_user.gcash_account:
-                # <-- NEW: Merges Bank Name and Account for the Table
                 b_name = driver_user.bank_name if driver_user.bank_name else "GCash"
-                acc = f"{b_name} - {driver_user.gcash_account}" 
+                acc_num = driver_user.gcash_account
             else:
-                acc = "Not Provided"
+                b_name = "--"
+                acc_num = "Not Provided"
             
             payouts[driver_name] = {
                 "driver_name": driver_name,
-                "account_number": acc,
+                "bank_name": b_name,            # Separate bank name
+                "account_number": acc_num,      # Separate account number
                 "ride_count": 0,
                 "total_gross": 0.0,
                 "driver_share": 0.0,
@@ -404,12 +341,14 @@ def get_payout_summary(db: Session = Depends(get_db)):
         payouts[driver_name]["katoda_share"] += katoda_cut
         payouts[driver_name]["platform_share"] += platform_cut
 
+    katoda_bank = config.katoda_bank if config and config.katoda_bank else "GCash"
     katoda_acct = config.katoda_account if config and config.katoda_account else "Not Configured"
     
     return {
         "drivers": list(payouts.values()),
         "total_katoda": total_katoda,
         "total_platform": total_platform,
+        "katoda_bank": katoda_bank,
         "katoda_account": katoda_acct
     }   
 
@@ -421,16 +360,12 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
-
     driver_payouts = {}
     total_katoda_payout = 0.0
 
     for ride in unsettled_rides:
-        if not ride.driver_name or not ride.fare:
-            continue
-            
+        if not ride.driver_name or not ride.fare: continue
         clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
-        
         driver_cut = clean_fare * driver_pct
         katoda_cut = clean_fare * katoda_pct
         
@@ -438,7 +373,6 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
             driver_payouts[ride.driver_name] += driver_cut
         else:
             driver_payouts[ride.driver_name] = driver_cut
-            
         total_katoda_payout += katoda_cut
 
     output = StringIO()
@@ -448,61 +382,35 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     for driver_name, amount in driver_payouts.items():
         driver_user = db.query(User).filter(User.username == driver_name).first()
         account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
-        
-        # <-- NEW: Appends Bank Name to the CSV Remarks
         bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
-        
-        writer.writerow([
-            account_number,
-            driver_name,
-            f"{amount:.2f}",
-            f"2DA Payout ({bank_provider})" 
-        ])
+        writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout ({bank_provider})"])
 
     if total_katoda_payout > 0:
+        katoda_bank = config.katoda_bank if config and config.katoda_bank else "GCash"
         katoda_acct = config.katoda_account if config and config.katoda_account else "MISSING_KATODA_ACCOUNT"
-        writer.writerow([
-            katoda_acct, 
-            "KATODA Organization", 
-            f"{total_katoda_payout:.2f}", 
-            "2DA Daily Katoda Share"
-        ])
+        writer.writerow([katoda_acct, "KATODA Organization", f"{total_katoda_payout:.2f}", f"2DA Daily Katoda Share ({katoda_bank})"])
         
     output.seek(0)
-    
     current_date = datetime.now().strftime("%Y-%m-%d")
-    filename = f"BizLink_Payout_{current_date}.csv"
-    
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_Payout_{current_date}.csv"})
 
 # ==========================================
-# 6. IN-APP TEXT CHAT (WEBSOCKETS + DATABASE)
+# 6. IN-APP TEXT CHAT & KATODA BROADCAST
 # ==========================================
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
-
     async def connect(self, websocket: WebSocket, ride_id: str):
         await websocket.accept()
-        if ride_id not in self.active_connections:
-            self.active_connections[ride_id] = []
+        if ride_id not in self.active_connections: self.active_connections[ride_id] = []
         self.active_connections[ride_id].append(websocket)
-
     def disconnect(self, websocket: WebSocket, ride_id: str):
         if ride_id in self.active_connections:
-            if websocket in self.active_connections[ride_id]:
-                self.active_connections[ride_id].remove(websocket)
-            if len(self.active_connections[ride_id]) == 0:
-                del self.active_connections[ride_id]
-
+            if websocket in self.active_connections[ride_id]: self.active_connections[ride_id].remove(websocket)
+            if len(self.active_connections[ride_id]) == 0: del self.active_connections[ride_id]
     async def broadcast_to_ride(self, message: str, ride_id: str):
         if ride_id in self.active_connections:
-            for connection in self.active_connections[ride_id]:
-                await connection.send_text(message)
+            for connection in self.active_connections[ride_id]: await connection.send_text(message)
 
 chat_manager = ConnectionManager()
 
@@ -518,61 +426,35 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
         while True:
             data = await websocket.receive_text()
             message_data = json.loads(data)
-            
-            new_message = ChatMessage(
-                ride_id=int(ride_id),
-                sender=message_data.get("sender", "Unknown"),
-                text=message_data.get("text", "")
-            )
+            new_message = ChatMessage(ride_id=int(ride_id), sender=message_data.get("sender", "Unknown"), text=message_data.get("text", ""))
             db.add(new_message)
             db.commit()
-
             await chat_manager.broadcast_to_ride(data, ride_id)
-            
     except WebSocketDisconnect:
         chat_manager.disconnect(websocket, ride_id)
 
-# ==========================================
-# KATODA Broadcast System Endpoints
-# ==========================================
 latest_broadcast = {"message": ""}
-
-class BroadcastSchema(BaseModel):
-    message: str
+class BroadcastSchema(BaseModel): message: str
 
 @app.post("/api/katoda/broadcast")
 def send_broadcast(data: BroadcastSchema):
     global latest_broadcast
     latest_broadcast["message"] = data.message
-    return {"status": "success", "message": "Broadcast sent to all drivers"}
+    return {"status": "success", "message": "Broadcast sent"}
 
 @app.get("/api/driver/broadcast")
-def get_driver_broadcast():
-    return latest_broadcast
+def get_driver_broadcast(): return latest_broadcast
 
 @app.get('/api/katoda/finances')
 def get_katoda_finances(db: Session = Depends(get_db)):
-    completed_rides = db.query(RideRequest).filter(
-        RideRequest.status.in_(['completed', 'paid'])
-    ).all()
-    
+    completed_rides = db.query(RideRequest).filter(RideRequest.status.in_(['completed', 'paid'])).all()
     total_gross = 0.0
     for ride in completed_rides:
         if ride.fare:
-            clean_fare = ride.fare.replace('₱', '').replace(',', '').strip()
-            try:
-                total_gross += float(clean_fare)
-            except ValueError:
-                pass
-                
+            try: total_gross += float(ride.fare.replace('₱', '').replace(',', '').strip())
+            except ValueError: pass
     katoda_share = total_gross * 0.03
-    
-    return {
-        "today": katoda_share,
-        "week": katoda_share,
-        "month": katoda_share,
-        "ytd": katoda_share
-    }
+    return {"today": katoda_share, "week": katoda_share, "month": katoda_share, "ytd": katoda_share}
 
 # ==========================================
 # 7. STATIC FILES MOUNT (MUST BE AT THE BOTTOM)
