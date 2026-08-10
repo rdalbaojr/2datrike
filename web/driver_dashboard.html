@@ -225,20 +225,30 @@
             }
         });
 
+        // FIX: The Quotation Mark Stripper! This fixes ₱0.00 balances and missing rides.
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return decodeURIComponent(match[2]); 
-            let driverMatch = document.cookie.match(new RegExp('(^| )driver_name=([^;]+)'));
-            if (driverMatch) return decodeURIComponent(driverMatch[2]);
-            return "Unknown Driver"; 
+            if (match) {
+                let val = decodeURIComponent(match[2]);
+                return val.replace(/^"|"$/g, '').trim();
+            }
+            if (name === 'driver_name') {
+                let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
+                if (pMatch) {
+                    let pVal = decodeURIComponent(pMatch[2]);
+                    return pVal.replace(/^"|"$/g, '').trim();
+                }
+            }
+            return "Unknown"; 
         }
 
         function logout() {
             document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = "login.html";
         }
 
-        const currentDriverName = getCookie("driver_name") !== "Unknown Driver" ? getCookie("driver_name") : getCookie("passenger_name");
+        const currentDriverName = getCookie("driver_name") !== "Unknown" ? getCookie("driver_name") : getCookie("passenger_name");
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("driver-welcome-name").innerText = `${currentDriverName}`;
