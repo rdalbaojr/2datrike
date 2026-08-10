@@ -136,6 +136,12 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
+# Helper function to strip quotes from names
+def sanitize_name(name: str) -> str:
+    if not name:
+        return ""
+    return name.replace('"', '').replace("'", "").strip()
+
 # ==========================================
 # 5. API ENDPOINTS
 # ==========================================
@@ -167,7 +173,8 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
     db.commit()
     
     response = RedirectResponse(url="/driver_dashboard.html" if user.role == "driver" else "/booking.html", status_code=303)
-    display_name = user.full_name if user.full_name else user.username
+    display_name = sanitize_name(user.full_name if user.full_name else user.username)
+    
     response.set_cookie(key="passenger_name", value=display_name)
     if user.role == "driver":
         response.set_cookie(key="driver_name", value=display_name)
@@ -175,7 +182,8 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
 
 @app.post("/api/logout/{username}")
 def logout_user(username: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == username).first()
+    clean_username = sanitize_name(username)
+    user = db.query(User).filter(User.username == clean_username).first()
     if user:
         user.status = "offline"
         user.last_offline = datetime.now()
@@ -189,18 +197,21 @@ def register_account(
     toda_number: str = Form(None), gcash_account: str = Form(None), bank_name: str = Form("GCash"),
     toda_id: UploadFile = File(None), db: Session = Depends(get_db)
 ):
-    existing_user = db.query(User).filter(User.username == username).first()
+    clean_user = sanitize_name(username)
+    clean_full_name = sanitize_name(full_name)
+    
+    existing_user = db.query(User).filter(User.username == clean_user).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
 
     file_path = None
     if role == "driver" and toda_id:
-        file_path = f"uploads/{username}_{toda_id.filename}"
+        file_path = f"uploads/{clean_user}_{toda_id.filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
 
     new_user = User(
-        username=username, password=password, role=role, full_name=full_name,
+        username=clean_user, password=password, role=role, full_name=clean_full_name,
         address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
         gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path
     )
@@ -208,12 +219,12 @@ def register_account(
     db.commit()
     return RedirectResponse(url="/login.html", status_code=303)
 
-# --- NEW: PROFILE MANAGEMENT ENDPOINTS ---
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == display_name).first()
+    clean_name = sanitize_name(display_name)
+    user = db.query(User).filter(User.username == clean_name).first()
     if not user:
-        user = db.query(User).filter(User.full_name == display_name).first()
+        user = db.query(User).filter(User.full_name == clean_name).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
@@ -226,9 +237,10 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
 
 @app.post("/api/update-profile")
 def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.display_name).first()
+    clean_name = sanitize_name(data.display_name)
+    user = db.query(User).filter(User.username == clean_name).first()
     if not user:
-        user = db.query(User).filter(User.full_name == data.display_name).first()
+        user = db.query(User).filter(User.full_name == clean_name).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -239,12 +251,10 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     
     return {"status": "success", "message": "Profile updated successfully"}
 
-# ----------------------------------------
-
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     new_ride = RideRequest(
-        passenger_name=request.passenger_name, pickup_location=request.pickup_location,
+        passenger_name=sanitize_name(request.passenger_name), pickup_location=request.pickup_location,
         dropoff_location=request.dropoff_location, service_type=request.service_type,
         fare=request.fare, status="pending"
     )
@@ -259,7 +269,7 @@ def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(g
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
     ride.status = "accepted"
-    ride.driver_name = request.driver_name
+    ride.driver_name = sanitize_name(request.driver_name) # Strips quote marks before saving
     db.commit()
     db.refresh(ride)
     return {"message": "Ride accepted successfully!", "ride_id": ride.id}
@@ -287,9 +297,8 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
     all_drivers = db.query(User).filter(User.role == 'driver').all()
     driver_list = []
     for driver in all_drivers:
-        name = driver.full_name if driver.full_name else driver.username
-        clean_name = name.strip().replace('"', '').replace("'", "")
-        ride_count = db.query(RideRequest).filter(RideRequest.driver_name.ilike(f"%{clean_name}%"), RideRequest.status.in_(['completed', 'paid'])).count()
+        name = sanitize_name(driver.full_name if driver.full_name else driver.username)
+        ride_count = db.query(RideRequest).filter(RideRequest.driver_name.ilike(f"%{name}%"), RideRequest.status.in_(['completed', 'paid'])).count()
         
         display_id = driver.toda_number if driver.toda_number else driver.id
         gcash = driver.gcash_account if driver.gcash_account else "Not Provided"
@@ -300,7 +309,7 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
         elif driver.status == 'offline' and driver.last_offline:
             time_str = driver.last_offline.strftime("%I:%M %p")
 
-        driver_list.append({"id": display_id, "name": clean_name, "status": driver.status, "status_time": time_str, "gcash": gcash, "rating": 5.0, "totalRides": ride_count})
+        driver_list.append({"id": display_id, "name": name, "status": driver.status, "status_time": time_str, "gcash": gcash, "rating": 5.0, "totalRides": ride_count})
     return driver_list
 
 @app.get("/api/admin/config")
@@ -339,7 +348,8 @@ def get_payout_summary(db: Session = Depends(get_db)):
         if not ride.driver_name or not ride.fare: continue
             
         clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
-        driver_name = ride.driver_name
+        raw_driver_name = ride.driver_name
+        clean_driver_name = sanitize_name(raw_driver_name)
 
         driver_cut = clean_fare * driver_pct
         katoda_cut = clean_fare * katoda_pct
@@ -348,10 +358,11 @@ def get_payout_summary(db: Session = Depends(get_db)):
         total_katoda += katoda_cut
         total_platform += platform_cut
 
-        if driver_name not in payouts:
-            driver_user = db.query(User).filter(User.username == driver_name).first()
+        if clean_driver_name not in payouts:
+            # Query User by sanitized name
+            driver_user = db.query(User).filter(User.username == clean_driver_name).first()
             if not driver_user:
-                driver_user = db.query(User).filter(User.full_name == driver_name).first()
+                driver_user = db.query(User).filter(User.full_name == clean_driver_name).first()
 
             if driver_user and driver_user.gcash_account:
                 b_name = driver_user.bank_name if driver_user.bank_name else "GCash"
@@ -360,8 +371,8 @@ def get_payout_summary(db: Session = Depends(get_db)):
                 b_name = "--"
                 acc_num = "Not Provided"
             
-            payouts[driver_name] = {
-                "driver_name": driver_name,
+            payouts[clean_driver_name] = {
+                "driver_name": clean_driver_name,
                 "bank_name": b_name,            
                 "account_number": acc_num,      
                 "ride_count": 0,
@@ -371,11 +382,11 @@ def get_payout_summary(db: Session = Depends(get_db)):
                 "platform_share": 0.0
             }
 
-        payouts[driver_name]["ride_count"] += 1
-        payouts[driver_name]["total_gross"] += clean_fare
-        payouts[driver_name]["driver_share"] += driver_cut
-        payouts[driver_name]["katoda_share"] += katoda_cut
-        payouts[driver_name]["platform_share"] += platform_cut
+        payouts[clean_driver_name]["ride_count"] += 1
+        payouts[clean_driver_name]["total_gross"] += clean_fare
+        payouts[clean_driver_name]["driver_share"] += driver_cut
+        payouts[clean_driver_name]["katoda_share"] += katoda_cut
+        payouts[clean_driver_name]["platform_share"] += platform_cut
 
     katoda_bank = config.katoda_bank if config and config.katoda_bank else "GCash"
     katoda_acct = config.katoda_account if config and config.katoda_account else "Not Configured"
@@ -402,13 +413,15 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     for ride in unsettled_rides:
         if not ride.driver_name or not ride.fare: continue
         clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
+        clean_driver_name = sanitize_name(ride.driver_name)
+        
         driver_cut = clean_fare * driver_pct
         katoda_cut = clean_fare * katoda_pct
         
-        if ride.driver_name in driver_payouts:
-            driver_payouts[ride.driver_name] += driver_cut
+        if clean_driver_name in driver_payouts:
+            driver_payouts[clean_driver_name] += driver_cut
         else:
-            driver_payouts[ride.driver_name] = driver_cut
+            driver_payouts[clean_driver_name] = driver_cut
         total_katoda_payout += katoda_cut
 
     output = StringIO()
@@ -439,7 +452,7 @@ def get_pending_rides(db: Session = Depends(get_db)):
     return [{
         "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
         "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-        "status": r.status, "driver_name": r.driver_name
+        "status": r.status, "driver_name": sanitize_name(r.driver_name)
     } for r in rides]
 
 @app.get("/api/rides")
@@ -448,14 +461,14 @@ def get_available_rides(db: Session = Depends(get_db)):
     return [{
         "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
         "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-        "status": r.status, "driver_name": r.driver_name
+        "status": r.status, "driver_name": sanitize_name(r.driver_name)
     } for r in rides]
 
 @app.get("/ride-status/{ride_id}")
 def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride: raise HTTPException(status_code=404, detail="Ride not found")
-    return {"status": ride.status, "driver_name": ride.driver_name}
+    return {"status": ride.status, "driver_name": sanitize_name(ride.driver_name)}
 
 # ==========================================
 # 6. IN-APP TEXT CHAT & KATODA BROADCAST
