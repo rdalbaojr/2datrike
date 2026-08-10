@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from typing import List, Dict
+from typing import List, Dict, Optional
 import csv
 from io import StringIO
 from fastapi.responses import StreamingResponse
@@ -81,7 +81,7 @@ def get_db():
         db.close()
 
 # ==========================================
-# 4. PYDANTIC SCHEMAS
+# 4. PYDANTIC SCHEMAS & CONFIG
 # ==========================================
 class LoginRequest(BaseModel):
     username: str
@@ -103,10 +103,13 @@ class ProfileUpdateSchema(BaseModel):
     bank_name: str
     gcash_account: str
     whatsapp_number: str
+    address: str # <--- Added Address support!
+
+# NEW: Password Reset Schema
 class PasswordResetSchema(BaseModel):
     username: str
     whatsapp_number: str
-    new_password: str    
+    new_password: str
 
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -140,7 +143,6 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
-# Helper function to strip quotes from names
 def sanitize_name(name: str) -> str:
     if not name:
         return ""
@@ -168,7 +170,8 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
         return response
 
-    user = db.query(User).filter(User.username == username, User.password == password).first()
+    clean_user = sanitize_name(username)
+    user = db.query(User).filter(User.username == clean_user, User.password == password).first()
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
@@ -193,6 +196,8 @@ def logout_user(username: str, db: Session = Depends(get_db)):
         user.last_offline = datetime.now()
         db.commit()
     return {"message": "Logged out"}
+
+# NEW: Password Reset Endpoint
 @app.post("/api/reset-password")
 def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
@@ -207,12 +212,14 @@ def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
     db.commit()
     
     return {"status": "success", "message": "Password updated successfully"}
+
 @app.post("/register-account/")
 def register_account(
     role: str = Form(...), username: str = Form(...), password: str = Form(...),
     full_name: str = Form(...), address: str = Form(...), whatsapp_number: str = Form(...),
-    toda_number: str = Form(None), gcash_account: str = Form(None), bank_name: str = Form("GCash"),
-    toda_id: UploadFile = File(None), db: Session = Depends(get_db)
+    toda_number: Optional[str] = Form(None), gcash_account: Optional[str] = Form(None), 
+    bank_name: Optional[str] = Form("GCash"),
+    toda_id: Optional[UploadFile] = File(None), db: Session = Depends(get_db)
 ):
     clean_user = sanitize_name(username)
     clean_full_name = sanitize_name(full_name)
@@ -222,7 +229,7 @@ def register_account(
         raise HTTPException(status_code=400, detail="Username already registered")
 
     file_path = None
-    if role == "driver" and toda_id:
+    if role == "driver" and toda_id and toda_id.filename:
         file_path = f"uploads/{clean_user}_{toda_id.filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
@@ -249,7 +256,8 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "full_name": user.full_name,
         "whatsapp_number": user.whatsapp_number,
         "bank_name": user.bank_name if user.bank_name else "GCash",
-        "gcash_account": user.gcash_account if user.gcash_account else ""
+        "gcash_account": user.gcash_account if user.gcash_account else "",
+        "address": user.address if user.address else "" # <--- Added Address support!
     }
 
 @app.post("/api/update-profile")
@@ -264,6 +272,7 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     user.bank_name = data.bank_name
     user.gcash_account = data.gcash_account
     user.whatsapp_number = data.whatsapp_number
+    user.address = data.address # <--- Added Address support!
     db.commit()
     
     return {"status": "success", "message": "Profile updated successfully"}
@@ -286,7 +295,7 @@ def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(g
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
     ride.status = "accepted"
-    ride.driver_name = sanitize_name(request.driver_name) # Strips quote marks before saving
+    ride.driver_name = sanitize_name(request.driver_name)
     db.commit()
     db.refresh(ride)
     return {"message": "Ride accepted successfully!", "ride_id": ride.id}
@@ -380,7 +389,6 @@ def get_payout_summary(db: Session = Depends(get_db)):
             if not driver_user:
                 driver_user = db.query(User).filter(User.full_name == clean_driver_name).first()
 
-            # SAFEGUARD: Check that account number is provided and NOT equal to the provider name
             b_name = driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash"
             
             if driver_user and driver_user.gcash_account and driver_user.gcash_account.strip().lower() != b_name.strip().lower():
@@ -414,7 +422,8 @@ def get_payout_summary(db: Session = Depends(get_db)):
         "total_platform": total_platform,
         "katoda_bank": katoda_bank,
         "katoda_account": katoda_acct
-    }
+    }   
+
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
