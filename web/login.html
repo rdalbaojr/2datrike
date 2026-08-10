@@ -51,19 +51,7 @@
             </a>
         </div>
     </div>
-    <script>
-        function toggleQuickMenu() {
-            const menu = document.getElementById('quickMenu');
-            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
-        }
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('quickMenu');
-            const button = menu.previousElementSibling;
-            if (!menu.contains(event.target) && !button.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
-    </script>
+    
     <!-- ==================================================================== -->
 
     <!-- Main Container -->
@@ -105,10 +93,15 @@
                     <input type="password" name="password" required placeholder="Enter your password" 
                            class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
                 </div>
+                
+                <!-- NEW: FORGOT PASSWORD LINK -->
+                <div class="text-right mt-2">
+                    <a href="#" onclick="openResetModal()" class="text-[11px] font-bold text-amber-900 hover:text-amber-800 underline transition">Forgot Password?</a>
+                </div>
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="w-full py-4 mt-4 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-300 flex justify-center items-center gap-2">
+            <button type="submit" class="w-full py-4 mt-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-300 flex justify-center items-center gap-2">
                 Log In <i class="fa-solid fa-arrow-right"></i>
             </button>
         </form>
@@ -122,5 +115,107 @@
 
     </div>
 
+    <!-- ==================== FORGOT PASSWORD MODAL ==================== -->
+    <div id="reset-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[400px] rounded-[24px] overflow-hidden shadow-2xl relative">
+            <div class="bg-[#78350f] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
+                <h3 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-solid fa-lock-open"></i> Reset Password
+                </h3>
+                <button onclick="closeResetModal()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex justify-center items-center transition hover:scale-110">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <form id="reset-form" onsubmit="submitPasswordReset(event)" class="p-6 space-y-4">
+                <p class="text-xs text-[#78350f] font-bold mb-4 text-center">Verify your identity to reset your password.</p>
+                
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Username</label>
+                    <input type="text" id="reset-user" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Registered Mobile No.</label>
+                    <input type="text" id="reset-mobile" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">New Password</label>
+                    <input type="password" id="reset-pass" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+                
+                <div id="reset-alert" class="hidden text-center text-xs font-bold text-red-700 bg-red-100 p-2 rounded-lg border border-red-200"></div>
+
+                <button type="submit" id="reset-btn" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm">
+                    <i class="fa-solid fa-key mr-1"></i> Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            const button = menu.previousElementSibling;
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        // Forgot Password Logic
+        function openResetModal() {
+            document.getElementById('reset-modal').classList.remove('hidden');
+            document.getElementById('reset-alert').classList.add('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-modal').classList.add('hidden');
+        }
+
+        async function submitPasswordReset(event) {
+            event.preventDefault();
+            const btn = document.getElementById('reset-btn');
+            const alertBox = document.getElementById('reset-alert');
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Verifying...';
+            alertBox.classList.add('hidden');
+            
+            const payload = {
+                username: document.getElementById('reset-user').value,
+                whatsapp_number: document.getElementById('reset-mobile').value,
+                new_password: document.getElementById('reset-pass').value
+            };
+
+            try {
+                const response = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("✅ Password successfully reset! You can now log in with your new password.");
+                    closeResetModal();
+                    // Clear the form fields
+                    document.getElementById('reset-user').value = '';
+                    document.getElementById('reset-mobile').value = '';
+                    document.getElementById('reset-pass').value = '';
+                } else {
+                    alertBox.innerText = "⚠️ Account not found. Check your username and mobile number.";
+                    alertBox.classList.remove('hidden');
+                }
+            } catch (error) {
+                alertBox.innerText = "⚠️ Network error. Try again.";
+                alertBox.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-key mr-1"></i> Update Password';
+            }
+        }
+    </script>
 </body>
 </html>
