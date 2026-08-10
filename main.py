@@ -103,6 +103,10 @@ class ProfileUpdateSchema(BaseModel):
     bank_name: str
     gcash_account: str
     whatsapp_number: str
+class PasswordResetSchema(BaseModel):
+    username: str
+    whatsapp_number: str
+    new_password: str    
 
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -189,7 +193,20 @@ def logout_user(username: str, db: Session = Depends(get_db)):
         user.last_offline = datetime.now()
         db.commit()
     return {"message": "Logged out"}
-
+@app.post("/api/reset-password")
+def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
+    clean_user = sanitize_name(data.username)
+    # Check if BOTH username and phone number match an account
+    user = db.query(User).filter(User.username == clean_user, User.whatsapp_number == data.whatsapp_number).first()
+    
+    if not user:
+        raise HTTPException(status_code=400, detail="Account details do not match.")
+        
+    # Update to the new password
+    user.password = data.new_password
+    db.commit()
+    
+    return {"status": "success", "message": "Password updated successfully"}
 @app.post("/register-account/")
 def register_account(
     role: str = Form(...), username: str = Form(...), password: str = Form(...),
