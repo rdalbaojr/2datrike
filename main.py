@@ -359,16 +359,16 @@ def get_payout_summary(db: Session = Depends(get_db)):
         total_platform += platform_cut
 
         if clean_driver_name not in payouts:
-            # Query User by sanitized name
             driver_user = db.query(User).filter(User.username == clean_driver_name).first()
             if not driver_user:
                 driver_user = db.query(User).filter(User.full_name == clean_driver_name).first()
 
-            if driver_user and driver_user.gcash_account:
-                b_name = driver_user.bank_name if driver_user.bank_name else "GCash"
+            # SAFEGUARD: Check that account number is provided and NOT equal to the provider name
+            b_name = driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash"
+            
+            if driver_user and driver_user.gcash_account and driver_user.gcash_account.strip().lower() != b_name.strip().lower():
                 acc_num = driver_user.gcash_account
             else:
-                b_name = "--"
                 acc_num = "Not Provided"
             
             payouts[clean_driver_name] = {
@@ -397,8 +397,7 @@ def get_payout_summary(db: Session = Depends(get_db)):
         "total_platform": total_platform,
         "katoda_bank": katoda_bank,
         "katoda_account": katoda_acct
-    }   
-
+    }
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
