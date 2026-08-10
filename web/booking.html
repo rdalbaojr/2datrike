@@ -33,19 +33,16 @@
             <i class="fa-solid fa-bars mr-1"></i> Menu
         </button>
         <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
-            <a href="/login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
                 🔑 Login / Register
             </a>
-            <a href="/booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
+            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
                 📱 Passenger Dash
             </a>
-            <a href="/driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ Driver Dash
             </a>  
-            <a href="/katoda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
-                🏍️ Katoda Dash
-            </a>  
-            <a href="/admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
+            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
                 <i class="fa-solid fa-lock mr-1"></i> Admin Dash
             </a>
         </div>
@@ -220,9 +217,13 @@
             }
         });
 
+        // FIX: The Quotation Mark Stripper! This prevents all radar bugs.
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return decodeURIComponent(match[2]); 
+            if (match) {
+                let val = decodeURIComponent(match[2]);
+                return val.replace(/^"|"$/g, '').trim(); 
+            }
             return "Guest"; 
         }
 
@@ -233,7 +234,6 @@
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("welcome-name").innerText = `${currentPassenger}`;
             try {
-                // ADDED CACHE BUSTER TO CONFIG FETCH
                 const res = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
                 if (res.ok) {
                     const config = await res.json();
@@ -316,7 +316,6 @@
                 });
 
                 if (response.ok) {
-                    // Removed the 2-second form reset so it stays searching!
                     document.getElementById('pickup').value = '';
                     document.getElementById('dropoff').value = '';
                     document.getElementById('fare-estimate').classList.add('hidden');
@@ -333,7 +332,6 @@
             }
         });
 
-        // Added functionality to cancel search manually
         function cancelSearch() {
             document.getElementById('searching-state').classList.add('hidden');
             document.getElementById('booking-form').classList.remove('hidden');
@@ -341,12 +339,11 @@
 
         function logout() {
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            window.location.href = "/login.html";
+            window.location.href = "login.html";
         }
 
         async function fetchMyRides() {
             try {
-                // ADDED CACHE BUSTER TO PREVENT BROWSER FREEZING THE DATA
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
                 const allRides = await response.json();
                 const container = document.getElementById('my-rides-container');
@@ -358,7 +355,6 @@
 
                 if (myRides.length === 0) {
                     container.innerHTML = '<p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>';
-                    // If no rides are active, turn off searching state
                     document.getElementById('searching-state').classList.add('hidden');
                     document.getElementById('booking-form').classList.remove('hidden');
                     return;
@@ -373,12 +369,10 @@
                     let statusHtml = "";
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-[#78350f] text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1 animate-pulse"></i> Looking for a driver...</p>`;
-                        // Keep searching state ON if there is a pending ride
                         document.getElementById('booking-form').classList.add('hidden');
                         document.getElementById('searching-state').classList.remove('hidden');
                     } 
                     else if (ride.status === 'accepted') {
-                        // Driver found! Turn off searching state
                         document.getElementById('searching-state').classList.add('hidden');
                         document.getElementById('booking-form').classList.remove('hidden');
                         
@@ -391,7 +385,6 @@
                                     <a href="tel:${ride.driver_mobile || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                         <i class="fa-solid fa-phone"></i> Call
                                     </a>
-                                    <!-- NATIVE CHAT BUTTON -->
                                     <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                         <i class="fa-regular fa-comment-dots"></i> Chat
                                     </button>
@@ -473,7 +466,7 @@
             } catch (error) { alert("⚠️ Network error."); }
         }
 
-        // WEBSOCKET CHAT LOGIC FOR PASSENGER (WITH DATABASE HISTORY LOAD)
+        // WEBSOCKET CHAT LOGIC FOR PASSENGER
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
 
@@ -484,7 +477,6 @@
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
             try {
-                // ADDED CACHE BUSTER HERE TOO
                 const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const history = await response.json();
