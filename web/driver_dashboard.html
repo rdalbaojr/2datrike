@@ -30,7 +30,9 @@
             <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1); border-bottom: 1px solid #a35c27;">
                 🏍️ Driver Dash
             </a>
-            <!-- PROFILE SETTINGS BUTTON -->
+            <a href="katoda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🏍️ Katoda Dash
+            </a>
             <button onclick="openProfileModal()" style="width: 100%; text-align: left; display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27; cursor: pointer; background: transparent; border-top: none; border-left: none; border-right: none;">
                 ⚙️ Profile Settings
             </button>
@@ -225,7 +227,6 @@
             }
         });
 
-        // FIX: The Quotation Mark Stripper! This fixes ₱0.00 balances and missing rides.
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
             if (match) {
