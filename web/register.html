@@ -58,7 +58,8 @@
         <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-sm font-bold border border-red-800/30 bg-red-100 text-red-800"></div>
 
         <!-- ==================== PASSENGER REGISTRATION FORM ==================== -->
-        <form id="form-passenger" action="/register-account/" method="POST" class="space-y-4" onsubmit="return validatePasswords('passenger')">
+        <!-- FIX: Added enctype="multipart/form-data" here so the backend accepts it! -->
+        <form id="form-passenger" action="/register-account/" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return validatePasswords('passenger')">
             <input type="hidden" name="role" value="passenger">
 
             <div>
