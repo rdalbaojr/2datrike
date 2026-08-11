@@ -552,14 +552,41 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
 @app.get("/pending-rides/")
 def get_pending_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
-    # NEW: Send the rating down to the frontend
-    return [{
-        "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
-        "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-        "status": r.status, "driver_name": sanitize_name(r.driver_name),
-        "rating": r.rating
-    } for r in rides]
+    results = []
+    
+    for r in rides:
+        # Get Passenger Phone
+        pass_phone = "0"
+        pass_user = db.query(User).filter(User.username == sanitize_name(r.passenger_name)).first()
+        if not pass_user:
+            pass_user = db.query(User).filter(User.full_name == sanitize_name(r.passenger_name)).first()
+        if pass_user and pass_user.whatsapp_number:
+            pass_phone = pass_user.whatsapp_number
+            
+        # Get Driver Phone
+        drv_phone = "0"
+        if r.driver_name:
+            drv_user = db.query(User).filter(User.username == sanitize_name(r.driver_name)).first()
+            if not drv_user:
+                drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name)).first()
+            if drv_user and drv_user.whatsapp_number:
+                drv_phone = drv_user.whatsapp_number
 
+        results.append({
+            "id": r.id, 
+            "passenger_name": r.passenger_name, 
+            "pickup_location": r.pickup_location,
+            "dropoff_location": r.dropoff_location, 
+            "service_type": r.service_type, 
+            "fare": r.fare,
+            "status": r.status, 
+            "driver_name": sanitize_name(r.driver_name),
+            "rating": r.rating,
+            "passenger_phone": pass_phone,
+            "driver_phone": drv_phone
+        })
+        
+    return results
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
