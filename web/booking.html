@@ -67,20 +67,22 @@
         </div>
 
         <!-- Service Selection -->
-        <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
-        <div class="grid grid-cols-3 gap-3 mb-6">
-            <button onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                <i class="fa-solid fa-person-walking-luggage text-xl mb-2"></i>
-                <span class="text-[10px] font-bold uppercase">Pasundo</span>
-            </button>
-            <button onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                <i class="fa-solid fa-basket-shopping text-xl mb-2"></i>
-                <span class="text-[10px] font-bold uppercase">Pabili</span>
-            </button>
-            <button onclick="selectService('Papickup/Deliver')" id="btn-Deliver" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                <i class="fa-solid fa-box-open text-xl mb-2"></i>
-                <span class="text-[10px] font-bold uppercase text-center leading-tight">Papickup<br>Deliver</span>
-            </button>
+        <div id="service-selection-box">
+            <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <button onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                    <i class="fa-solid fa-person-walking-luggage text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase">Pasundo</span>
+                </button>
+                <button onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                    <i class="fa-solid fa-basket-shopping text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase">Pabili</span>
+                </button>
+                <button onclick="selectService('Papickup/Deliver')" id="btn-Deliver" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                    <i class="fa-solid fa-box-open text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase text-center leading-tight">Papickup<br>Deliver</span>
+                </button>
+            </div>
         </div>
 
         <!-- Routing Form -->
@@ -124,7 +126,6 @@
             </div>
             <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
             <p class="text-sm text-[#78350f] font-medium">Notifying 2DA drivers nearby.</p>
-            <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline">Cancel Search</button>
         </div>
 
         <!-- MY ACTIVE RIDES (RADAR) -->
@@ -213,6 +214,7 @@
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
+
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
             const button = menu.previousElementSibling;
@@ -221,6 +223,7 @@
             }
         });
 
+        // 🟢 FIX: The Quotation Mark Stripper!
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
             if (match) {
@@ -300,7 +303,9 @@
                 return;
             }
 
+            // Immediately hide forms to prevent double booking
             document.getElementById('booking-form').classList.add('hidden');
+            document.getElementById('service-selection-box').classList.add('hidden');
             document.getElementById('searching-state').classList.remove('hidden');
 
             const requestData = {
@@ -338,6 +343,7 @@
         function cancelSearch() {
             document.getElementById('searching-state').classList.add('hidden');
             document.getElementById('booking-form').classList.remove('hidden');
+            document.getElementById('service-selection-box').classList.remove('hidden');
         }
 
         function logout() {
@@ -352,21 +358,42 @@
                 const container = document.getElementById('my-rides-container');
                 if (!container) return;
 
-                // Show pending, accepted, completed, AND paid (so they can rate it)
-                const myRides = allRides.filter(ride => 
-                    ride.passenger_name === currentPassenger
+                const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger);
+
+                // Check for ANY active or unrated rides
+                const activeOrUnrated = myRides.filter(r => 
+                    ['pending', 'accepted', 'completed'].includes(r.status) || 
+                    (r.status === 'paid' && !r.rating)
                 );
 
-                if (myRides.length === 0) {
-                    container.innerHTML = '<p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>';
-                    document.getElementById('searching-state').classList.add('hidden');
+                // 🟢 FIX: Bulletproof Form Visibility Logic
+                if (activeOrUnrated.length > 0) {
+                    // Hide the booking form because they are in an active ride
+                    document.getElementById('booking-form').classList.add('hidden');
+                    document.getElementById('service-selection-box').classList.add('hidden');
+                    
+                    // Show Radar only if the ride is still pending
+                    const isPending = activeOrUnrated.some(r => r.status === 'pending');
+                    if (isPending) {
+                        document.getElementById('searching-state').classList.remove('hidden');
+                    } else {
+                        document.getElementById('searching-state').classList.add('hidden');
+                    }
+                } else {
+                    // Fully free to book!
                     document.getElementById('booking-form').classList.remove('hidden');
+                    document.getElementById('service-selection-box').classList.remove('hidden');
+                    document.getElementById('searching-state').classList.add('hidden');
+                }
+
+                if (activeOrUnrated.length === 0) {
+                    container.innerHTML = '<p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>';
                     return;
                 }
 
                 container.innerHTML = ''; 
 
-                myRides.reverse().forEach(ride => {
+                activeOrUnrated.reverse().forEach(ride => {
                     const rideBox = document.createElement('div');
                     rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm";
                     
@@ -374,13 +401,8 @@
                     
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-[#78350f] text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1 animate-pulse"></i> Looking for a driver...</p>`;
-                        document.getElementById('booking-form').classList.add('hidden');
-                        document.getElementById('searching-state').classList.remove('hidden');
                     } 
                     else if (ride.status === 'accepted') {
-                        document.getElementById('searching-state').classList.add('hidden');
-                        document.getElementById('booking-form').classList.remove('hidden');
-                        
                         statusHtml = `
                             <div class="bg-green-900/10 border border-green-800/30 rounded-xl p-3 mt-4">
                                 <p class="text-green-800 text-sm font-bold m-0">
@@ -409,44 +431,31 @@
                             </div>
                         `;
                     }
-                    else if (ride.status === 'paid') {
-                        if (!ride.rating) {
-                            // Needs Rating
-                            statusHtml = `
-                                <div class="bg-white border border-[#d4aa7c] rounded-xl p-3 mt-4 text-center">
-                                    <p class="text-[#78350f] text-xs font-bold uppercase tracking-widest mb-2">Rate Driver ${ride.driver_name}</p>
-                                    <div class="flex justify-center gap-2 text-2xl" id="rating-stars-${ride.id}">
-                                        <button onclick="submitRating(${ride.id}, 1)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 2)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 3)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 4)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 5)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                    </div>
+                    else if (ride.status === 'paid' && !ride.rating) {
+                        statusHtml = `
+                            <div class="bg-white border border-[#d4aa7c] rounded-xl p-3 mt-4 text-center">
+                                <p class="text-[#78350f] text-xs font-bold uppercase tracking-widest mb-2">Rate Driver ${ride.driver_name}</p>
+                                <div class="flex justify-center gap-2 text-2xl" id="rating-stars-${ride.id}">
+                                    <button onclick="submitRating(${ride.id}, 1)" class="star-btn"><i class="fa-solid fa-star"></i></button>
+                                    <button onclick="submitRating(${ride.id}, 2)" class="star-btn"><i class="fa-solid fa-star"></i></button>
+                                    <button onclick="submitRating(${ride.id}, 3)" class="star-btn"><i class="fa-solid fa-star"></i></button>
+                                    <button onclick="submitRating(${ride.id}, 4)" class="star-btn"><i class="fa-solid fa-star"></i></button>
+                                    <button onclick="submitRating(${ride.id}, 5)" class="star-btn"><i class="fa-solid fa-star"></i></button>
                                 </div>
-                            `;
-                        } else {
-                            // Already Rated
-                            statusHtml = `
-                                <div class="bg-green-900/10 border border-green-800/30 rounded-xl p-2 mt-4 text-center">
-                                    <p class="text-green-800 text-xs font-bold"><i class="fa-solid fa-check-double mr-1"></i> Ride Completed & Rated ${ride.rating} Stars.</p>
-                                </div>
-                            `;
-                        }
+                            </div>
+                        `;
                     }
 
-                    // Only render if it's not a super old paid ride that's already rated
-                    if (ride.status !== 'paid' || (ride.status === 'paid' && !ride.rating)) {
-                        rideBox.innerHTML = `
-                            <div class="flex justify-between items-center mb-3">
-                                <strong class="text-[#78350f] text-[11px] tracking-widest uppercase font-extrabold">${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-[#0f172a] font-extrabold text-sm">${ride.fare}</span>
-                            </div>
-                            <p class="text-slate-700 text-xs mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
-                            <p class="text-slate-700 text-xs font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
-                            ${statusHtml}
-                        `;
-                        container.appendChild(rideBox);
-                    }
+                    rideBox.innerHTML = `
+                        <div class="flex justify-between items-center mb-3">
+                            <strong class="text-[#78350f] text-[11px] tracking-widest uppercase font-extrabold">${ride.service_type || 'PASSENGER'}</strong>
+                            <span class="text-[#0f172a] font-extrabold text-sm">${ride.fare}</span>
+                        </div>
+                        <p class="text-slate-700 text-xs mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
+                        <p class="text-slate-700 text-xs font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
+                        ${statusHtml}
+                    `;
+                    container.appendChild(rideBox);
                 });
             } catch (error) { console.error("Error fetching rides:", error); }
         }
