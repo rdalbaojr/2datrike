@@ -7,7 +7,7 @@ from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, Web
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, func
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Dict, Optional
@@ -37,20 +37,23 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
     password = Column(String)
-    role = Column(String)  # 'passenger' or 'driver'
-    
+    role = Column(String)  
     full_name = Column(String)
     address = Column(String)
     whatsapp_number = Column(String)
-    
     toda_number = Column(String, nullable=True)
     gcash_account = Column(String, nullable=True)
     bank_name = Column(String, nullable=True, default="GCash")
     toda_id_path = Column(String, nullable=True)
-    
     status = Column(String, default="offline")
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
+    
+    # --- NEW: ACCOUNTABILITY TRACKING ---
+    warnings = Column(Integer, default=0)
+    is_suspended = Column(Integer, default=0) # 0 = Active, 1 = Suspended
+    rating_sum = Column(Float, default=0.0)
+    rating_count = Column(Integer, default=0)
 
 class RideRequest(Base):
     __tablename__ = "ride_requests"
@@ -62,6 +65,9 @@ class RideRequest(Base):
     fare = Column(String, nullable=True)         
     status = Column(String, default="pending")
     driver_name = Column(String, nullable=True)
+    
+    # --- NEW: RIDE RATING ---
+    rating = Column(Integer, nullable=True) 
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -103,13 +109,20 @@ class ProfileUpdateSchema(BaseModel):
     bank_name: str
     gcash_account: str
     whatsapp_number: str
-    address: str # <--- Added Address support!
+    address: str
 
-# NEW: Password Reset Schema
 class PasswordResetSchema(BaseModel):
     username: str
     whatsapp_number: str
     new_password: str
+
+# NEW: Rating & Discipline Schemas
+class RateRideSchema(BaseModel):
+    rating: int
+
+class DisciplineSchema(BaseModel):
+    driver_id: int
+    action: str # "warn" or "suspend" or "reinstate"
 
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -175,6 +188,10 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
+    # NEW: SUSPENSION BLOCKER
+    if user.is_suspended == 1:
+        raise HTTPException(status_code=403, detail="ACCOUNT SUSPENDED: Please contact KATODA admin.")
+    
     user.status = "online"
     user.last_online = datetime.now()
     db.commit()
@@ -197,20 +214,14 @@ def logout_user(username: str, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Logged out"}
 
-# NEW: Password Reset Endpoint
 @app.post("/api/reset-password")
 def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
-    # Check if BOTH username and phone number match an account
     user = db.query(User).filter(User.username == clean_user, User.whatsapp_number == data.whatsapp_number).first()
-    
     if not user:
         raise HTTPException(status_code=400, detail="Account details do not match.")
-        
-    # Update to the new password
     user.password = data.new_password
     db.commit()
-    
     return {"status": "success", "message": "Password updated successfully"}
 
 @app.post("/register-account/")
@@ -257,7 +268,7 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "whatsapp_number": user.whatsapp_number,
         "bank_name": user.bank_name if user.bank_name else "GCash",
         "gcash_account": user.gcash_account if user.gcash_account else "",
-        "address": user.address if user.address else "" # <--- Added Address support!
+        "address": user.address if user.address else "" 
     }
 
 @app.post("/api/update-profile")
@@ -272,9 +283,8 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     user.bank_name = data.bank_name
     user.gcash_account = data.gcash_account
     user.whatsapp_number = data.whatsapp_number
-    user.address = data.address # <--- Added Address support!
+    user.address = data.address 
     db.commit()
-    
     return {"status": "success", "message": "Profile updated successfully"}
 
 @app.post("/request-ride/")
@@ -318,6 +328,52 @@ def pay_ride(ride_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Payment confirmed", "id": ride.id}
 
+# --- NEW: RATE RIDE ENDPOINT ---
+@app.post("/api/rate-ride/{ride_id}")
+def rate_ride(ride_id: int, data: RateRideSchema, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    ride.rating = data.rating
+    
+    # Calculate driver's new average
+    if ride.driver_name:
+        driver = db.query(User).filter(User.username == ride.driver_name).first()
+        if not driver:
+            driver = db.query(User).filter(User.full_name == ride.driver_name).first()
+            
+        if driver:
+            # Safely handle potential None values for older accounts
+            current_sum = driver.rating_sum if driver.rating_sum else 0.0
+            current_count = driver.rating_count if driver.rating_count else 0
+            
+            driver.rating_sum = current_sum + float(data.rating)
+            driver.rating_count = current_count + 1
+            
+    db.commit()
+    return {"status": "success"}
+
+# --- NEW: KATODA DISCIPLINE ENDPOINT ---
+@app.post("/api/admin/discipline")
+def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
+    driver = db.query(User).filter(User.id == data.driver_id).first()
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+        
+    if data.action == "warn":
+        driver.warnings = (driver.warnings if driver.warnings else 0) + 1
+        if driver.warnings >= 3:
+            driver.is_suspended = 1 # Auto suspend on 3 strikes
+    elif data.action == "suspend":
+        driver.is_suspended = 1
+    elif data.action == "reinstate":
+        driver.is_suspended = 0
+        driver.warnings = 0
+        
+    db.commit()
+    return {"status": "success", "warnings": driver.warnings, "suspended": driver.is_suspended}
+
 @app.get('/api/katoda/drivers')
 def get_katoda_drivers(db: Session = Depends(get_db)):
     all_drivers = db.query(User).filter(User.role == 'driver').all()
@@ -334,8 +390,24 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
             time_str = driver.last_online.strftime("%I:%M %p")
         elif driver.status == 'offline' and driver.last_offline:
             time_str = driver.last_offline.strftime("%I:%M %p")
+            
+        # Calculate Average Rating
+        avg_rating = 5.0 # Default start
+        if driver.rating_count and driver.rating_count > 0:
+            avg_rating = round(driver.rating_sum / driver.rating_count, 1)
 
-        driver_list.append({"id": display_id, "name": name, "status": driver.status, "status_time": time_str, "gcash": gcash, "rating": 5.0, "totalRides": ride_count})
+        driver_list.append({
+            "id": driver.id, 
+            "toda_number": display_id, 
+            "name": name, 
+            "status": driver.status, 
+            "status_time": time_str, 
+            "gcash": gcash, 
+            "rating": avg_rating, 
+            "totalRides": ride_count,
+            "warnings": driver.warnings if driver.warnings else 0,
+            "is_suspended": driver.is_suspended if driver.is_suspended else 0
+        })
     return driver_list
 
 @app.get("/api/admin/config")
@@ -474,10 +546,12 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
 @app.get("/pending-rides/")
 def get_pending_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
+    # NEW: Send the rating down to the frontend
     return [{
         "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
         "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-        "status": r.status, "driver_name": sanitize_name(r.driver_name)
+        "status": r.status, "driver_name": sanitize_name(r.driver_name),
+        "rating": r.rating
     } for r in rides]
 
 @app.get("/api/rides")
