@@ -29,19 +29,14 @@
             <button onclick="switchDashboard('katoda-dashboard')" class="bg-[#E3BC90] text-amber-950 hover:bg-[#d4aa7c] px-5 py-2 rounded-xl font-extrabold transition shadow-md flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-shield-halved"></i> KATODA Portal
             </button>
-            <button onclick="switchDashboard('driver-dashboard')" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+            <button onclick="window.location.href='driver_dashboard.html'" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
                 <i class="fa-solid fa-motorcycle"></i> Driver App
             </button>
-            <button onclick="switchDashboard('passenger-dashboard')" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+            <button onclick="window.location.href='booking.html'" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
                 <i class="fa-solid fa-mobile-screen"></i> Passenger App
             </button>
         </div>
     </nav>
-
-    <!-- ==================== ADMIN DASHBOARD (PLACEHOLDER) ==================== -->
-    <div id="admin-dashboard" class="dashboard-view hidden py-10 px-4">
-        <h1 class="text-center text-white text-2xl font-bold">Admin Vault will go here</h1>
-    </div>
 
     <!-- ==================== KATODA DASHBOARD ==================== -->
     <div id="katoda-dashboard" class="dashboard-view py-10 px-4">
@@ -116,6 +111,7 @@
 
             <!-- Moderation Tools -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Broadcast Card -->
                 <div class="glass-card rounded-3xl p-6 md:col-span-1 h-fit">
                     <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-bullhorn text-amber-800"></i> Broadcast
@@ -127,6 +123,7 @@
                     </button>
                 </div>
 
+                <!-- Driver Roster -->
                 <div class="glass-card rounded-3xl p-0 md:col-span-2 overflow-hidden flex flex-col h-[500px]">
                     <div class="p-6 border-b border-[#d4aa7c] bg-[#e8cda8] flex justify-between items-center">
                         <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
@@ -141,19 +138,8 @@
         </div>
     </div>
 
-    <!-- ==================== DRIVER DASHBOARD (PLACEHOLDER) ==================== -->
-    <div id="driver-dashboard" class="dashboard-view hidden py-10 px-4">
-        <h1 class="text-center text-white text-2xl font-bold">Driver App will go here</h1>
-    </div>
-
-    <!-- ==================== PASSENGER DASHBOARD (PLACEHOLDER) ==================== -->
-    <div id="passenger-dashboard" class="dashboard-view hidden py-10 px-4">
-        <h1 class="text-center text-white text-2xl font-bold">Passenger App will go here</h1>
-    </div>
-
     <!-- ==================== ALL JAVASCRIPT ==================== -->
     <script>
-        // --- 1. Master Menu Logic ---
         function switchDashboard(targetId) {
             const allDashboards = document.querySelectorAll('.dashboard-view');
             allDashboards.forEach(dashboard => {
@@ -166,7 +152,7 @@
             }
         }
 
-        // --- 2. KATODA Login Logic ---
+        // --- KATODA Login Logic ---
         function loginKatoda() {
             const user = document.getElementById('k-user').value;
             const pass = document.getElementById('k-pass').value;
@@ -175,7 +161,6 @@
                 document.getElementById('katoda-login-section').classList.add('hidden');
                 document.getElementById('katoda-main-section').classList.remove('hidden');
                 
-                // Load live data immediately and poll every 5 seconds
                 loadLiveKatodaData();
                 setInterval(loadLiveKatodaData, 5000); 
             } else {
@@ -191,13 +176,12 @@
             document.getElementById('katoda-login-section').classList.remove('hidden');
         }
 
-        // --- 3. Live Backend Fetching ---
+        // --- Live Backend Fetching ---
         async function loadLiveKatodaData() {
             try {
-                // Fetch drivers and financial data in parallel
                 const [driverRes, financeRes] = await Promise.all([
-                    fetch('/api/katoda/drivers'),
-                    fetch('/api/katoda/finances')
+                    fetch(`/api/katoda/drivers?t=${new Date().getTime()}`),
+                    fetch(`/api/katoda/finances?t=${new Date().getTime()}`)
                 ]);
                 
                 const drivers = await driverRes.json();
@@ -218,6 +202,7 @@
                     return;
                 }
 
+                // Sort: Online first, then offline
                 drivers.sort((a, b) => (a.status === 'online' ? -1 : 1));
 
                 drivers.forEach(driver => {
@@ -228,8 +213,33 @@
                     const starColor = isLowRating ? 'text-red-600' : 'text-yellow-500';
                     const ratingClass = isLowRating ? 'bg-red-100 text-red-800 border-red-300' : 'bg-white text-slate-800 border-[#d4aa7c]';
 
+                    const isSuspended = driver.is_suspended === 1;
+                    const rowStyles = isSuspended ? 'bg-red-100/80 border-red-300 opacity-80' : 'bg-white/60 border-[#d4aa7c] hover:bg-white/80';
+                    const suspendBadge = isSuspended ? `<span class="text-[10px] text-red-800 bg-red-200 px-2 py-0.5 rounded-md ml-1 font-extrabold uppercase tracking-widest"><i class="fa-solid fa-ban"></i> Suspended</span>` : '';
+
+                    let actionButtons = '';
+                    if (isSuspended) {
+                        actionButtons = `
+                            <button onclick="disciplineAction(${driver.id}, 'reinstate')" class="bg-green-700 hover:bg-green-800 text-white px-4 h-9 rounded-lg flex items-center justify-center transition shadow-sm text-xs font-bold w-full sm:w-auto" title="Reinstate Account">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> Reinstate
+                            </button>
+                        `;
+                    } else {
+                        actionButtons = `
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-amber-800 mr-1" title="Warnings">${driver.warnings}/3 <i class="fa-solid fa-triangle-exclamation"></i></span>
+                                <button onclick="disciplineAction(${driver.id}, 'warn')" class="bg-amber-500 hover:bg-amber-600 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Issue Warning">
+                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                </button>
+                                <button onclick="disciplineAction(${driver.id}, 'suspend')" class="bg-red-700 hover:bg-red-800 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Suspend Account">
+                                    <i class="fa-solid fa-ban text-xs"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+
                     const card = document.createElement('div');
-                    card.className = "bg-white/60 border border-[#d4aa7c] rounded-xl p-4 mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition hover:bg-white/80";
+                    card.className = `border rounded-xl p-4 mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition ${rowStyles}`;
                     
                     card.innerHTML = `
                         <div class="flex items-center gap-4">
@@ -237,7 +247,11 @@
                                 ${driver.name.charAt(0)}
                             </div>
                             <div>
-                                <h4 class="font-bold text-slate-900 text-md capitalize">${driver.name} <span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md ml-1">ID: ${driver.id}</span></h4>
+                                <h4 class="font-bold text-slate-900 text-md capitalize flex items-center flex-wrap gap-1">
+                                    ${driver.name} 
+                                    <span class="text-[10px] text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">ID: ${driver.toda_number}</span>
+                                    ${suspendBadge}
+                                </h4>
                                 <div class="flex items-center gap-3 mt-1">
                                     <p class="text-xs font-bold text-slate-600 flex items-center gap-1">
                                         <i class="fa-solid fa-circle text-[8px] ${statusDot}"></i> ${statusText}
@@ -253,14 +267,7 @@
                                     ${(driver.rating || 5.0).toFixed(1)} <i class="fa-solid fa-star text-[10px] ${starColor}"></i>
                                 </div>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="warnDriver('${driver.name}')" class="bg-amber-500 hover:bg-amber-600 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Issue Warning">
-                                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                                </button>
-                                <button onclick="suspendDriver('${driver.name}')" class="bg-red-700 hover:bg-red-800 text-white w-9 h-9 rounded-lg flex items-center justify-center transition shadow-sm" title="Suspend Account">
-                                    <i class="fa-solid fa-ban text-xs"></i>
-                                </button>
-                            </div>
+                            ${actionButtons}
                         </div>
                     `;
                     container.appendChild(card);
@@ -270,7 +277,39 @@
             }
         }
 
-        // --- 4. Moderation Actions ---
+        // --- Moderation Actions ---
+        async function disciplineAction(driverId, action) {
+            let msg = "";
+            if (action === "warn") msg = "Are you sure you want to issue a warning to this driver? (3 warnings = Auto-Suspend)";
+            if (action === "suspend") msg = "Are you sure you want to immediately SUSPEND this driver? They will not be able to log in.";
+            if (action === "reinstate") msg = "Are you sure you want to REINSTATE this driver? Their warnings will be reset to 0.";
+
+            if (!confirm(msg)) return;
+
+            try {
+                const response = await fetch('/api/admin/discipline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driver_id: driverId, action: action })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if(action !== 'reinstate') {
+                        alert(`Action successful. Driver currently has ${data.warnings}/3 warnings.`);
+                    } else {
+                        alert(`Driver has been successfully reinstated.`);
+                    }
+                    loadLiveKatodaData(); 
+                } else {
+                    alert("Failed to update driver status. Check server logs.");
+                }
+            } catch (error) {
+                console.error("Discipline network error:", error);
+                alert("Network error while trying to update driver.");
+            }
+        }
+
         async function sendBroadcast() {
             const msg = document.getElementById('broadcast-msg').value;
             if(!msg.trim()) return alert("Please type a message first.");
@@ -292,6 +331,11 @@
                 console.error("Broadcast network error:", error);
                 alert("Network error while sending broadcast.");
             }
+        }
+
+        // Kick off the data fetch if we start on Katoda view
+        if(document.getElementById('katoda-dashboard').classList.contains('hidden') === false) {
+             loadLiveKatodaData();
         }
     </script>
 </body>
