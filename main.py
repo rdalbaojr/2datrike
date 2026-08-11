@@ -263,12 +263,18 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Calculate their average rating
+    avg_rating = 5.0
+    if user.rating_count and user.rating_count > 0:
+        avg_rating = round(user.rating_sum / user.rating_count, 1)
+    
     return {
         "full_name": user.full_name,
         "whatsapp_number": user.whatsapp_number,
         "bank_name": user.bank_name if user.bank_name else "GCash",
         "gcash_account": user.gcash_account if user.gcash_account else "",
-        "address": user.address if user.address else "" 
+        "address": user.address if user.address else "",
+        "rating": avg_rating # <--- NEW: Send rating to the dashboard
     }
 
 @app.post("/api/update-profile")
