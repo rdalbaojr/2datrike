@@ -43,7 +43,6 @@
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
         <!-- Header -->
-        <!-- Header -->
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Driver Portal</h1>
@@ -52,18 +51,8 @@
             <div class="text-right">
                 <p class="text-xs text-[#78350f] font-medium">Welcome,</p>
                 <p id="driver-welcome-name" class="font-extrabold text-sm text-[#0f172a]">Driver</p>
-                <!-- NEW: Star Rating Display -->
+                <!-- Star Rating Display -->
                 <p id="driver-rating-display" class="text-xs font-bold text-yellow-600 mt-0.5 hidden"><i class="fa-solid fa-star"></i> <span id="driver-star-val">5.0</span></p>
-            </div>
-        </div>
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Driver Portal</h1>
-                <p class="text-xs text-green-800 font-bold mt-1"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> Online and Ready</p>
-            </div>
-            <div class="text-right">
-                <p class="text-xs text-[#78350f] font-medium">Welcome,</p>
-                <p id="driver-welcome-name" class="font-extrabold text-sm text-[#0f172a]">Driver</p>
             </div>
         </div>
 
@@ -271,18 +260,20 @@
 
         const currentDriverName = getCookie("driver_name") !== "Unknown" ? getCookie("driver_name") : getCookie("passenger_name");
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("driver-welcome-name").innerText = `${currentDriverName}`;
             checkDriverBroadcasts();
-          try {
+            
+            try {
                 const response = await fetch(`/api/profile/${currentDriverName}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('driver-star-val').innerText = data.rating.toFixed(1);
-                    document.getElementById('driver-rating-display').classList.remove('hidden');
+                    if(data.rating) {
+                        document.getElementById('driver-star-val').innerText = data.rating.toFixed(1);
+                        document.getElementById('driver-rating-display').classList.remove('hidden');
+                    }
                 }
             } catch (e) { console.error("Could not load rating"); }
-        });  
         });
 
         // --- PROFILE MODAL LOGIC ---
