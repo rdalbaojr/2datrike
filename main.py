@@ -467,9 +467,10 @@ def get_payout_summary(db: Session = Depends(get_db)):
         d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
         b_name = driver.bank_name if driver.bank_name else "GCash"
         
-        # 🟢 THE FAILSAFE: Try GCash first, fallback to WhatsApp number
-        if driver.gcash_account and driver.gcash_account.strip():
-            acc_num = driver.gcash_account
+        # 🟢 IGNORING THE "GHOST" DATA: Ignore if the DB says "GCash" or "Maya"
+        raw_acct = driver.gcash_account.strip() if driver.gcash_account else ""
+        if raw_acct and raw_acct.lower() not in ["gcash", "maya"]:
+            acc_num = raw_acct
         elif driver.whatsapp_number and driver.whatsapp_number.strip():
             acc_num = driver.whatsapp_number
         else:
@@ -510,9 +511,9 @@ def get_payout_summary(db: Session = Depends(get_db)):
 
             b_name = driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash"
             
-            # 🟢 Apply the failsafe here too
-            if driver_user and driver_user.gcash_account and driver_user.gcash_account.strip():
-                acc_num = driver_user.gcash_account
+            raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
+            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]:
+                acc_num = raw_acct
             elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip():
                 acc_num = driver_user.whatsapp_number
             else:
@@ -554,6 +555,12 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     driver_payouts = {}
+    
+    all_drivers = db.query(User).filter(User.role == 'driver').all()
+    for driver in all_drivers:
+        d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
+        driver_payouts[d_name] = 0.0
+
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
     total_katoda_payout = 0.0
 
@@ -576,15 +583,14 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
     writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
     for driver_name, amount in driver_payouts.items():
-        # 🟢 FILTER APPLIED: Only generate a CSV row if the driver earned > 0
         if amount > 0:
             driver_user = db.query(User).filter(User.full_name == driver_name, User.role == 'driver').first()
             if not driver_user:
                 driver_user = db.query(User).filter(User.username == driver_name, User.role == 'driver').first()
 
-            # 🟢 Apply the failsafe to the export as well
-            if driver_user and driver_user.gcash_account and driver_user.gcash_account.strip():
-                account_number = driver_user.gcash_account
+            raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
+            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]:
+                account_number = raw_acct
             elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip():
                 account_number = driver_user.whatsapp_number
             else:
