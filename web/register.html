@@ -21,7 +21,7 @@
             color: #0f172a; 
         }
         .input-field:focus {
-            border-color: #78350f; /* amber-900 */
+            border-color: #78350f; 
         }
         .input-field::placeholder {
             color: #92400e; 
@@ -108,6 +108,7 @@
         <!-- ==================== DRIVER REGISTRATION FORM ==================== -->
         <form id="form-driver" action="/register-account/" method="POST" enctype="multipart/form-data" class="space-y-4 hidden" onsubmit="return validatePasswords('driver')">
             <input type="hidden" name="role" value="driver">
+            <input type="hidden" name="bank_name" value="GCash"> <!-- Default backup provider -->
 
             <div>
                 <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Full Name (On License) *</label>
@@ -155,35 +156,14 @@
                 </div>
             </div>
 
-            <!-- PAYOUT SELECTION -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Payout Provider *</label>
-                    <div class="relative">
-                        <select name="bank_name" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800 appearance-none cursor-pointer">
-                            <option value="GCash" selected>📱 GCash</option>
-                            <option value="Maya">💳 Maya</option>
-                            <option value="BPI">🏦 BPI</option>
-                            <option value="BDO">🏦 BDO</option>
-                            <option value="Landbank">🏦 Landbank</option>
-                            <option value="UnionBank">🏦 UnionBank</option>
-                            <option value="Metrobank">🏦 Metrobank</option>
-                            <option value="RCBC">🏦 RCBC</option>
-                            <option value="Other Bank">🏛️ Other Bank</option>
-                        </select>
-                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-900">
-                            <i class="fa-solid fa-chevron-down text-xs"></i>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Account Number *</label>
-                    <p class="text-[10px] text-green-700 font-extrabold mb-1.5"><i class="fa-solid fa-lightbulb"></i> Can be your Wife's GCash/Maya number!</p>
-                    <input type="text" name="gcash_account" id="driver-acct" required placeholder="e.g., 09171234567" 
-                           pattern="[0-9]{11}" maxlength="11" title="Must be exactly 11 numbers (e.g. 09171234567)"
-                           oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800">
-                </div>
+            <!-- CLEAN PAYOUT ACCOUNT NUMBER FIELD -->
+            <div>
+                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">GCash / Maya Payout Account No. *</label>
+                <p class="text-[10px] text-green-700 font-extrabold mb-1.5"><i class="fa-solid fa-lightbulb"></i> Can be your Wife's GCash or Maya number!</p>
+                <input type="text" name="gcash_account" id="driver-acct" required placeholder="09171234567" 
+                       pattern="[0-9]{11}" maxlength="11" title="Must be exactly 11 numbers (e.g. 09171234567)"
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                       class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800">
             </div>
 
             <div>
@@ -204,7 +184,6 @@
     </div>
 
     <script>
-        // Switches the visible form between Passenger and Driver
         function switchRole(role) {
             const btnPassenger = document.getElementById('btn-passenger');
             const btnDriver = document.getElementById('btn-driver');
@@ -212,7 +191,7 @@
             const formDriver = document.getElementById('form-driver');
             const alertBox = document.getElementById('alert-box');
 
-            alertBox.classList.add('hidden'); // Hide alerts on switch
+            alertBox.classList.add('hidden');
 
             if (role === 'passenger') {
                 btnPassenger.className = "py-3 text-sm font-bold rounded-xl transition-all duration-300 bg-amber-900 text-white shadow-md shadow-amber-900/30";
@@ -227,7 +206,6 @@
             }
         }
 
-        // Checks if Password and Confirm Password match before submitting to backend
         function validatePasswords(role) {
             const pass = document.getElementById(`pass-${role}`).value;
             const confirm = document.getElementById(`confirm-${role}`).value;
@@ -236,9 +214,9 @@
             if (pass !== confirm) {
                 alertBox.innerHTML = "⚠️ Passwords do not match! Please verify and try again.";
                 alertBox.classList.remove('hidden');
-                return false; // Prevents form submission
+                return false;
             }
-            return true; // Allows form submission
+            return true;
         }
     </script>
 </body>
