@@ -272,7 +272,6 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.full_name == clean_name, User.role == 'driver').first()
     if not user:
         user = db.query(User).filter(User.username == clean_name, User.role == 'driver').first()
-        
     if not user:
         user = db.query(User).filter(User.full_name == clean_name, User.role == 'passenger').first()
     if not user:
@@ -487,7 +486,8 @@ def get_payout_summary(db: Session = Depends(get_db)):
 
             b_name = driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash"
             
-            if driver_user and driver_user.gcash_account and driver_user.gcash_account.strip().lower() != b_name.strip().lower():
+            # 🟢 DIRECT LOOKUP: Always grab whatever account number the driver registered with
+            if driver_user and driver_user.gcash_account:
                 acc_num = driver_user.gcash_account
             else:
                 acc_num = "Not Provided"
@@ -672,8 +672,7 @@ def get_driver_broadcast(): return latest_broadcast
 
 @app.get('/api/katoda/finances')
 def get_katoda_finances(db: Session = Depends(get_db)):
-    completed_rides = db.query(RideRequest).filter(RideRequest.status.in_(['completed', 'paid'])).all()
-    total_gross = 0.0
+    completed_rides = db.query(RideRequest).filter(RideRequest.status.in_(['completed', 'paid'])).all()        total_gross = 0.0
     for ride in completed_rides:
         if ride.fare:
             try: total_gross += float(ride.fare.replace('₱', '').replace(',', '').strip())
