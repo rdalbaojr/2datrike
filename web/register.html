@@ -123,7 +123,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Mobile / WhatsApp No. *</label>
-                    <input type="text" name="whatsapp_number" required placeholder="09181234567" 
+                    <input type="text" name="whatsapp_number" id="driver-mobile" required placeholder="09181234567" 
                            class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800">
                 </div>
             </div>
@@ -177,10 +177,10 @@
                     </div>
                 </div>
                 <div>
-                    <!-- FOOLPROOF ACCOUNT NUMBER FIELD -->
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Account Number *</label>
-                    <p class="text-[10px] text-red-700 font-extrabold mb-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Required: Your daily payouts will be sent here.</p>
-                    <input type="text" name="gcash_account" required placeholder="e.g., 09171234567" 
+                    <!-- NEW FUN HELPER TEXT -->
+                    <p class="text-[10px] text-green-700 font-extrabold mb-1.5"><i class="fa-solid fa-lightbulb"></i> Can be your Wife's GCash/Maya number!</p>
+                    <input type="text" name="gcash_account" id="driver-acct" required placeholder="e.g., 09171234567" 
                            pattern="[0-9]{11}" maxlength="11" title="Must be exactly 11 numbers (e.g. 09171234567)"
                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                            class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800">
