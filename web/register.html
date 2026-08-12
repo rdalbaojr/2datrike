@@ -58,7 +58,6 @@
         <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-sm font-bold border border-red-800/30 bg-red-100 text-red-800"></div>
 
         <!-- ==================== PASSENGER REGISTRATION FORM ==================== -->
-        <!-- FIX: Added enctype="multipart/form-data" here so the backend accepts it! -->
         <form id="form-passenger" action="/register-account/" method="POST" enctype="multipart/form-data" class="space-y-4" onsubmit="return validatePasswords('passenger')">
             <input type="hidden" name="role" value="passenger">
 
@@ -178,8 +177,12 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Account Number *</label>
-                    <input type="text" name="gcash_account" required placeholder="09181234567 or Acct #" 
+                    <!-- FOOLPROOF ACCOUNT NUMBER FIELD -->
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Account Number *</label>
+                    <p class="text-[10px] text-red-700 font-extrabold mb-1.5"><i class="fa-solid fa-triangle-exclamation"></i> Required: Your daily payouts will be sent here.</p>
+                    <input type="text" name="gcash_account" required placeholder="e.g., 09171234567" 
+                           pattern="[0-9]{11}" maxlength="11" title="Must be exactly 11 numbers (e.g. 09171234567)"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                            class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium focus:border-green-800">
                 </div>
             </div>
