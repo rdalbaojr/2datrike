@@ -7,7 +7,7 @@ from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, Web
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Dict, Optional
@@ -49,9 +49,8 @@ class User(Base):
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
     
-    # --- NEW: ACCOUNTABILITY TRACKING ---
     warnings = Column(Integer, default=0)
-    is_suspended = Column(Integer, default=0) # 0 = Active, 1 = Suspended
+    is_suspended = Column(Integer, default=0) 
     rating_sum = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
 
@@ -65,8 +64,6 @@ class RideRequest(Base):
     fare = Column(String, nullable=True)         
     status = Column(String, default="pending")
     driver_name = Column(String, nullable=True)
-    
-    # --- NEW: RIDE RATING ---
     rating = Column(Integer, nullable=True) 
 
 class ChatMessage(Base):
@@ -116,13 +113,12 @@ class PasswordResetSchema(BaseModel):
     whatsapp_number: str
     new_password: str
 
-# NEW: Rating & Discipline Schemas
 class RateRideSchema(BaseModel):
     rating: int
 
 class DisciplineSchema(BaseModel):
     driver_id: int
-    action: str # "warn" or "suspend" or "reinstate"
+    action: str 
 
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -145,6 +141,22 @@ def initialize_config():
         new_config = SystemConfig()
         db.add(new_config)
         db.commit()
+        
+    try:
+        db.execute(text("ALTER TABLE users ADD COLUMN warnings INTEGER DEFAULT 0"))
+        db.execute(text("ALTER TABLE users ADD COLUMN is_suspended INTEGER DEFAULT 0"))
+        db.execute(text("ALTER TABLE users ADD COLUMN rating_sum FLOAT DEFAULT 0.0"))
+        db.execute(text("ALTER TABLE users ADD COLUMN rating_count INTEGER DEFAULT 0"))
+        db.commit()
+    except Exception:
+        db.rollback()
+        
+    try:
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN rating INTEGER"))
+        db.commit()
+    except Exception:
+        db.rollback()
+        
     db.close()
 
 class ConfigUpdateSchema(BaseModel):
@@ -188,7 +200,6 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
     
-    # NEW: SUSPENSION BLOCKER
     if user.is_suspended == 1:
         raise HTTPException(status_code=403, detail="ACCOUNT SUSPENDED: Please contact KATODA admin.")
     
@@ -258,31 +269,40 @@ def register_account(
 def get_profile(display_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(display_name)
     user = db.query(User).filter(User.username == clean_name).first()
+    
+    # Strictly search for DRIVER account if there is a name duplicate
+    if not user:
+        user = db.query(User).filter(User.full_name == clean_name, User.role == 'driver').first()
     if not user:
         user = db.query(User).filter(User.full_name == clean_name).first()
+        
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Calculate their average rating
     avg_rating = 5.0
     if user.rating_count and user.rating_count > 0:
         avg_rating = round(user.rating_sum / user.rating_count, 1)
-    
+        
     return {
         "full_name": user.full_name,
         "whatsapp_number": user.whatsapp_number,
         "bank_name": user.bank_name if user.bank_name else "GCash",
         "gcash_account": user.gcash_account if user.gcash_account else "",
         "address": user.address if user.address else "",
-        "rating": avg_rating # <--- NEW: Send rating to the dashboard
+        "rating": avg_rating
     }
 
 @app.post("/api/update-profile")
 def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     clean_name = sanitize_name(data.display_name)
     user = db.query(User).filter(User.username == clean_name).first()
+    
+    # Strictly search for DRIVER account if there is a name duplicate
+    if not user:
+        user = db.query(User).filter(User.full_name == clean_name, User.role == 'driver').first()
     if not user:
         user = db.query(User).filter(User.full_name == clean_name).first()
+        
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -334,7 +354,6 @@ def pay_ride(ride_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Payment confirmed", "id": ride.id}
 
-# --- NEW: RATE RIDE ENDPOINT ---
 @app.post("/api/rate-ride/{ride_id}")
 def rate_ride(ride_id: int, data: RateRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -343,14 +362,13 @@ def rate_ride(ride_id: int, data: RateRideSchema, db: Session = Depends(get_db))
     
     ride.rating = data.rating
     
-    # Calculate driver's new average
     if ride.driver_name:
         driver = db.query(User).filter(User.username == ride.driver_name).first()
+        # Strictly search for DRIVER account if there is a name duplicate
         if not driver:
-            driver = db.query(User).filter(User.full_name == ride.driver_name).first()
+            driver = db.query(User).filter(User.full_name == ride.driver_name, User.role == 'driver').first()
             
         if driver:
-            # Safely handle potential None values for older accounts
             current_sum = driver.rating_sum if driver.rating_sum else 0.0
             current_count = driver.rating_count if driver.rating_count else 0
             
@@ -360,7 +378,6 @@ def rate_ride(ride_id: int, data: RateRideSchema, db: Session = Depends(get_db))
     db.commit()
     return {"status": "success"}
 
-# --- NEW: KATODA DISCIPLINE ENDPOINT ---
 @app.post("/api/admin/discipline")
 def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
     driver = db.query(User).filter(User.id == data.driver_id).first()
@@ -370,7 +387,7 @@ def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
     if data.action == "warn":
         driver.warnings = (driver.warnings if driver.warnings else 0) + 1
         if driver.warnings >= 3:
-            driver.is_suspended = 1 # Auto suspend on 3 strikes
+            driver.is_suspended = 1 
     elif data.action == "suspend":
         driver.is_suspended = 1
     elif data.action == "reinstate":
@@ -397,8 +414,7 @@ def get_katoda_drivers(db: Session = Depends(get_db)):
         elif driver.status == 'offline' and driver.last_offline:
             time_str = driver.last_offline.strftime("%I:%M %p")
             
-        # Calculate Average Rating
-        avg_rating = 5.0 # Default start
+        avg_rating = 5.0
         if driver.rating_count and driver.rating_count > 0:
             avg_rating = round(driver.rating_sum / driver.rating_count, 1)
 
@@ -464,8 +480,9 @@ def get_payout_summary(db: Session = Depends(get_db)):
 
         if clean_driver_name not in payouts:
             driver_user = db.query(User).filter(User.username == clean_driver_name).first()
+            # Strictly search for DRIVER account if there is a name duplicate
             if not driver_user:
-                driver_user = db.query(User).filter(User.full_name == clean_driver_name).first()
+                driver_user = db.query(User).filter(User.full_name == clean_driver_name, User.role == 'driver').first()
 
             b_name = driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash"
             
@@ -533,8 +550,9 @@ def generate_bizlink_payout(db: Session = Depends(get_db)):
 
     for driver_name, amount in driver_payouts.items():
         driver_user = db.query(User).filter(User.username == driver_name).first()
+        # Strictly search for DRIVER account if there is a name duplicate
         if not driver_user:
-            driver_user = db.query(User).filter(User.full_name == driver_name).first()
+            driver_user = db.query(User).filter(User.full_name == driver_name, User.role == 'driver').first()
 
         account_number = driver_user.gcash_account if driver_user and driver_user.gcash_account else "MISSING_ACCOUNT"
         bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
@@ -567,8 +585,9 @@ def get_pending_rides(db: Session = Depends(get_db)):
         drv_phone = "0"
         if r.driver_name:
             drv_user = db.query(User).filter(User.username == sanitize_name(r.driver_name)).first()
+            # Strictly search for DRIVER account if there is a name duplicate
             if not drv_user:
-                drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name)).first()
+                drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name), User.role == 'driver').first()
             if drv_user and drv_user.whatsapp_number:
                 drv_phone = drv_user.whatsapp_number
 
@@ -587,6 +606,7 @@ def get_pending_rides(db: Session = Depends(get_db)):
         })
         
     return results
+
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
