@@ -144,6 +144,28 @@
                 </div>
             </div>
 
+            <!-- 🟢 NEW: City, Barangay & TODA Inputs -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">City *</label>
+                    <select name="city" class="input-field driver-focus w-full border rounded-xl px-3 py-3.5 text-sm outline-none font-medium">
+                        <option value="Pasig City">Pasig City</option>
+                        <option value="Quezon City">Quezon City</option>
+                        <option value="Bacolod City">Bacolod City</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Barangay *</label>
+                    <input type="text" name="barangay" required placeholder="e.g., San Antonio" 
+                           class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">TODA Name *</label>
+                    <input type="text" name="toda_name" required placeholder="e.g., KOTA TODA" 
+                           class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
+                </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Driver's License No. *</label>
@@ -151,13 +173,29 @@
                            class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">2DA Body / Plate No. *</label>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Body / Plate No. *</label>
                     <input type="text" name="address" id="driver-plate" required placeholder="042 / 123-ABC" 
                            class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
                 </div>
             </div>
 
             <div>
+                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">QRPh Payout Wallet *</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <select name="bank_name" id="driver-wallet-type" class="input-field driver-focus border rounded-xl px-3 py-3.5 text-sm outline-none font-medium">
+                        <option value="GCash">GCash</option>
+                        <option value="Maya">Maya</option>
+                    </select>
+                    <input type="text" name="gcash_account" id="driver-wallet-num" required placeholder="09181234567" 
+                           maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                           class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full py-4 mt-2 bg-green-800 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg shadow-green-900/30 transition-all duration-300">
+                Submit Driver Credentials <i class="fa-solid fa-shield-check ml-2"></i>
+            </button>
+        </form>
                 <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">QRPh Payout Wallet *</label>
                 <div class="grid grid-cols-2 gap-3">
                     <!-- Changed name to "bank_name" -->
