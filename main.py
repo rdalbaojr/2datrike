@@ -30,7 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # ==========================================
-# 3. DATABASE MODELS (Now with Branch Tracking)
+# 3. DATABASE MODELS (Multi-Branch & Local LGU Tracking)
 # ==========================================
 class User(Base):
     __tablename__ = "users"
@@ -53,7 +53,12 @@ class User(Base):
     is_suspended = Column(Integer, default=0) 
     rating_sum = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
-    branch = Column(String, default="Main") # 🟢 NEW: Tracks which TODA branch they belong to
+    
+    # 🟢 NEW LGU & Branch Fields
+    city = Column(String, nullable=True, default="Pasig City")
+    barangay = Column(String, nullable=True, default="")
+    toda_name = Column(String, nullable=True, default="")
+    branch = Column(String, default="Main") 
 
 class RideRequest(Base):
     __tablename__ = "ride_requests"
@@ -115,6 +120,9 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN is_suspended INTEGER DEFAULT 0"))
         db.execute(text("ALTER TABLE users ADD COLUMN rating_sum FLOAT DEFAULT 0.0"))
         db.execute(text("ALTER TABLE users ADD COLUMN rating_count INTEGER DEFAULT 0"))
+        db.execute(text("ALTER TABLE users ADD COLUMN city VARCHAR DEFAULT 'Pasig City'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN barangay VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE users ADD COLUMN toda_name VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.commit()
     except Exception:
@@ -239,7 +247,10 @@ def register_account(
     role: str = Form(...), username: str = Form(...), password: str = Form(...),
     full_name: str = Form(...), address: str = Form(...), whatsapp_number: str = Form(...),
     toda_number: Optional[str] = Form(None), gcash_account: Optional[str] = Form(None), 
-    bank_name: Optional[str] = Form("GCash"), branch: Optional[str] = Form("Main"),
+    bank_name: Optional[str] = Form("GCash"), 
+    city: Optional[str] = Form("Pasig City"),
+    barangay: Optional[str] = Form(""),
+    toda_name: Optional[str] = Form(""),
     toda_id: Optional[UploadFile] = File(None), db: Session = Depends(get_db)
 ):
     clean_user = sanitize_name(username)
@@ -254,10 +265,14 @@ def register_account(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
 
+    # Automatically format branch name for admin filtering
+    assigned_branch = f"{city} - {barangay} ({toda_name})" if role == "driver" else "Passenger"
+
     new_user = User(
         username=clean_user, password=password, role=role, full_name=clean_full_name,
         address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
-        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path, branch=branch
+        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
+        city=city, barangay=barangay, toda_name=toda_name, branch=assigned_branch
     )
     db.add(new_user)
     db.commit()
@@ -434,7 +449,6 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         if not ride.driver_name or not ride.fare: continue
         clean_driver_name = sanitize_name(ride.driver_name)
         
-        # If filtering by branch, skip rides that belong to drivers not in this branch
         if branch != "All" and clean_driver_name not in payouts: continue
             
         clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
@@ -445,7 +459,6 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         total_katoda += katoda_cut
         total_platform += platform_cut
 
-        # Failsafe for "All" view if driver wasn't preloaded
         if clean_driver_name not in payouts:
             driver_user = db.query(User).filter(User.full_name == clean_driver_name, User.role == 'driver').first()
             if not driver_user: driver_user = db.query(User).filter(User.username == clean_driver_name, User.role == 'driver').first()
@@ -535,7 +548,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Payout_{current_date}.csv"})
 
 # ==========================================
-# REST OF ENDPOINTS (No changes needed)
+# MISC ENDPOINTS
 # ==========================================
 @app.get("/api/admin/config")
 def get_system_config(db: Session = Depends(get_db)): return db.query(SystemConfig).first()
