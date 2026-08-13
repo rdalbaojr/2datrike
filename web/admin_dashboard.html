@@ -35,12 +35,25 @@
             </form>
         </div>
 
-        <div class="flex flex-col items-start pb-5 border-b border-[#d4aa7c]/50 mb-6 relative">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#d4aa7c]/50 mb-6 relative gap-4">
             <button onclick="lockDashboard()" class="absolute top-0 right-0 text-[#78350f] bg-[#d4aa7c]/40 p-3 rounded-full hover:bg-[#d4aa7c] hover:scale-105 transition">
                 <i class="fa-solid fa-lock text-lg"></i>
             </button>
-            <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight pr-8">2DA Master Admin</h2>
-            <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
+            <div>
+                <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight pr-12">2DA Master Admin</h2>
+                <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
+            </div>
+
+            <!-- 🟢 MULTI-BRANCH SELECTOR -->
+            <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
+                <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Branch:</label>
+                <select id="branchSelector" onchange="changeBranch()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                    <option value="All">🌐 All Branches (Master)</option>
+                    <option value="Pasig City">Pasig City</option>
+                    <option value="Quezon City">Quezon City</option>
+                    <option value="Bacolod City">Bacolod City</option>
+                </select>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -92,7 +105,6 @@
                                 </div>
                             </div>
                             
-                            <!-- UPDATED: KATODA BANK & ACCOUNT SELECTOR -->
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex flex-col gap-2 shadow-sm">
                                 <label class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA Payout Acct</label>
                                 <div class="flex gap-2">
@@ -120,7 +132,7 @@
                             <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Payouts</h2>
                             <p class="text-xs text-[#78350f] font-bold mt-1">Real-time collective settlement</p>
                         </div>
-                        <a href="/api/admin/generate-bizlink-payout" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
+                        <a id="exportBizLinkBtn" href="/api/admin/generate-bizlink-payout?branch=All" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
                             <i class="fa-solid fa-download"></i> Export for BizLink
                         </a>
                     </div>
@@ -128,7 +140,6 @@
                     <div class="overflow-x-auto rounded-xl border border-[#c99c6b] table-scroll pb-2">
                         <table class="w-full text-left text-sm whitespace-nowrap">
                             <thead class="bg-[#E3BC90]/50">
-                                <!-- UPDATED HEADERS -->
                                 <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
                                     <th class="py-3 px-4">Entity / Driver</th>
                                     <th class="py-3 px-4">Provider</th>
@@ -175,6 +186,10 @@
             const overlay = document.getElementById('lockOverlay');
             overlay.style.display = 'flex';
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+        }
+
+        function changeBranch() {
+            loadPayoutSummary();
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -243,8 +258,13 @@
         }
 
         async function loadPayoutSummary() {
+            const selectedBranch = document.getElementById('branchSelector').value;
+            
+            // Update the Export CSV button link dynamically based on the branch filter
+            document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
+
             try {
-                const response = await fetch('/api/admin/payout-summary');
+                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}`);
                 if (!response.ok) return;
                 
                 const data = await response.json();
@@ -252,7 +272,7 @@
                 tbody.innerHTML = '';
 
                 if (data.drivers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts at this time.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
                     return;
                 }
 
