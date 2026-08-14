@@ -47,12 +47,10 @@
             <!-- 🟢 MULTI-BRANCH SELECTOR -->
             <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
                 <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Branch:</label>
-                <select id="branchSelector" onchange="changeBranch()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
-                    <option value="All">🌐 All Branches (Master)</option>
-                    <option value="Pasig City">Pasig City</option>
-                    <option value="Quezon City">Quezon City</option>
-                    <option value="Bacolod City">Bacolod City</option>
-                </select>
+                <!-- Replace your hardcoded <select id="branchSelector"> with this: -->
+<select id="branchSelector" onchange="changeBranch()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+    <option value="All">🌐 All Branches (Master)</option>
+</select>
             </div>
         </div>
 
@@ -201,7 +199,22 @@
                 overlay.style.display = 'flex';
                 overlay.style.opacity = '1';
             }
-
+// Dynamically load recorded cities into the admin dropdown
+try {
+    const locRes = await fetch('/api/admin/locations');
+    if (locRes.ok) {
+        const locations = await locRes.json();
+        const selector = document.getElementById('branchSelector');
+        Object.keys(locations).forEach(city => {
+            const opt = document.createElement('option');
+            opt.value = city;
+            opt.textContent = city;
+            selector.appendChild(opt);
+        });
+    }
+} catch (e) {
+    console.error("Could not load dynamic locations", e);
+}
             try {
                 const response = await fetch('/api/admin/config');
                 if (response.ok) {
