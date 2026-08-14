@@ -1,6 +1,7 @@
 import os
 import shutil
 import json
+import random
 from datetime import datetime
 
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect
@@ -326,7 +327,18 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
 
     # Generate the unique origin-based reference number on the fly
-    origin_ref = generate_local_ref(city_str, brgy_str, toda_str)
+    import random
+
+def generate_local_ref(city: str, barangay: str, toda: str) -> str:
+    # Extract initials or short codes from City, Barangay, and TODA
+    city_code = "".join([w[0] for w in city.split() if w]).upper()[:2]
+    brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
+    toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
+    
+    # Strictly generate a unique 5-digit random number (10000 to 99995)
+    rand_5digit = random.randint(10000, 99999)
+    
+    return f"{city_code}{brgy_code}{toda_code}-{rand_5digit}"
 
     new_ride = RideRequest(
         passenger_name=clean_pass_name,
