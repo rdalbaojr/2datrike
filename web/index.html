@@ -63,7 +63,11 @@
 
         <!-- ==================== 1. PASSENGER REGISTRATION FORM ==================== -->
         <form id="form-passenger" action="/register-account/" method="POST" class="space-y-4" onsubmit="return validateAndSubmit(event, 'passenger')">
-            <input type="hidden" name="role" value="passenger">
+    <input type="hidden" name="role" value="passenger">
+    <!-- 🟢 ADD THIS HIDDEN LINE TO SATISFY THE BACKEND -->
+    <input type="hidden" name="address" value="Passenger - Address Not Required">
+    
+    <!-- FULL NAME FIELD -->
             
             <!-- FULL NAME FIELD -->
             <div>
