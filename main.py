@@ -296,15 +296,19 @@ def register_account(
 @app.get("/api/admin/locations")
 def get_registered_locations(db: Session = Depends(get_db)):
     drivers = db.query(User).filter(User.role == 'driver').all()
-    barangays = set()
-    todas = set()
+    
+    # Map TODAs to their respective Barangays
+    location_map = {}
     for d in drivers:
-        if d.barangay: barangays.add(d.barangay)
-        if d.toda_name: todas.add(d.toda_name)
-    return {
-        "barangays": sorted(list(barangays)),
-        "todas": sorted(list(todas))
-    }
+        brgy = d.barangay.strip() if d.barangay else "Unassigned"
+        toda = d.toda_name.strip() if d.toda_name else "No TODA"
+        
+        if brgy not in location_map:
+            location_map[brgy] = set()
+        location_map[brgy].add(toda)
+        
+    # Convert to sorted lists for clean JSON output
+    return {b: sorted(list(t)) for b, t in location_map.items()}
 
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
