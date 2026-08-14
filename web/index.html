@@ -146,15 +146,12 @@
             </div>
 
             <!-- 🟢 NEW: City, Barangay & TODA Inputs -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">City *</label>
-                    <select name="city" class="input-field driver-focus w-full border rounded-xl px-3 py-3.5 text-sm outline-none font-medium">
-                        <option value="Pasig City">Pasig City</option>
-                        <option value="Quezon City">Quezon City</option>
-                        <option value="Bacolod City">Bacolod City</option>
-                    </select>
-                </div>
+           <!-- REPLACE WITH THIS OPEN TEXT INPUT -->
+<div>
+    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">City *</label>
+    <input type="text" name="city" required placeholder="e.g., Pasig City" 
+           class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
+</div>
                 <div>
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Barangay *</label>
                     <input type="text" name="barangay" required placeholder="e.g., San Antonio" 
