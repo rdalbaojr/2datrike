@@ -199,7 +199,7 @@
                 overlay.style.display = 'flex';
                 overlay.style.opacity = '1';
             }
-// Dynamically load recorded cities into the admin branch dropdown
+// Dynamically load recorded Barangays into the admin branch dropdown
 try {
     const locRes = await fetch('/api/admin/locations');
     if (locRes.ok) {
@@ -209,15 +209,18 @@ try {
         // Clear any existing options except the default "All"
         selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
         
-        // Loop through the array of cities returned from /api/admin/locations
-        const cities = data.cities || [];
-        cities.forEach(city => {
+        // 🟢 FIXED: Loop through 'barangays' instead of 'cities'
+        const barangays = data.barangays || [];
+        barangays.forEach(brgy => {
             const opt = document.createElement('option');
-            opt.value = city;
-            opt.textContent = city;
+            opt.value = brgy;
+            opt.textContent = "Barangay " + brgy;
             selector.appendChild(opt);
         });
     }
+} catch (e) {
+    console.error("Could not load dynamic locations", e);
+}
 } catch (e) {
     console.error("Could not load dynamic locations", e);
 }
