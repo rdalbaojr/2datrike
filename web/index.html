@@ -61,53 +61,57 @@
         <!-- Alert Box for Response Feedback -->
         <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800"></div>
 
-        <!-- ==================== 1. PASSENGER REGISTRATION FORM ==================== -->
-        <form id="form-passenger" action="/register-account/" method="POST" class="space-y-4" onsubmit="return validateAndSubmit(event, 'passenger')">
-            <input type="hidden" name="role" value="passenger">
-            
-            <!-- Change this from a <select> to a text <input> -->
-<div>
-    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">City *</label>
-    <input type="text" name="city" required placeholder="e.g., Pasig City" 
-           class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-</div>
+        <!-- PASSENGER REGISTRATION FORM -->
+<form id="passengerRegisterForm" action="/register-account/" method="POST" class="space-y-4">
+    <input type="hidden" name="role" value="passenger">
+    
+    <!-- FULL NAME FIELD -->
+    <div>
+        <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Full Name *</label>
+        <input type="text" name="full_name" required placeholder="e.g., Juan dela Cruz" 
+               class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+    </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Username *</label>
-                    <input type="text" name="username" id="passenger-username" required placeholder="Choose a username" 
-                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Mobile / WhatsApp No. *</label>
-                    <input type="text" name="whatsapp_number" id="passenger-contact" required placeholder="09171234567" 
-                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-                </div>
-            </div>
+    <!-- USERNAME & MOBILE -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+            <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Username *</label>
+            <input type="text" name="username" required placeholder="Choose a username" 
+                   class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Mobile / WhatsApp No. *</label>
+            <input type="text" name="whatsapp_number" required placeholder="09171234567" maxlength="11" 
+                   oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                   class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+        </div>
+    </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Password *</label>
-                    <input type="password" name="password" id="passenger-password" required placeholder="••••••••" 
-                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Confirm Password *</label>
-                    <input type="password" id="passenger-confirm" required placeholder="••••••••" 
-                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-                </div>
-            </div>
+    <!-- PASSWORD FIELDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+            <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Password *</label>
+            <input type="password" name="password" required placeholder="••••••••" 
+                   class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+        </div>
+        <div>
+            <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Confirm Password *</label>
+            <input type="password" required placeholder="••••••••" 
+                   class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+        </div>
+    </div>
 
-            <div>
-                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Home Barangay / Community *</label>
-                <input type="text" name="address" id="passenger-barangay" required placeholder="e.g., Brgy. San Antonio, Pasig City" 
-                       class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
-            </div>
+    <!-- BARANGAY / COMMUNITY -->
+    <div>
+        <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Home Barangay / Community *</label>
+        <input type="text" name="barangay" required placeholder="e.g., Brgy. San Antonio" 
+               class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+    </div>
 
-            <button type="submit" class="w-full py-4 mt-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-300">
-                Register Passenger Account <i class="fa-solid fa-arrow-right ml-2"></i>
-            </button>
-        </form>
+    <button type="submit" class="w-full py-4 mt-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg transition-all duration-300">
+        Register Passenger Account <i class="fa-solid fa-arrow-right ml-2"></i>
+    </button>
+</form>
 
         <!-- ==================== 2. DRIVER REGISTRATION FORM ==================== -->
         <form id="form-driver" action="/register-account/" method="POST" class="space-y-4 hidden" onsubmit="return validateAndSubmit(event, 'driver')">
