@@ -353,7 +353,7 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
 
     # TO THIS:
-    origin_ref = generate_local_ref(brgy_str, toda_str))
+    origin_ref = generate_local_ref(brgy_str, toda_str)
 
     new_ride = RideRequest(
         passenger_name=clean_pass_name,
