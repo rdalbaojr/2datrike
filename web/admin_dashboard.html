@@ -199,13 +199,19 @@
                 overlay.style.display = 'flex';
                 overlay.style.opacity = '1';
             }
-// Dynamically load recorded cities into the admin dropdown
+// Dynamically load recorded cities into the admin branch dropdown
 try {
     const locRes = await fetch('/api/admin/locations');
     if (locRes.ok) {
-        const locations = await locRes.json();
+        const data = await locRes.json();
         const selector = document.getElementById('branchSelector');
-        Object.keys(locations).forEach(city => {
+        
+        // Clear any existing options except the default "All"
+        selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+        
+        // Loop through the array of cities returned from /api/admin/locations
+        const cities = data.cities || [];
+        cities.forEach(city => {
             const opt = document.createElement('option');
             opt.value = city;
             opt.textContent = city;
