@@ -199,7 +199,7 @@
                 overlay.style.display = 'flex';
                 overlay.style.opacity = '1';
             }
-// Dynamically load recorded Barangays into the admin branch dropdown
+// Dynamically load recorded Barangays and TODAs into the admin branch dropdown
 try {
     const locRes = await fetch('/api/admin/locations');
     if (locRes.ok) {
@@ -209,14 +209,22 @@ try {
         // Clear any existing options except the default "All"
         selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
         
-        // 🟢 FIXED: Loop through 'barangays' instead of 'cities'
-        const barangays = data.barangays || [];
-        barangays.forEach(brgy => {
-            const opt = document.createElement('option');
-            opt.value = brgy;
-            opt.textContent = "Barangay " + brgy;
-            selector.appendChild(opt);
-        });
+        // Loop through the grouped data
+        for (const [brgy, todas] of Object.entries(data)) {
+            // Create a non-selectable Group Header for the Barangay
+            const group = document.createElement('optgroup');
+            group.label = `📍 Brgy. ${brgy}`;
+            
+            // Add each TODA underneath its Barangay
+            todas.forEach(toda => {
+                const opt = document.createElement('option');
+                opt.value = toda; // The backend filter will perfectly catch this TODA name!
+                opt.textContent = ` ↳ ${toda}`;
+                group.appendChild(opt);
+            });
+            
+            selector.appendChild(group);
+        }
     }
 } catch (e) {
     console.error("Could not load dynamic locations", e);
