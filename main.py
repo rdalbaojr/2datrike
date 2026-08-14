@@ -96,12 +96,11 @@ def get_db():
 # ==========================================
 # 4. SECURE 5-DIGIT LOCAL PREFIX GENERATOR
 # ==========================================
-def generate_local_ref(city: str, barangay: str, toda: str) -> str:
-    city_code = "".join([w[0] for w in city.split() if w]).upper()[:2]
+def generate_local_ref(barangay: str, toda: str) -> str:
     brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
     toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
     rand_5digit = random.randint(10000, 99999)
-    return f"{city_code}{brgy_code}{toda_code}-{rand_5digit}"
+    return f"{brgy_code}-{toda_code}-{rand_5digit}"
 
 # ==========================================
 # 5. STARTUP SCRIPT (Safely updates existing databases)
@@ -296,10 +295,15 @@ def register_account(
 @app.get("/api/admin/locations")
 def get_registered_locations(db: Session = Depends(get_db)):
     drivers = db.query(User).filter(User.role == 'driver').all()
-    cities = set()
+    barangays = set()
+    todas = set()
     for d in drivers:
-        if d.city: cities.add(d.city)
-    return {"cities": sorted(list(cities))}
+        if d.barangay: barangays.add(d.barangay)
+        if d.toda_name: todas.add(d.toda_name)
+    return {
+        "barangays": sorted(list(barangays)),
+        "todas": sorted(list(todas))
+    }
 
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
