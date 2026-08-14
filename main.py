@@ -280,7 +280,8 @@ def register_account(
             shutil.copyfileobj(toda_id.file, buffer)
 
     assigned_branch = f"{city} - {barangay} ({toda_name})" if role == "driver" else "Passenger"
-    generated_ref = generate_local_ref(city, barangay, toda_name) if role == "driver" else "PASSENGER"
+    # TO THIS:
+    generated_ref = generate_local_ref(barangay, toda_name) if role == "driver" else "PASSENGER"
 
     new_user = User(
         username=clean_user, password=password, role=role, full_name=clean_full_name,
@@ -351,7 +352,8 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
 
-    origin_ref = generate_local_ref(city_str, brgy_str, toda_str)
+    # TO THIS:
+    origin_ref = generate_local_ref(brgy_str, toda_str))
 
     new_ride = RideRequest(
         passenger_name=clean_pass_name,
