@@ -316,14 +316,38 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
 
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
+    # Look up passenger profile to check their home location/branch context if available
+    clean_pass_name = sanitize_name(request.passenger_name)
+    user_profile = db.query(User).filter(User.full_name == clean_pass_name).first()
+    
+    # Default fallback if passenger profile location isn't set yet
+    city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
+    brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
+    toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
+
+    # Generate the unique origin-based reference number on the fly
+    origin_ref = generate_local_ref(city_str, brgy_str, toda_str)
+
     new_ride = RideRequest(
-        passenger_name=sanitize_name(request.passenger_name), pickup_location=request.pickup_location,
-        dropoff_location=request.dropoff_location, service_type=request.service_type,
-        fare=request.fare, status="pending"
+        passenger_name=clean_pass_name,
+        pickup_location=request.pickup_location,
+        dropoff_location=request.dropoff_location,
+        service_type=request.service_type,
+        fare=request.fare,
+        status="pending",
+        branch=f"{city_str} - {brgy_str} ({toda_str})"
     )
+    
+    # We can attach the unique reference directly to the ride record or remarks
     db.add(new_ride)
     db.commit()
     db.refresh(new_ride)
+    
+    return {
+        "message": "Ride requested successfully", 
+        "id": new_ride.id, 
+        "local_ref": origin_ref
+    }
     return {"message": "Ride requested successfully", "id": new_ride.id}
 
 @app.post("/accept-ride/{ride_id}")
