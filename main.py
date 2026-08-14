@@ -31,7 +31,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # ==========================================
-# 3. DATABASE MODELS (Multi-Branch & Local LGU Tracking)
+# 3. DATABASE MODELS (Multi-Branch & Local Prefix Tracking)
 # ==========================================
 class User(Base):
     __tablename__ = "users"
@@ -55,11 +55,12 @@ class User(Base):
     rating_sum = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
     
-    # 🟢 NEW LGU & Branch Fields
+    # 🟢 Organic LGU, Branch, & Secure Local Prefix Fields
     city = Column(String, nullable=True, default="Pasig City")
     barangay = Column(String, nullable=True, default="")
     toda_name = Column(String, nullable=True, default="")
     branch = Column(String, default="Main") 
+    local_ref = Column(String, nullable=True, default="")
 
 class RideRequest(Base):
     __tablename__ = "ride_requests"
@@ -73,6 +74,7 @@ class RideRequest(Base):
     driver_name = Column(String, nullable=True)
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
+    local_ref = Column(String, nullable=True, default="") # 🟢 Origin Reference Stamped on Orders
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -92,7 +94,17 @@ def get_db():
         db.close()
 
 # ==========================================
-# 4. STARTUP SCRIPT (Safely updates existing databases)
+# 4. SECURE 5-DIGIT LOCAL PREFIX GENERATOR
+# ==========================================
+def generate_local_ref(city: str, barangay: str, toda: str) -> str:
+    city_code = "".join([w[0] for w in city.split() if w]).upper()[:2]
+    brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
+    toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
+    rand_5digit = random.randint(10000, 99999)
+    return f"{city_code}{brgy_code}{toda_code}-{rand_5digit}"
+
+# ==========================================
+# 5. STARTUP SCRIPT (Safely updates existing databases)
 # ==========================================
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -125,6 +137,7 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN barangay VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN toda_name VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
+        db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
@@ -132,6 +145,7 @@ def initialize_config():
     try:
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN rating INTEGER"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
@@ -186,7 +200,7 @@ def sanitize_name(name: str) -> str:
     return name.replace('"', '').replace("'", "").strip()
 
 # ==========================================
-# 5. API ENDPOINTS
+# 6. API ENDPOINTS
 # ==========================================
 @app.get("/")
 def read_root():
@@ -266,18 +280,26 @@ def register_account(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
 
-    # Automatically format branch name for admin filtering
     assigned_branch = f"{city} - {barangay} ({toda_name})" if role == "driver" else "Passenger"
+    generated_ref = generate_local_ref(city, barangay, toda_name) if role == "driver" else "PASSENGER"
 
     new_user = User(
         username=clean_user, password=password, role=role, full_name=clean_full_name,
         address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
         gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
-        city=city, barangay=barangay, toda_name=toda_name, branch=assigned_branch
+        city=city, barangay=barangay, toda_name=toda_name, branch=assigned_branch, local_ref=generated_ref
     )
     db.add(new_user)
     db.commit()
     return RedirectResponse(url="/login.html", status_code=303)
+
+@app.get("/api/admin/locations")
+def get_registered_locations(db: Session = Depends(get_db)):
+    drivers = db.query(User).filter(User.role == 'driver').all()
+    cities = set()
+    for d in drivers:
+        if d.city: cities.add(d.city)
+    return {"cities": sorted(list(cities))}
 
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
@@ -296,7 +318,8 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "full_name": user.full_name, "whatsapp_number": user.whatsapp_number,
         "bank_name": user.bank_name if user.bank_name else "GCash",
         "gcash_account": user.gcash_account if user.gcash_account else "",
-        "address": user.address if user.address else "", "rating": avg_rating
+        "address": user.address if user.address else "", "rating": avg_rating,
+        "local_ref": user.local_ref if user.local_ref else "N/A"
     }
 
 @app.post("/api/update-profile")
@@ -317,28 +340,14 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
 
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
-    # Look up passenger profile to check their home location/branch context if available
     clean_pass_name = sanitize_name(request.passenger_name)
     user_profile = db.query(User).filter(User.full_name == clean_pass_name).first()
     
-    # Default fallback if passenger profile location isn't set yet
     city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
 
-    # Generate the unique origin-based reference number on the fly
-    import random
-
-def generate_local_ref(city: str, barangay: str, toda: str) -> str:
-    # Extract initials or short codes from City, Barangay, and TODA
-    city_code = "".join([w[0] for w in city.split() if w]).upper()[:2]
-    brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
-    toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
-    
-    # Strictly generate a unique 5-digit random number (10000 to 99995)
-    rand_5digit = random.randint(10000, 99999)
-    
-    return f"{city_code}{brgy_code}{toda_code}-{rand_5digit}"
+    origin_ref = generate_local_ref(city_str, brgy_str, toda_str)
 
     new_ride = RideRequest(
         passenger_name=clean_pass_name,
@@ -347,20 +356,13 @@ def generate_local_ref(city: str, barangay: str, toda: str) -> str:
         service_type=request.service_type,
         fare=request.fare,
         status="pending",
-        branch=f"{city_str} - {brgy_str} ({toda_str})"
+        branch=f"{city_str} - {brgy_str} ({toda_str})",
+        local_ref=origin_ref
     )
-    
-    # We can attach the unique reference directly to the ride record or remarks
     db.add(new_ride)
     db.commit()
     db.refresh(new_ride)
-    
-    return {
-        "message": "Ride requested successfully", 
-        "id": new_ride.id, 
-        "local_ref": origin_ref
-    }
-    return {"message": "Ride requested successfully", "id": new_ride.id}
+    return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
 
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(get_db)):
@@ -424,7 +426,7 @@ def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
 def get_katoda_drivers(branch: str = "All", db: Session = Depends(get_db)):
     query = db.query(User).filter(User.role == 'driver')
     if branch != "All":
-        query = query.filter(User.branch == branch)
+        query = query.filter((User.city == branch) | (User.branch == branch))
     
     all_drivers = query.all()
     driver_list = []
@@ -446,7 +448,8 @@ def get_katoda_drivers(branch: str = "All", db: Session = Depends(get_db)):
             "rating": avg_rating, "totalRides": ride_count,
             "warnings": driver.warnings if driver.warnings else 0,
             "is_suspended": driver.is_suspended if driver.is_suspended else 0,
-            "branch": driver.branch
+            "branch": driver.branch,
+            "local_ref": driver.local_ref if driver.local_ref else "N/A"
         })
     return driver_list
 
@@ -460,7 +463,7 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     payouts = {}
     query = db.query(User).filter(User.role == 'driver')
     if branch != "All":
-        query = query.filter(User.branch == branch)
+        query = query.filter((User.city == branch) | (User.branch == branch))
     
     all_drivers = query.all()
     for driver in all_drivers:
@@ -474,7 +477,8 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         payouts[d_name] = {
             "driver_name": d_name, "bank_name": driver.bank_name if driver.bank_name else "GCash",            
             "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
-            "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0
+            "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
+            "local_ref": driver.local_ref if driver.local_ref else "N/A"
         }
 
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
@@ -507,7 +511,8 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             payouts[clean_driver_name] = {
                 "driver_name": clean_driver_name, "bank_name": driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash",            
                 "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
-                "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0
+                "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
+                "local_ref": driver_user.local_ref if (driver_user and driver_user.local_ref) else "N/A"
             }
 
         payouts[clean_driver_name]["ride_count"] += 1
@@ -532,7 +537,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
     driver_payouts = {}
     query = db.query(User).filter(User.role == 'driver')
     if branch != "All":
-        query = query.filter(User.branch == branch)
+        query = query.filter((User.city == branch) | (User.branch == branch))
         
     all_drivers = query.all()
     for driver in all_drivers:
@@ -571,7 +576,8 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
             else: account_number = "MISSING_ACCOUNT"
                 
             bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
-            writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout ({bank_provider})"])
+            local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
+            writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout [{local_tag}] ({bank_provider})"])
 
     if total_katoda_payout > 0:
         katoda_bank = config.katoda_bank if config and config.katoda_bank else "GCash"
@@ -625,20 +631,21 @@ def get_pending_rides(db: Session = Depends(get_db)):
             "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
             "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
             "status": r.status, "driver_name": sanitize_name(r.driver_name), "rating": r.rating,
-            "passenger_phone": pass_phone, "driver_phone": drv_phone, "branch": r.branch
+            "passenger_phone": pass_phone, "driver_phone": drv_phone, "branch": r.branch,
+            "local_ref": r.local_ref if r.local_ref else "N/A"
         })
     return results
 
 @app.get("/api/rides")
 def get_available_rides(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).all()
-    return [{"id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location, "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare, "status": r.status, "driver_name": sanitize_name(r.driver_name), "branch": r.branch} for r in rides]
+    return [{"id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location, "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare, "status": r.status, "driver_name": sanitize_name(r.driver_name), "branch": r.branch, "local_ref": r.local_ref} for r in rides]
 
 @app.get("/ride-status/{ride_id}")
 def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride: raise HTTPException(status_code=404, detail="Ride not found")
-    return {"status": ride.status, "driver_name": sanitize_name(ride.driver_name)}
+    return {"status": ride.status, "driver_name": sanitize_name(ride.driver_name), "local_ref": ride.local_ref}
 
 class ConnectionManager:
     def __init__(self): self.active_connections: Dict[str, List[WebSocket]] = {}
