@@ -4,7 +4,7 @@ import json
 import random
 from datetime import datetime
 
-from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
@@ -643,9 +643,38 @@ def get_pending_rides(db: Session = Depends(get_db)):
     return results
 
 @app.get("/api/rides")
-def get_available_rides(db: Session = Depends(get_db)):
+def get_available_rides(request: Request, db: Session = Depends(get_db)):
+    driver_name = request.cookies.get("driver_name")
+    driver_branch = None
+    driver_brgy = None
+
+    # 1. Identify which driver is looking at the dashboard
+    if driver_name:
+        clean_name = sanitize_name(driver_name)
+        driver = db.query(User).filter((User.full_name == clean_name) | (User.username == clean_name), User.role == 'driver').first()
+        if driver:
+            driver_branch = driver.branch
+            driver_brgy = driver.barangay
+
     rides = db.query(RideRequest).all()
-    return [{"id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location, "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare, "status": r.status, "driver_name": sanitize_name(r.driver_name), "branch": r.branch, "local_ref": r.local_ref} for r in rides]
+    results = []
+    
+    for r in rides:
+        ride_data = {
+            "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
+            "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
+            "status": r.status, "driver_name": sanitize_name(r.driver_name),
+            "branch": r.branch, "local_ref": r.local_ref
+        }
+
+        # 2. OVERRIDE: If the ride is pending and in the driver's Barangay, force the text to match perfectly!
+        if driver_brgy and r.status == "pending" and r.branch:
+            if driver_brgy.lower() in r.branch.lower():
+                ride_data["branch"] = driver_branch
+
+        results.append(ride_data)
+
+    return results
 
 @app.get("/ride-status/{ride_id}")
 def check_ride_status(ride_id: int, db: Session = Depends(get_db)):
