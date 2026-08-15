@@ -68,8 +68,8 @@
             <p class="text-xs font-extrabold uppercase tracking-widest text-amber-900 mt-2">Please log in to your account</p>
         </div>
 
-        <!-- Login Form -->
-        <form action="/login" method="POST" class="space-y-5">
+        <!-- 🟢 FIXED: Converted to JS interceptor form -->
+        <form id="loginForm" class="space-y-5" onsubmit="handleLogin(event)">
             
             <!-- Username -->
             <div>
@@ -78,7 +78,7 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-user text-amber-800 opacity-70"></i>
                     </div>
-                    <input type="text" name="username" required placeholder="Enter your username" 
+                    <input type="text" id="login-username" name="username" required placeholder="Enter your username" 
                            class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
                 </div>
             </div>
@@ -90,7 +90,7 @@
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <i class="fa-solid fa-lock text-amber-800 opacity-70"></i>
                     </div>
-                    <input type="password" name="password" required placeholder="Enter your password" 
+                    <input type="password" id="login-password" name="password" required placeholder="Enter your password" 
                            class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
                 </div>
                 
@@ -99,6 +99,9 @@
                     <a href="#" onclick="openResetModal()" class="text-[11px] font-bold text-amber-900 hover:text-amber-800 underline transition">Forgot Password?</a>
                 </div>
             </div>
+
+            <!-- Alert Box -->
+            <div id="login-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
             <!-- Submit Button -->
             <button type="submit" class="w-full py-4 mt-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-300 flex justify-center items-center gap-2">
@@ -214,6 +217,57 @@
                 alertBox.classList.remove('hidden');
             } finally {
                 btn.innerHTML = '<i class="fa-solid fa-key mr-1"></i> Update Password';
+            }
+        }
+
+        // 🟢 FIXED: The powerful Admin/User login interceptor
+        async function handleLogin(event) {
+            event.preventDefault(); 
+            
+            const user = document.getElementById('login-username').value.trim();
+            const pass = document.getElementById('login-password').value;
+            const alertBox = document.getElementById('login-alert');
+            
+            alertBox.classList.add('hidden'); 
+
+            try {
+                // Check if it's the Admin Login
+                if (user === "masterom" && pass === "qZ82118@@") {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: user, password: pass })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        window.location.href = data.redirect; 
+                        return;
+                    }
+                }
+
+                // Standard Driver / Passenger Login
+                const formData = new FormData();
+                formData.append('username', user);
+                formData.append('password', pass);
+
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData,
+                    redirect: 'follow' 
+                });
+
+                if (response.redirected) {
+                    window.location.href = response.url; 
+                } else {
+                    alertBox.textContent = "⚠️ Invalid username or password.";
+                    alertBox.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error("Login Error:", error);
+                alertBox.textContent = "⚠️ Server error. Please try again.";
+                alertBox.classList.remove('hidden');
             }
         }
     </script>
