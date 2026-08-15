@@ -21,7 +21,8 @@
 
     <div class="w-full max-w-[1000px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
-        <div id="lockOverlay" class="absolute inset-0 bg-[#E3BC90]/95 backdrop-blur-md z-50 flex flex-col items-center justify-center text-center p-6">
+        <!-- 🟢 FIXED OVERLAY: Changed to 'fixed' to center perfectly on screen, z-[100] to sit on top -->
+        <div id="lockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
             <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
             <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Master Access is required to view and modify system configuration rules.</p>
@@ -44,13 +45,12 @@
                 <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
             </div>
 
-            <!-- 🟢 MULTI-BRANCH SELECTOR -->
+            <!-- MULTI-BRANCH SELECTOR -->
             <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
                 <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Branch:</label>
-                <!-- Replace your hardcoded <select id="branchSelector"> with this: -->
-<select id="branchSelector" onchange="changeBranch()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
-    <option value="All">🌐 All Branches (Master)</option>
-</select>
+                <select id="branchSelector" onchange="loadPayoutSummary()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                    <option value="All">🌐 All Branches (Master)</option>
+                </select>
             </div>
         </div>
 
@@ -162,10 +162,11 @@
         </div>
     </div>
 
+    <!-- 🟢 FIXED JAVASCRIPT: Cleaned up errors and mapped logic perfectly -->
     <script>
         function handleMasterLogin(event) {
             event.preventDefault();
-            const u = document.getElementById('masterUser').value;
+            const u = document.getElementById('masterUser').value.trim();
             const p = document.getElementById('masterPass').value;
             
             if (u === 'masterom' && p === 'qZ82118@@') {
@@ -186,62 +187,38 @@
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
         }
 
-        function unlockDashboard() {
-    // Make sure these IDs match the inputs on your overlay!
-    // If your inputs have different IDs, update 'overlay-user' and 'overlay-pass' to match them.
-    const user = document.getElementById('overlay-user').value.trim();
-    const pass = document.getElementById('overlay-pass').value;
+        window.onload = async function() {
+            // 1. Check if already logged in
+            if (sessionStorage.getItem('admin_session') === 'masterom_active') {
+                document.getElementById('lockOverlay').style.display = 'none';
+            }
 
-    if (user === "masterom" && pass === "qZ82118@@") {
-        // Hide the lock screen overlay (Update 'security-overlay' if your ID is different)
-        document.getElementById('security-overlay').style.display = 'none';
-        
-        // Optional: Save to sessionStorage so it doesn't lock you out if you refresh the page
-        sessionStorage.setItem('dashboard_unlocked', 'true');
-    } else {
-        alert("⚠️ Invalid Master Credentials");
-    }
-}
+            // 2. Load Locations
+            try {
+                const locRes = await fetch('/api/admin/locations');
+                if (locRes.ok) {
+                    const data = await locRes.json();
+                    const selector = document.getElementById('branchSelector');
+                    selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+                    
+                    for (const [brgy, todas] of Object.entries(data)) {
+                        const group = document.createElement('optgroup');
+                        group.label = `📍 Brgy. ${brgy}`;
+                        
+                        todas.forEach(toda => {
+                            const opt = document.createElement('option');
+                            opt.value = toda;
+                            opt.textContent = ` ↳ ${toda}`;
+                            group.appendChild(opt);
+                        });
+                        selector.appendChild(group);
+                    }
+                }
+            } catch (e) {
+                console.error("Could not load dynamic locations", e);
+            }
 
-// Add this right below it so you don't have to unlock it again if you accidentally refresh!
-window.onload = function() {
-    if (sessionStorage.getItem('dashboard_unlocked') === 'true') {
-        document.getElementById('security-overlay').style.display = 'none';
-    }
-};
-// Dynamically load recorded Barangays and TODAs into the admin branch dropdown
-try {
-    const locRes = await fetch('/api/admin/locations');
-    if (locRes.ok) {
-        const data = await locRes.json();
-        const selector = document.getElementById('branchSelector');
-        
-        // Clear any existing options except the default "All"
-        selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
-        
-        // Loop through the grouped data
-        for (const [brgy, todas] of Object.entries(data)) {
-            // Create a non-selectable Group Header for the Barangay
-            const group = document.createElement('optgroup');
-            group.label = `📍 Brgy. ${brgy}`;
-            
-            // Add each TODA underneath its Barangay
-            todas.forEach(toda => {
-                const opt = document.createElement('option');
-                opt.value = toda; // The backend filter will perfectly catch this TODA name!
-                opt.textContent = ` ↳ ${toda}`;
-                group.appendChild(opt);
-            });
-            
-            selector.appendChild(group);
-        }
-    }
-} catch (e) {
-    console.error("Could not load dynamic locations", e);
-}
-} catch (e) {
-    console.error("Could not load dynamic locations", e);
-}
+            // 3. Load Config Settings
             try {
                 const response = await fetch('/api/admin/config');
                 if (response.ok) {
@@ -258,8 +235,9 @@ try {
                 console.error("Error loading config from server:", error);
             }
 
+            // 4. Load Payouts
             loadPayoutSummary();
-        });
+        };
 
         async function updateFareSettings(event) {
             event.preventDefault();
@@ -299,8 +277,6 @@ try {
 
         async function loadPayoutSummary() {
             const selectedBranch = document.getElementById('branchSelector').value;
-            
-            // Update the Export CSV button link dynamically based on the branch filter
             document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
 
             try {
