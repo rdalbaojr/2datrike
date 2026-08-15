@@ -69,14 +69,14 @@
                                 </div>
                             </div>
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
-                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pabili</label>
+                                <label id="toda-label-1" class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA</label>
                                 <div class="relative w-28">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
                                     <input type="number" id="cfg-pabili" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                 </div>
                             </div>
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
-                                <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Papickup</label>
+                                <label id="toda-label-2" class="text-xs font-bold uppercase text-[#78350f] ml-1">KATODA Payout Acct</label>
                                 <div class="relative w-28">
                                     <span class="absolute left-3 top-1/2 -translate-y-1/2 font-black text-[#0f172a] text-sm">₱</span>
                                     <input type="number" id="cfg-deliver" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
@@ -145,7 +145,7 @@
                                     <th class="py-3 px-4 text-center">Rides</th>
                                     <th class="py-3 px-4 text-right">Gross</th>
                                     <th class="py-3 px-4 text-right text-[#175d33]">Net (80%)</th>
-                                    <th class="py-3 px-4 text-right">KATODA</th>
+                                    <th id="toda-label-3" class="py-3 px-4 text-right">KATODA</th>
                                     <th class="py-3 px-4 text-right">Platform</th>
                                 </tr>
                             </thead>
@@ -276,57 +276,70 @@
         }
 
         async function loadPayoutSummary() {
-            const selectedBranch = document.getElementById('branchSelector').value;
-            document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
+    const selectedBranch = document.getElementById('branchSelector').value;
+    document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
 
-            try {
-                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}`);
-                if (!response.ok) return;
-                
-                const data = await response.json();
-                const tbody = document.getElementById('payout-table-body');
-                tbody.innerHTML = '';
+    // 🟢 NEW: Determine the TODA name and update the HTML labels
+    const todaName = selectedBranch === "All" ? "KATODA" : selectedBranch.toUpperCase();
+    
+    const label1 = document.getElementById('toda-label-1');
+    const label2 = document.getElementById('toda-label-2');
+    const label3 = document.getElementById('toda-label-3');
+    
+    if (label1) label1.innerText = todaName;
+    if (label2) label2.innerText = `${todaName} Payout Acct`;
+    if (label3) label3.innerText = todaName;
 
-                if (data.drivers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
-                    return;
-                }
+    try {
+        const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const tbody = document.getElementById('payout-table-body');
+        tbody.innerHTML = '';
 
-                // Render DRIVER Rows
-                data.drivers.forEach(driver => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
-                        <td class="py-4 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
-                        <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
-                        <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
-                        <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(row);
-                });
-                
-                // Render KATODA Total Row
-                const totalRow = document.createElement('tr');
-                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
-                totalRow.innerHTML = `
-                    <td class="py-4 px-4 font-black text-[#0f172a] uppercase">KATODA TOTAL</td>
-                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank}</td>
-                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
-                    <td class="py-4 px-4 text-center">--</td>
-                    <td class="py-4 px-4 text-right">--</td>
-                    <td class="py-4 px-4 text-right">--</td>
-                    <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
-                `;
-                tbody.appendChild(totalRow);
-
-            } catch (error) {
-                console.error("Error loading payouts summary:", error);
-            }
+        if (data.drivers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
+            return;
         }
+
+        // Render DRIVER Rows
+        data.drivers.forEach(driver => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
+                <td class="py-4 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
+                <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
+                <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
+                <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
+                <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
+                <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+        
+        // Render TODA Total Row
+        const totalRow = document.createElement('tr');
+        totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
+        
+        // 🟢 NEW: Use the dynamic ${todaName} variable instead of hardcoded "KATODA"
+        totalRow.innerHTML = `
+            <td class="py-4 px-4 font-black text-[#0f172a] uppercase">${todaName} TOTAL</td>
+            <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank}</td>
+            <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
+            <td class="py-4 px-4 text-center">--</td>
+            <td class="py-4 px-4 text-right">--</td>
+            <td class="py-4 px-4 text-right">--</td>
+            <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
+            <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
+        `;
+        tbody.appendChild(totalRow);
+
+    } catch (error) {
+        console.error("Error loading payouts summary:", error);
+    }
+}
     </script>
 </body>
 </html>
