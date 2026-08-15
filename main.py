@@ -488,7 +488,9 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             "driver_name": d_name, "bank_name": driver.bank_name if driver.bank_name else "GCash",            
             "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
             "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
-            "local_ref": driver.local_ref if driver.local_ref else "N/A"
+            "local_ref": driver.local_ref if driver.local_ref else "N/A",
+            # Add this line below:
+            "toda_name": driver.toda_name if driver.toda_name else "KATODA" 
         }
 
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
@@ -522,7 +524,9 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
                 "driver_name": clean_driver_name, "bank_name": driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash",            
                 "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
                 "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
-                "local_ref": driver_user.local_ref if (driver_user and driver_user.local_ref) else "N/A"
+                "local_ref": driver_user.local_ref if (driver_user and driver_user.local_ref) else "N/A",
+                # Add this line below:
+                "toda_name": driver_user.toda_name if (driver_user and driver_user.toda_name) else "KATODA"
             }
 
         payouts[clean_driver_name]["ride_count"] += 1
