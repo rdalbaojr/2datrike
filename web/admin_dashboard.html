@@ -186,19 +186,29 @@
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
         }
 
-        function changeBranch() {
-            loadPayoutSummary();
-        }
+        function unlockDashboard() {
+    // Make sure these IDs match the inputs on your overlay!
+    // If your inputs have different IDs, update 'overlay-user' and 'overlay-pass' to match them.
+    const user = document.getElementById('overlay-user').value.trim();
+    const pass = document.getElementById('overlay-pass').value;
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            const isMaster = sessionStorage.getItem('admin_session') === 'masterom_active';
-            const overlay = document.getElementById('lockOverlay');
-            if (isMaster) {
-                overlay.style.display = 'none';
-            } else {
-                overlay.style.display = 'flex';
-                overlay.style.opacity = '1';
-            }
+    if (user === "masterom" && pass === "qZ82118@@") {
+        // Hide the lock screen overlay (Update 'security-overlay' if your ID is different)
+        document.getElementById('security-overlay').style.display = 'none';
+        
+        // Optional: Save to sessionStorage so it doesn't lock you out if you refresh the page
+        sessionStorage.setItem('dashboard_unlocked', 'true');
+    } else {
+        alert("⚠️ Invalid Master Credentials");
+    }
+}
+
+// Add this right below it so you don't have to unlock it again if you accidentally refresh!
+window.onload = function() {
+    if (sessionStorage.getItem('dashboard_unlocked') === 'true') {
+        document.getElementById('security-overlay').style.display = 'none';
+    }
+};
 // Dynamically load recorded Barangays and TODAs into the admin branch dropdown
 try {
     const locRes = await fetch('/api/admin/locations');
