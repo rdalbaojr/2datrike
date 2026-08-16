@@ -63,11 +63,8 @@
 
         <!-- ==================== 1. PASSENGER REGISTRATION FORM ==================== -->
         <form id="form-passenger" action="/register-account/" method="POST" class="space-y-4" onsubmit="return validateAndSubmit(event, 'passenger')">
-    <input type="hidden" name="role" value="passenger">
-    <!-- 🟢 ADD THIS HIDDEN LINE TO SATISFY THE BACKEND -->
-    <input type="hidden" name="address" value="Passenger - Address Not Required">
-    
-    <!-- FULL NAME FIELD -->
+            <input type="hidden" name="role" value="passenger">
+            <input type="hidden" name="address" value="Passenger - Address Not Required">
             
             <!-- FULL NAME FIELD -->
             <div>
@@ -105,11 +102,18 @@
                 </div>
             </div>
 
-            <!-- BARANGAY / COMMUNITY -->
-            <div>
-                <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Home Barangay / Community *</label>
-                <input type="text" name="barangay" required placeholder="e.g., Brgy. San Antonio" 
-                       class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+            <!-- 🟢 FIXED: BARANGAY & TODA / COMMUNITY GRID -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Home Barangay *</label>
+                    <input type="text" name="barangay" required placeholder="e.g., Brgy. San Antonio" 
+                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Local TODA Name *</label>
+                    <input type="text" name="toda_name" required placeholder="e.g., MAYTODA" 
+                           class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium bg-amber-50/50">
+                </div>
             </div>
 
             <button type="submit" class="w-full py-4 mt-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl shadow-lg transition-all duration-300">
