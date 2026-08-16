@@ -385,13 +385,17 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
                         
+                        // 🟢 ADDED REF NUMBER IN THE INNER HTML BELOW
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
                                 <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
                             </div>
                             <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
-                                <p class="text-[#0f172a] text-sm mb-2 font-medium"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
+                                <div class="flex justify-between items-start mb-2">
+                                    <p class="text-[#0f172a] text-sm font-medium"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
+                                    <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
+                                </div>
                                 <p class="text-[#0f172a] text-sm font-medium leading-tight"><i class="fa-solid fa-location-dot text-rose-600 mr-2 w-4"></i> ${ride.pickup_location || 'Location Not Provided'}</p>
                             </div>
                             <button onclick="acceptRide(${ride.id})" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-amber-900/20">
@@ -431,10 +435,14 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
+                        // 🟢 ADDED REF NUMBER IN THE INNER HTML BELOW
                         rideBox.innerHTML = `
-                            <div class="flex justify-between items-center mb-3">
-                                <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-[#0f172a] font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold block mb-1"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
+                                    <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
+                                </div>
+                                <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
                             </div>
                             
                             <div class="flex gap-3 mb-3 mt-4">
