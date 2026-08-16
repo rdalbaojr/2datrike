@@ -283,15 +283,19 @@ def register_account(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
 
-    assigned_branch = f"{city} - {barangay} ({toda_name})" if role == "driver" else "Passenger"
-    # TO THIS:
-    generated_ref = generate_local_ref(barangay, toda_name) if role == "driver" else "PASSENGER"
+    # 🟢 NEW: Auto-format to completely eliminate case-sensitivity issues!
+    safe_city = city.strip().title() if city else "Pasig City"
+    safe_brgy = barangay.strip().title() if barangay else ""
+    safe_toda = toda_name.strip().upper() if toda_name else ""
+
+    assigned_branch = f"{safe_city} - {safe_brgy} ({safe_toda})" if role == "driver" else "Passenger"
+    generated_ref = generate_local_ref(safe_brgy, safe_toda) if role == "driver" else "PASSENGER"
 
     new_user = User(
         username=clean_user, password=password, role=role, full_name=clean_full_name,
         address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
         gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
-        city=city, barangay=barangay, toda_name=toda_name, branch=assigned_branch, local_ref=generated_ref
+        city=safe_city, barangay=safe_brgy, toda_name=safe_toda, branch=assigned_branch, local_ref=generated_ref
     )
     db.add(new_user)
     db.commit()
