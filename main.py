@@ -451,35 +451,31 @@ def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
 # ==========================================
 # 🟢 ADMIN MULTI-BRANCH ENDPOINTS
 # ==========================================
-@app.get('/api/katoda/drivers')
-def get_katoda_drivers(branch: str = "All", db: Session = Depends(get_db)):
-    query = db.query(User).filter(User.role == 'driver')
-    if branch != "All":
-        query = query.filter((User.city == branch) | (User.branch == branch))
+@app.get("/api/toda/drivers")
+def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
+    search_term = f"%{toda_name.strip()}%"
     
-    all_drivers = query.all()
-    driver_list = []
-    for driver in all_drivers:
-        name = sanitize_name(driver.full_name if driver.full_name else driver.username)
-        ride_count = db.query(RideRequest).filter(RideRequest.driver_name.ilike(f"%{name}%"), RideRequest.status.in_(['completed', 'paid'])).count()
-        
-        time_str = "--:--"
-        if driver.status == 'online' and driver.last_online: time_str = driver.last_online.strftime("%I:%M %p")
-        elif driver.status == 'offline' and driver.last_offline: time_str = driver.last_offline.strftime("%I:%M %p")
-            
-        avg_rating = 5.0
-        if driver.rating_count and driver.rating_count > 0: avg_rating = round(driver.rating_sum / driver.rating_count, 1)
-
-        driver_list.append({
-            "id": driver.id, "toda_number": driver.toda_number if driver.toda_number else driver.id, 
-            "name": name, "status": driver.status, "status_time": time_str, 
-            "gcash": driver.gcash_account if driver.gcash_account else "Not Provided", 
-            "rating": avg_rating, "totalRides": ride_count,
-            "warnings": driver.warnings if driver.warnings else 0,
-            "is_suspended": driver.is_suspended if driver.is_suspended else 0,
-            "branch": driver.branch,
-            "local_ref": driver.local_ref if driver.local_ref else "N/A"
+    # 🟢 FIXED: Strictly fetch ONLY drivers belonging to this TODA
+    drivers = db.query(User).filter(
+        User.toda_name.ilike(search_term),
+        User.role == 'driver'
+    ).all()
+    
+    results = []
+    for d in drivers:
+        results.append({
+            "id": d.id,
+            "name": sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username),
+            "whatsapp_number": d.whatsapp_number,
+            "status": d.status,
+            "toda_number": d.toda_number,
+            "is_suspended": d.is_suspended,
+            "warnings": d.warnings or 0,
+            "rating": 5.0, # Replace with actual rating if tracked
+            "totalRides": 0 # Replace with actual rides if tracked
         })
+        
+    return results
     return driver_list
 
 @app.get("/api/admin/payout-summary")
