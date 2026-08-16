@@ -215,7 +215,7 @@
                 }
 
                 // Financials (Currently pulling global until backend is updated)
-                const financeRes = await fetch(`/api/katoda/finances?t=${new Date().getTime()}`);
+                const financeRes = await fetch(`/api/toda/finances?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
                 if(financeRes.ok) {
                     const finances = await financeRes.json();
                     document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
@@ -382,11 +382,11 @@
             if(!msg.trim()) return alert("Please type a message first.");
 
             try {
-                const response = await fetch('/api/katoda/broadcast', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
-                });
+                const response = await fetch('/api/toda/broadcast', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ toda_name: activeTodaName, message: msg })
+});
 
                 if (response.ok) {
                     alert(`✅ BROADCAST SENT TO ALL FLEET DRIVERS:\n\n"${msg}"`);
