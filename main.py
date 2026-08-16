@@ -172,6 +172,10 @@ class ProfileUpdateSchema(BaseModel):
     gcash_account: str
     whatsapp_number: str
     address: str
+    # 🟢 ADD THESE THREE LINES:
+    city: Optional[str] = None
+    barangay: Optional[str] = None
+    toda_name: Optional[str] = None
 
 class PasswordResetSchema(BaseModel):
     username: str
@@ -344,6 +348,17 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     user.gcash_account = data.gcash_account
     user.whatsapp_number = data.whatsapp_number
     user.address = data.address 
+    
+    # 🟢 ADD THESE LINES TO UPDATE THEIR LOCAL TODA ROUTING
+    if data.city: user.city = data.city
+    if data.barangay: user.barangay = data.barangay
+    if data.toda_name: user.toda_name = data.toda_name
+    
+    # Update their branch label in the database
+    if data.city and data.barangay and data.toda_name:
+        assigned_branch = f"{data.city} - {data.barangay} ({data.toda_name})"
+        user.branch = assigned_branch if user.role == "driver" else f"Passenger - {assigned_branch}"
+
     db.commit()
     return {"status": "success", "message": "Profile updated successfully"}
 
