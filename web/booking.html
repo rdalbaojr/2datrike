@@ -116,7 +116,7 @@
             </button>
         </form>
 
-        <!-- SEARCHING STATE -->
+        <!-- SEARCHING STATE (🟢 UPDATED WITH REF BADGE) -->
         <div id="searching-state" class="hidden flex flex-col items-center justify-center py-10 text-center">
             <div class="relative w-20 h-20 mb-6">
                 <div class="absolute inset-0 bg-[#78350f] rounded-full animate-ping opacity-75"></div>
@@ -125,7 +125,9 @@
                 </div>
             </div>
             <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
-            <p class="text-sm text-[#78350f] font-medium">Notifying 2DA drivers nearby.</p>
+            <p class="text-sm text-[#78350f] font-medium mb-3">Notifying 2DA drivers nearby.</p>
+            <p id="searching-ref" class="text-[10px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/40 px-2.5 py-1 rounded inline-block">ID: Loading...</p>
+            
             <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline">Cancel Search</button>
         </div>
 
@@ -324,6 +326,10 @@
                 });
 
                 if (response.ok) {
+                    // 🟢 CAPTURE THE JSON AND SHOW THE LOCAL REF INSTANTLY
+                    const responseData = await response.json();
+                    document.getElementById('searching-ref').innerText = `ID: ${responseData.local_ref}`;
+                    
                     document.getElementById('pickup').value = '';
                     document.getElementById('dropoff').value = '';
                     document.getElementById('fare-estimate').classList.add('hidden');
@@ -370,6 +376,8 @@
                     
                     if (activeRide.status === 'pending') {
                         document.getElementById('searching-state').classList.remove('hidden');
+                        // 🟢 ENSURE REF NUMBER SHOWS IF PAGE IS REFRESHED
+                        document.getElementById('searching-ref').innerText = `ID: ${activeRide.local_ref || 'N/A'}`;
                     } else {
                         document.getElementById('searching-state').classList.add('hidden');
                     }
@@ -451,10 +459,14 @@
                         }
                     }
 
+                    // 🟢 ADDED LOCAL REF BADGE TO RIDE HISTORY CARDS
                     rideBox.innerHTML = `
-                        <div class="flex justify-between items-center mb-3">
-                            <strong class="text-[#78350f] text-[11px] tracking-widest uppercase font-extrabold">${ride.service_type || 'PASSENGER'}</strong>
-                            <span class="text-[#0f172a] font-extrabold text-sm">${ride.fare}</span>
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <strong class="text-[#78350f] text-[11px] tracking-widest uppercase font-extrabold block mb-1">${ride.service_type || 'PASSENGER'}</strong>
+                                <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
+                            </div>
+                            <span class="text-[#0f172a] font-extrabold text-sm mt-1">${ride.fare}</span>
                         </div>
                         <p class="text-slate-700 text-xs mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
                         <p class="text-slate-700 text-xs font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
