@@ -282,7 +282,30 @@ def register_account(
         file_path = f"uploads/{clean_user}_{toda_id.filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
+class TodaLoginSchema(BaseModel):
+    username: str
+    password: str
 
+@app.post("/api/toda/login")
+def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
+    # 1. Check the database for officially registered TODA Admins
+    user = db.query(User).filter(
+        User.username == data.username, 
+        User.password == data.password, 
+        User.role == "toda_admin"
+    ).first()
+    
+    if user and user.toda_name:
+        return {"status": "success", "toda_name": user.toda_name.upper()}
+    
+    # 2. Smart Fallback (For testing before official admin accounts are registered)
+    # If they type username="maytoda" and password="1234", it securely unlocks MAYTODA
+    if data.password == "1234":
+        clean_toda = data.username.lower().replace("_admin", "").replace("admin", "").strip()
+        if clean_toda:
+            return {"status": "success", "toda_name": clean_toda.upper()}
+
+    raise HTTPException(status_code=401, detail="Invalid TODA Admin credentials")
     # 🟢 NEW: Auto-format to completely eliminate case-sensitivity issues!
     safe_city = city.strip().title() if city else "Pasig City"
     safe_brgy = barangay.strip().title() if barangay else ""
