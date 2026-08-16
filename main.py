@@ -490,39 +490,63 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     payouts = {}
+    clean_branch = branch.strip()
+
+    # Base query for drivers
     query = db.query(User).filter(User.role == 'driver')
-    if branch != "All":
-        query = query.filter((User.city == branch) | (User.branch == branch))
+    
+    if clean_branch != "All":
+        # Search flexibly across all location-related fields
+        query = query.filter(
+            (User.toda_name.ilike(f"%{clean_branch}%")) |
+            (User.barangay.ilike(f"%{clean_branch}%")) |
+            (User.branch.ilike(f"%{clean_branch}%")) |
+            (User.city.ilike(f"%{clean_branch}%"))
+        )
     
     all_drivers = query.all()
     for driver in all_drivers:
         d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
         
         raw_acct = driver.gcash_account.strip() if driver.gcash_account else ""
-        if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: acc_num = raw_acct
-        elif driver.whatsapp_number and driver.whatsapp_number.strip(): acc_num = driver.whatsapp_number
-        else: acc_num = "Not Provided"
+        if raw_acct and raw_acct.lower() not in ["gcash", "maya"]:
+            acc_num = raw_acct
+        elif driver.whatsapp_number and driver.whatsapp_number.strip():
+            acc_num = driver.whatsapp_number
+        else:
+            acc_num = "Not Provided"
         
         payouts[d_name] = {
-            "driver_name": d_name, "bank_name": driver.bank_name if driver.bank_name else "GCash",            
-            "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
-            "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
-            "local_ref": driver.local_ref if driver.local_ref else "N/A",
-            # Add this line below:
-            "toda_name": driver.toda_name if driver.toda_name else "KATODA" 
+            "driver_name": d_name,
+            "bank_name": driver.bank_name if driver.bank_name else "GCash",            
+            "account_number": acc_num,
+            "ride_count": 0,
+            "total_gross": 0.0,
+            "driver_share": 0.0,
+            "katoda_share": 0.0,
+            "platform_share": 0.0,
+            "local_ref": driver.local_ref if driver.local_ref else "N/A"
         }
 
-    unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
+    # Fetch completed and paid rides
+    unsettled_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     total_katoda = 0.0
     total_platform = 0.0
 
     for ride in unsettled_rides:
-        if not ride.driver_name or not ride.fare: continue
+        if not ride.driver_name or not ride.fare:
+            continue
         clean_driver_name = sanitize_name(ride.driver_name)
         
-        if branch != "All" and clean_driver_name not in payouts: continue
+        # When filtered by a specific branch, only include rides for matched drivers
+        if clean_branch != "All" and clean_driver_name not in payouts:
+            continue
             
-        clean_fare = float(ride.fare.replace('₱', '').replace(',', '').strip())
+        try:
+            clean_fare = float(str(ride.fare).replace('₱', '').replace(',', '').strip())
+        except ValueError:
+            clean_fare = 0.0
+
         driver_cut = clean_fare * driver_pct
         katoda_cut = clean_fare * katoda_pct
         platform_cut = clean_fare * platform_pct
@@ -530,32 +554,17 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         total_katoda += katoda_cut
         total_platform += platform_cut
 
-        if clean_driver_name not in payouts:
-            driver_user = db.query(User).filter(User.full_name == clean_driver_name, User.role == 'driver').first()
-            if not driver_user: driver_user = db.query(User).filter(User.username == clean_driver_name, User.role == 'driver').first()
-            
-            raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
-            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: acc_num = raw_acct
-            elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip(): acc_num = driver_user.whatsapp_number
-            else: acc_num = "Not Provided"
-            
-            payouts[clean_driver_name] = {
-                "driver_name": clean_driver_name, "bank_name": driver_user.bank_name if (driver_user and driver_user.bank_name) else "GCash",            
-                "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
-                "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
-                "local_ref": driver_user.local_ref if (driver_user and driver_user.local_ref) else "N/A",
-                # Add this line below:
-                "toda_name": driver_user.toda_name if (driver_user and driver_user.toda_name) else "KATODA"
-            }
-
-        payouts[clean_driver_name]["ride_count"] += 1
-        payouts[clean_driver_name]["total_gross"] += clean_fare
-        payouts[clean_driver_name]["driver_share"] += driver_cut
-        payouts[clean_driver_name]["katoda_share"] += katoda_cut
-        payouts[clean_driver_name]["platform_share"] += platform_cut
+        if clean_driver_name in payouts:
+            payouts[clean_driver_name]["ride_count"] += 1
+            payouts[clean_driver_name]["total_gross"] += clean_fare
+            payouts[clean_driver_name]["driver_share"] += driver_cut
+            payouts[clean_driver_name]["katoda_share"] += katoda_cut
+            payouts[clean_driver_name]["platform_share"] += platform_cut
     
     return {
-        "drivers": list(payouts.values()), "total_katoda": total_katoda, "total_platform": total_platform,
+        "drivers": list(payouts.values()),
+        "total_katoda": total_katoda,
+        "total_platform": total_platform,
         "katoda_bank": config.katoda_bank if config and config.katoda_bank else "GCash",
         "katoda_account": config.katoda_account if config and config.katoda_account else "Not Configured"
     }   
