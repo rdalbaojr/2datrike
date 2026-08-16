@@ -213,12 +213,13 @@
                         const group = document.createElement('optgroup');
                         group.label = `📍 Brgy. ${brgy}`;
                         
-                        todas.forEach(toda => {
-                            const opt = document.createElement('option');
-                            opt.value = toda;
-                            opt.textContent = ` ↳ ${toda}`;
-                            group.appendChild(opt);
-                        });
+                        // Add each TODA underneath its Barangay
+todas.forEach(toda => {
+    const opt = document.createElement('option');
+    opt.value = toda; 
+    opt.textContent = toda; // 🟢 FIXED: Now it just says "KATODA"
+    group.appendChild(opt);
+});
                         selector.appendChild(group);
                     }
                 }
