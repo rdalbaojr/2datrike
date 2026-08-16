@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2DA Master Testing Environment</title>
+    <title>2DA TODA Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,7 +19,6 @@
         .driver-scroll::-webkit-scrollbar-track { background: transparent; }
         .driver-scroll::-webkit-scrollbar-thumb { background-color: #c99c6b; border-radius: 20px; }
         
-        /* Filter Button Active State */
         .filter-btn.active {
             background-color: #78350f !important;
             color: white !important;
@@ -29,11 +28,11 @@
 </head>
 <body class="min-h-full text-slate-900 antialiased relative bg-[#C87F37]">
 
-    <!-- ==================== MASTER TEST MENU ==================== -->
+    <!-- ==================== NAV MENU ==================== -->
     <nav class="bg-amber-950 p-4 shadow-xl sticky top-0 z-50 border-b border-amber-700">
         <div class="max-w-5xl mx-auto flex flex-wrap justify-center items-center gap-3">
-            <button onclick="switchDashboard('katoda-dashboard')" class="bg-[#E3BC90] text-amber-950 hover:bg-[#d4aa7c] px-5 py-2 rounded-xl font-extrabold transition shadow-md flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-shield-halved"></i> KATODA Portal
+            <button class="bg-[#E3BC90] text-amber-950 hover:bg-[#d4aa7c] px-5 py-2 rounded-xl font-extrabold transition shadow-md flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-shield-halved"></i> TODA Portal
             </button>
             <button onclick="window.location.href='driver_dashboard.html'" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
                 <i class="fa-solid fa-motorcycle"></i> Driver App
@@ -44,49 +43,41 @@
         </div>
     </nav>
 
-    <!-- ==================== KATODA DASHBOARD ==================== -->
-    <div id="katoda-dashboard" class="dashboard-view py-10 px-4">
+    <!-- ==================== TODA DASHBOARD ==================== -->
+    <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- 🟢 TODA LOGIN OVERLAY -->
-<div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
-    <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-        <i class="fa-solid fa-users-gear text-3xl text-white"></i>
-    </div>
-    <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
-    <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Enter your local TODA Chapter name to access your specific command center and members.</p>
-    
-    <form onsubmit="unlockTodaDashboard(event)" class="w-full max-w-[320px] flex flex-col gap-3">
-        <input type="text" id="todaLoginName" required placeholder="e.g., MAYTODA" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-4 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
-        <!-- Optional: Add a password field here later if you want strict security! -->
-        <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
-            <i class="fa-solid fa-right-to-bracket"></i> Access Command Center
-        </button>
-    </form>
-</div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase mb-1">Passcode</label>
-                    <input type="password" id="k-pass" placeholder="••••••••" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 outline-none focus:border-amber-700 transition font-medium">
-                </div>
-                <button onclick="loginKatoda()" class="w-full bg-amber-900 hover:bg-amber-800 text-white py-3.5 rounded-xl font-bold transition shadow-lg mt-2">
-                    Secure Login
+        <!-- 🟢 BULLETPROOF TODA LOGIN OVERLAY -->
+        <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
+            <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                <i class="fa-solid fa-users-gear text-3xl text-white"></i>
+            </div>
+            <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
+            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Enter your local TODA Chapter name to access your specific command center.</p>
+            
+            <!-- Removed the <form> tags to prevent mobile browsers from accidentally refreshing the page! -->
+            <div class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="todaLoginName" placeholder="e.g., MAYTODA" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-4 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                <button onclick="unlockTodaDashboard()" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                    <i class="fa-solid fa-right-to-bracket"></i> Access Command Center
                 </button>
-                <p id="katoda-login-error" class="text-red-600 text-xs font-bold text-center mt-2 hidden">Invalid Credentials. Try admin / 1234</p>
             </div>
         </div>
 
-        <!-- KATODA MAIN DASHBOARD -->
-        <div id="katoda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-10">
+        <!-- 🟢 TODA MAIN DASHBOARD -->
+        <div id="toda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-4">
+            
             <!-- Header -->
             <div class="glass-card rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4">
-                    <div class="bg-amber-900 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">
+                    <div class="bg-amber-900 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg shrink-0">
                         <i class="fa-solid fa-users-gear text-xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-extrabold text-slate-900">KATODA Command Center</h1>
-                        <p class="text-sm text-amber-900 font-medium">Monitoring & Member Management</p>
+                        <h1 id="cmd-center-title" class="text-2xl font-extrabold text-slate-900">Command Center</h1>
+                        <p class="text-sm text-amber-900 font-medium">Monitoring & Fleet Management</p>
                     </div>
                 </div>
-                <button onclick="logoutKatoda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                <button onclick="logoutToda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shrink-0">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                 </button>
             </div>
@@ -122,19 +113,19 @@
                     <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2 mb-4">
                         <i class="fa-solid fa-bullhorn text-amber-800"></i> Broadcast
                     </h2>
-                    <p class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all KATODA members.</p>
+                    <p id="broadcast-subtitle" class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all drivers.</p>
                     <textarea id="broadcast-msg" rows="4" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 outline-none focus:border-amber-700 text-sm font-medium resize-none mb-3" placeholder="Type your message here..."></textarea>
                     <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md">
-                        <i class="fa-regular fa-paper-plane"></i> Send to All
+                        <i class="fa-regular fa-paper-plane"></i> Send to Fleet
                     </button>
                 </div>
 
-                <!-- NEW: Compact Driver Roster with Filters & Search -->
+                <!-- Driver Roster with Filters & Search -->
                 <div class="glass-card rounded-3xl p-0 md:col-span-2 overflow-hidden flex flex-col h-[500px]">
                     <div class="p-4 border-b border-[#d4aa7c] bg-[#e8cda8] flex flex-col gap-3">
                         <div class="flex justify-between items-center">
                             <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
-                                <i class="fa-solid fa-id-card-clip text-amber-800"></i> Member Roster
+                                <i class="fa-solid fa-id-card-clip text-amber-800"></i> Driver Roster
                             </h2>
                             <span id="roster-count" class="text-[10px] font-bold bg-amber-900 text-white px-2 py-1 rounded-md">0 Drivers</span>
                         </div>
@@ -162,56 +153,87 @@
         </div>
     </div>
 
-    <!-- ==================== ALL JAVASCRIPT ==================== -->
+    <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        function switchDashboard(targetId) {
-            const allDashboards = document.querySelectorAll('.dashboard-view');
-            allDashboards.forEach(dashboard => {
-                dashboard.classList.add('hidden');
-            });
-            document.getElementById(targetId).classList.remove('hidden');
-            
-            if(targetId === 'katoda-dashboard') {
-                logoutKatoda(); 
-            }
-        }
-
-        // --- KATODA Login Logic ---
-        function loginKatoda() {
-            const user = document.getElementById('k-user').value;
-            const pass = document.getElementById('k-pass').value;
-            
-            if(user === 'admin' && pass === '1234') {
-                document.getElementById('katoda-login-section').classList.add('hidden');
-                document.getElementById('katoda-main-section').classList.remove('hidden');
-                
-                loadLiveKatodaData();
-                setInterval(loadLiveKatodaData, 5000); 
-            } else {
-                document.getElementById('katoda-login-error').classList.remove('hidden');
-            }
-        }
-
-        function logoutKatoda() {
-            document.getElementById('k-user').value = '';
-            document.getElementById('k-pass').value = '';
-            document.getElementById('katoda-main-section').classList.add('hidden');
-            document.getElementById('katoda-login-error').classList.add('hidden');
-            document.getElementById('katoda-login-section').classList.remove('hidden');
-        }
-
-        // --- GLOBAL STATE FOR SEARCH & FILTER ---
-        let allKatodaDrivers = [];
+        let allDrivers = [];
         let currentFilter = 'all';
         let currentSearchQuery = '';
+        let activeTodaName = '';
 
+        // 🟢 FIXED LOGIN FUNCTION: No more form refresh glitches!
+        function unlockTodaDashboard() {
+            const inputField = document.getElementById('todaLoginName');
+            const todaName = inputField.value.trim().toUpperCase();
+            
+            if (todaName) {
+                sessionStorage.setItem("active_toda_admin", todaName);
+                document.getElementById('todaLockOverlay').style.display = 'none';
+                document.getElementById('toda-main-section').classList.remove('hidden');
+                
+                initializeDashboard(todaName);
+            } else {
+                alert("Please enter a TODA Chapter name first.");
+            }
+        }
+
+        window.onload = function() {
+            const savedToda = sessionStorage.getItem('active_toda_admin');
+            if (savedToda) {
+                document.getElementById('todaLockOverlay').style.display = 'none';
+                document.getElementById('toda-main-section').classList.remove('hidden');
+                initializeDashboard(savedToda);
+            }
+        };
+
+        function logoutToda() {
+            sessionStorage.removeItem("active_toda_admin");
+            document.getElementById('toda-main-section').classList.add('hidden');
+            document.getElementById('todaLockOverlay').style.display = 'flex';
+        }
+
+        function initializeDashboard(todaName) {
+            activeTodaName = todaName;
+            
+            // Rebrand the text on the page!
+            document.getElementById('cmd-center-title').innerText = `${todaName} Command Center`;
+            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${todaName} drivers.`;
+            
+            loadLiveTodaData();
+            setInterval(loadLiveTodaData, 10000); 
+        }
+
+        // --- Live Backend Fetching ---
+        async function loadLiveTodaData() {
+            if(!activeTodaName) return;
+
+            try {
+                // Fetch ONLY drivers for this TODA
+                const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}`);
+                if(driverRes.ok) {
+                    allDrivers = await driverRes.json();
+                    renderDrivers();
+                }
+
+                // Financials (Currently pulling global until backend is updated)
+                const financeRes = await fetch(`/api/katoda/finances?t=${new Date().getTime()}`);
+                if(financeRes.ok) {
+                    const finances = await financeRes.json();
+                    document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
+                    document.getElementById('fin-week').innerText = `₱${finances.week.toFixed(2)}`;
+                    document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
+                    document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
+                }
+
+            } catch (error) {
+                console.error("Error loading live TODA data:", error);
+            }
+        }
+
+        // --- Filter Logic ---
         function setFilter(filterType) {
             currentFilter = filterType;
-            
-            // Update UI buttons
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`flt-${filterType}`).classList.add('active');
-            
             renderDrivers();
         }
 
@@ -220,51 +242,23 @@
             renderDrivers();
         }
 
-        // --- Live Backend Fetching ---
-        async function loadLiveKatodaData() {
-            try {
-                const [driverRes, financeRes] = await Promise.all([
-                    fetch(`/api/katoda/drivers?t=${new Date().getTime()}`),
-                    fetch(`/api/katoda/finances?t=${new Date().getTime()}`)
-                ]);
-                
-                allKatodaDrivers = await driverRes.json();
-                const finances = await financeRes.json();
-
-                // === UPDATE FINANCES ===
-                document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
-                document.getElementById('fin-week').innerText = `₱${finances.week.toFixed(2)}`;
-                document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
-                document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
-                
-                // === UPDATE ROSTER ===
-                renderDrivers();
-
-            } catch (error) {
-                console.error("Error loading live KATODA data:", error);
-            }
-        }
-
-        // --- Render the Compact Driver List ---
+        // --- Render the Driver Fleet List ---
         function renderDrivers() {
             const container = document.getElementById('driver-list');
             container.innerHTML = '';
 
-            if (!allKatodaDrivers || allKatodaDrivers.length === 0) {
-                container.innerHTML = '<p class="text-center text-amber-900/70 text-sm font-medium italic py-6">No registered drivers found.</p>';
+            if (!allDrivers || allDrivers.length === 0) {
+                container.innerHTML = '<p class="text-center text-amber-900/70 text-sm font-medium italic py-6">No registered drivers found for this TODA.</p>';
                 document.getElementById('roster-count').innerText = "0 Drivers";
                 return;
             }
 
             // 1. Filter the array
-            let filteredDrivers = allKatodaDrivers.filter(driver => {
-                // Apply Text Search
-                const matchesSearch = driver.name.toLowerCase().includes(currentSearchQuery) || 
-                                      (driver.toda_number && driver.toda_number.toString().includes(currentSearchQuery)) ||
-                                      driver.id.toString().includes(currentSearchQuery);
+            let filteredDrivers = allDrivers.filter(driver => {
+                const searchStr = `${driver.name} ${driver.whatsapp_number} ${driver.toda_number} ${driver.id}`.toLowerCase();
+                const matchesSearch = searchStr.includes(currentSearchQuery);
                 if (!matchesSearch) return false;
 
-                // Apply Tab Filter
                 if (currentFilter === 'online') return driver.status === 'online' && driver.is_suspended !== 1;
                 if (currentFilter === 'offline') return driver.status === 'offline' && driver.is_suspended !== 1;
                 if (currentFilter === 'suspended') return driver.is_suspended === 1;
@@ -315,7 +309,6 @@
                     `;
                 }
 
-                // COMPACT CARD HTML
                 const card = document.createElement('div');
                 card.className = `border rounded-xl p-2.5 mb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 transition shadow-sm ${rowStyles}`;
                 
@@ -327,7 +320,7 @@
                         <div>
                             <h4 class="font-bold text-slate-900 text-sm capitalize flex items-center flex-wrap gap-1 leading-tight">
                                 ${driver.name} 
-                                <span class="text-[9px] text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">ID: ${driver.toda_number}</span>
+                                <span class="text-[9px] text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">ID: ${driver.toda_number || 'N/A'}</span>
                                 ${suspendBadge}
                             </h4>
                             <div class="flex items-center gap-2 mt-0.5">
@@ -375,12 +368,11 @@
                     } else {
                         alert(`Driver has been successfully reinstated.`);
                     }
-                    loadLiveKatodaData(); 
+                    loadLiveTodaData(); 
                 } else {
                     alert("Failed to update driver status. Check server logs.");
                 }
             } catch (error) {
-                console.error("Discipline network error:", error);
                 alert("Network error while trying to update driver.");
             }
         }
@@ -397,20 +389,14 @@
                 });
 
                 if (response.ok) {
-                    alert(`✅ BROADCAST SENT TO ALL DRIVERS:\n\n"${msg}"`);
+                    alert(`✅ BROADCAST SENT TO ALL FLEET DRIVERS:\n\n"${msg}"`);
                     document.getElementById('broadcast-msg').value = '';
                 } else {
                     alert("Failed to transmit broadcast to the server.");
                 }
             } catch (error) {
-                console.error("Broadcast network error:", error);
                 alert("Network error while sending broadcast.");
             }
-        }
-
-        // Kick off the data fetch if we start on Katoda view
-        if(document.getElementById('katoda-dashboard').classList.contains('hidden') === false) {
-             loadLiveKatodaData();
         }
     </script>
 </body>
