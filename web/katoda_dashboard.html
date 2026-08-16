@@ -47,22 +47,22 @@
     <!-- ==================== KATODA DASHBOARD ==================== -->
     <div id="katoda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- KATODA LOGIN SECTION -->
-        <div id="katoda-login-section" class="w-full max-w-sm glass-card rounded-3xl p-8 relative z-10 mt-10 mx-auto">
-            <div class="text-center mb-8">
-                <div class="bg-amber-900 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <i class="fa-solid fa-shield-halved text-2xl"></i>
-                </div>
-                <h1 class="text-2xl font-extrabold text-slate-900">KATODA Portal</h1>
-                <p class="text-sm text-amber-900 font-medium mt-1">Authorized Personnel Only</p>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-amber-900 uppercase mb-1">Katoda ID</label>
-                    <input type="text" id="k-user" placeholder="Enter ID" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 outline-none focus:border-amber-700 transition font-medium">
-                </div>
-                <div>
+        <!-- 🟢 TODA LOGIN OVERLAY -->
+<div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
+    <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+        <i class="fa-solid fa-users-gear text-3xl text-white"></i>
+    </div>
+    <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
+    <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Enter your local TODA Chapter name to access your specific command center and members.</p>
+    
+    <form onsubmit="unlockTodaDashboard(event)" class="w-full max-w-[320px] flex flex-col gap-3">
+        <input type="text" id="todaLoginName" required placeholder="e.g., MAYTODA" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-4 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+        <!-- Optional: Add a password field here later if you want strict security! -->
+        <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+            <i class="fa-solid fa-right-to-bracket"></i> Access Command Center
+        </button>
+    </form>
+</div>
                     <label class="block text-xs font-bold text-amber-900 uppercase mb-1">Passcode</label>
                     <input type="password" id="k-pass" placeholder="••••••••" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 outline-none focus:border-amber-700 transition font-medium">
                 </div>
