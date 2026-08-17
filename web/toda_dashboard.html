@@ -46,7 +46,7 @@
     <!-- ==================== TODA DASHBOARD ==================== -->
     <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- 🟢 SECURE TODA LOGIN OVERLAY -->
+        <!-- 🟢 SECURE TODA LOGIN OVERLAY (FIXED FORM GLITCH) -->
         <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
                 <i class="fa-solid fa-users-gear text-3xl text-white"></i>
@@ -54,15 +54,16 @@
             <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
             <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
             
-            <form onsubmit="unlockTodaDashboard(event)" class="w-full max-w-[320px] flex flex-col gap-3">
-                <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
-                <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+            <!-- Replaced <form> with <div> to stop the page from refreshing -->
+            <div class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="todaUser" placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                <input type="password" id="todaPass" placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 
-                <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                <button type="button" id="toda-login-btn" onclick="unlockTodaDashboard()" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                     <i class="fa-solid fa-lock"></i> Secure Login
                 </button>
                 <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
-            </form>
+            </div>
         </div>
 
         <!-- 🟢 TODA MAIN DASHBOARD -->
