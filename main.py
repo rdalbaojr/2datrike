@@ -61,6 +61,7 @@ class User(Base):
     toda_name = Column(String, nullable=True, default="")
     branch = Column(String, default="Main") 
     local_ref = Column(String, nullable=True, default="")
+    plate_number = Column(String, nullable=True)
 
 class RideRequest(Base):
     __tablename__ = "ride_requests"
@@ -145,6 +146,7 @@ def initialize_config():
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN rating INTEGER"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN local_ref VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE users ADD COLUMN plate_number VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
