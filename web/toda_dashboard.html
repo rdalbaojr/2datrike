@@ -382,14 +382,18 @@
             if(!msg.trim()) return alert("Please type a message first.");
 
             try {
+                // 🟢 FIXED: Point to the new Multi-Tenant endpoint and include the TODA name!
                 const response = await fetch('/api/toda/broadcast', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ toda_name: activeTodaName, message: msg })
-});
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        toda_name: activeTodaName, 
+                        message: msg 
+                    })
+                });
 
                 if (response.ok) {
-                    alert(`✅ BROADCAST SENT TO ALL FLEET DRIVERS:\n\n"${msg}"`);
+                    alert(`✅ BROADCAST SENT TO ALL ${activeTodaName} DRIVERS:\n\n"${msg}"`);
                     document.getElementById('broadcast-msg').value = '';
                 } else {
                     alert("Failed to transmit broadcast to the server.");
