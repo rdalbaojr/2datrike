@@ -46,7 +46,7 @@
     <!-- ==================== TODA DASHBOARD ==================== -->
     <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- 🟢 SECURE TODA LOGIN OVERLAY (FIXED FORM GLITCH) -->
+        <!-- 🟢 SECURE TODA LOGIN OVERLAY (BULLETPROOF FORM) -->
         <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
                 <i class="fa-solid fa-users-gear text-3xl text-white"></i>
@@ -54,16 +54,15 @@
             <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
             <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
             
-            <!-- Replaced <form> with <div> to stop the page from refreshing -->
-            <div class="w-full max-w-[320px] flex flex-col gap-3">
-                <input type="text" id="todaUser" placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
-                <input type="password" id="todaPass" placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+            <form onsubmit="event.preventDefault(); unlockTodaDashboard();" class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 
-                <button type="button" id="toda-login-btn" onclick="unlockTodaDashboard()" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                     <i class="fa-solid fa-lock"></i> Secure Login
                 </button>
                 <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
-            </div>
+            </form>
         </div>
 
         <!-- 🟢 TODA MAIN DASHBOARD -->
@@ -163,19 +162,14 @@
         let currentSearchQuery = '';
         let activeTodaName = '';
 
-        // 🟢 SECURE LOGIN FUNCTION
-        async function unlockTodaDashboard(event) {
-            if(event) event.preventDefault(); // Prevent the form from refreshing the page
-            
+        // 🟢 BULLETPROOF LOGIN FUNCTION
+        async function unlockTodaDashboard() {
             const u = document.getElementById('todaUser').value.trim();
             const p = document.getElementById('todaPass').value;
             const btn = document.getElementById('toda-login-btn');
             const errorMsg = document.getElementById('toda-login-error');
             
-            if (!u || !p) {
-                alert("Please enter both username and password.");
-                return;
-            }
+            if (!u || !p) return;
 
             // Show loading state
             const originalText = btn.innerHTML;
@@ -191,9 +185,8 @@
                 });
 
                 if (response.ok) {
-                    // Success! The server validated the password.
                     const data = await response.json();
-                    const verifiedTodaName = data.toda_name; // The server tells us exactly which TODA to load
+                    const verifiedTodaName = data.toda_name; 
                     
                     sessionStorage.setItem("active_toda_admin", verifiedTodaName);
                     document.getElementById('todaLockOverlay').style.display = 'none';
@@ -201,29 +194,57 @@
                     
                     initializeDashboard(verifiedTodaName);
                 } else {
-                    // Wrong password or username
                     errorMsg.classList.remove('hidden');
                 }
             } catch (error) {
+                console.error(error);
                 alert("Network error. Could not reach server.");
             } finally {
-                // Restore button text
                 btn.innerHTML = originalText;
             }
         }
+
+        window.onload = function() {
+            const savedToda = sessionStorage.getItem('active_toda_admin');
+            if (savedToda) {
+                document.getElementById('todaLockOverlay').style.display = 'none';
+                document.getElementById('toda-main-section').classList.remove('hidden');
+                initializeDashboard(savedToda);
+            }
+        };
+
+        function logoutToda() {
+            sessionStorage.removeItem("active_toda_admin");
+            document.getElementById('toda-main-section').classList.add('hidden');
+            
+            const overlay = document.getElementById('todaLockOverlay');
+            overlay.style.display = 'flex';
+            
+            // Clear passwords so they have to type again
+            document.getElementById('todaUser').value = "";
+            document.getElementById('todaPass').value = "";
+        }
+
+        function initializeDashboard(todaName) {
+            activeTodaName = todaName;
+            document.getElementById('cmd-center-title').innerText = `${todaName} Command Center`;
+            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${todaName} drivers.`;
+            
+            loadLiveTodaData();
+            setInterval(loadLiveTodaData, 10000); 
+        }
+
         // --- Live Backend Fetching ---
         async function loadLiveTodaData() {
             if(!activeTodaName) return;
 
             try {
-                // Fetch ONLY drivers for this TODA
                 const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}`);
                 if(driverRes.ok) {
                     allDrivers = await driverRes.json();
                     renderDrivers();
                 }
 
-                // Financials (Currently pulling global until backend is updated)
                 const financeRes = await fetch(`/api/toda/finances?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
                 if(financeRes.ok) {
                     const finances = await financeRes.json();
@@ -232,7 +253,6 @@
                     document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
                     document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
                 }
-
             } catch (error) {
                 console.error("Error loading live TODA data:", error);
             }
@@ -262,7 +282,6 @@
                 return;
             }
 
-            // 1. Filter the array
             let filteredDrivers = allDrivers.filter(driver => {
                 const searchStr = `${driver.name} ${driver.whatsapp_number} ${driver.toda_number} ${driver.id}`.toLowerCase();
                 const matchesSearch = searchStr.includes(currentSearchQuery);
@@ -271,7 +290,7 @@
                 if (currentFilter === 'online') return driver.status === 'online' && driver.is_suspended !== 1;
                 if (currentFilter === 'offline') return driver.status === 'offline' && driver.is_suspended !== 1;
                 if (currentFilter === 'suspended') return driver.is_suspended === 1;
-                return true; // 'all'
+                return true;
             });
 
             document.getElementById('roster-count').innerText = `${filteredDrivers.length} Drivers`;
@@ -281,10 +300,8 @@
                 return;
             }
 
-            // 2. Sort: Online first, then offline
             filteredDrivers.sort((a, b) => (a.status === 'online' ? -1 : 1));
 
-            // 3. Render
             filteredDrivers.forEach(driver => {
                 const isOnline = driver.status === 'online';
                 const statusDot = isOnline ? 'text-green-600 animate-pulse' : 'text-slate-400';
@@ -354,7 +371,6 @@
             });
         }
 
-        // --- Moderation Actions ---
         async function disciplineAction(driverId, action) {
             let msg = "";
             if (action === "warn") msg = "Are you sure you want to issue a warning to this driver? (3 warnings = Auto-Suspend)";
@@ -391,25 +407,21 @@
             if(!msg.trim()) return alert("Please type a message first.");
 
             try {
-                // 1. Package the data
                 const payload = { 
                     toda_name: activeTodaName, 
                     message: msg 
                 };
                 
-                // 2. Send to the new Multi-Tenant endpoint
                 const response = await fetch('/api/toda/broadcast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
-                // 3. Handle the response
                 if (response.ok) {
                     alert(`✅ BROADCAST SENT TO ALL ${activeTodaName} DRIVERS:\n\n"${msg}"`);
                     document.getElementById('broadcast-msg').value = '';
                 } else {
-                    // 🟢 NEW: If it fails, read the exact error from the Python backend!
                     const errorDetails = await response.text();
                     alert(`❌ Server rejected broadcast.\n\nReason: ${errorDetails}`);
                 }
