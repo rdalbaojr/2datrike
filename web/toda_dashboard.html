@@ -46,21 +46,23 @@
     <!-- ==================== TODA DASHBOARD ==================== -->
     <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- 🟢 BULLETPROOF TODA LOGIN OVERLAY -->
+        <!-- 🟢 SECURE TODA LOGIN OVERLAY -->
         <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
                 <i class="fa-solid fa-users-gear text-3xl text-white"></i>
             </div>
             <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
-            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Enter your local TODA Chapter name to access your specific command center.</p>
+            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
             
-            <!-- Removed the <form> tags to prevent mobile browsers from accidentally refreshing the page! -->
-            <div class="w-full max-w-[320px] flex flex-col gap-3">
-                <input type="text" id="todaLoginName" placeholder="e.g., MAYTODA" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-4 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
-                <button onclick="unlockTodaDashboard()" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
-                    <i class="fa-solid fa-right-to-bracket"></i> Access Command Center
+            <form onsubmit="unlockTodaDashboard(event)" class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                
+                <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                    <i class="fa-solid fa-lock"></i> Secure Login
                 </button>
-            </div>
+                <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
+            </form>
         </div>
 
         <!-- 🟢 TODA MAIN DASHBOARD -->
@@ -160,48 +162,54 @@
         let currentSearchQuery = '';
         let activeTodaName = '';
 
-        // 🟢 FIXED LOGIN FUNCTION: No more form refresh glitches!
-        function unlockTodaDashboard() {
-            const inputField = document.getElementById('todaLoginName');
-            const todaName = inputField.value.trim().toUpperCase();
+        // 🟢 SECURE LOGIN FUNCTION
+        async function unlockTodaDashboard(event) {
+            if(event) event.preventDefault(); // Prevent the form from refreshing the page
             
-            if (todaName) {
-                sessionStorage.setItem("active_toda_admin", todaName);
-                document.getElementById('todaLockOverlay').style.display = 'none';
-                document.getElementById('toda-main-section').classList.remove('hidden');
-                
-                initializeDashboard(todaName);
-            } else {
-                alert("Please enter a TODA Chapter name first.");
+            const u = document.getElementById('todaUser').value.trim();
+            const p = document.getElementById('todaPass').value;
+            const btn = document.getElementById('toda-login-btn');
+            const errorMsg = document.getElementById('toda-login-error');
+            
+            if (!u || !p) {
+                alert("Please enter both username and password.");
+                return;
+            }
+
+            // Show loading state
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+            errorMsg.classList.add('hidden');
+
+            try {
+                // Send credentials to the Python Backend for secure verification
+                const response = await fetch('/api/toda/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    // Success! The server validated the password.
+                    const data = await response.json();
+                    const verifiedTodaName = data.toda_name; // The server tells us exactly which TODA to load
+                    
+                    sessionStorage.setItem("active_toda_admin", verifiedTodaName);
+                    document.getElementById('todaLockOverlay').style.display = 'none';
+                    document.getElementById('toda-main-section').classList.remove('hidden');
+                    
+                    initializeDashboard(verifiedTodaName);
+                } else {
+                    // Wrong password or username
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                alert("Network error. Could not reach server.");
+            } finally {
+                // Restore button text
+                btn.innerHTML = originalText;
             }
         }
-
-        window.onload = function() {
-            const savedToda = sessionStorage.getItem('active_toda_admin');
-            if (savedToda) {
-                document.getElementById('todaLockOverlay').style.display = 'none';
-                document.getElementById('toda-main-section').classList.remove('hidden');
-                initializeDashboard(savedToda);
-            }
-        };
-
-        function logoutToda() {
-            sessionStorage.removeItem("active_toda_admin");
-            document.getElementById('toda-main-section').classList.add('hidden');
-            document.getElementById('todaLockOverlay').style.display = 'flex';
-        }
-
-        function initializeDashboard(todaName) {
-            activeTodaName = todaName;
-            
-            // Rebrand the text on the page!
-            document.getElementById('cmd-center-title').innerText = `${todaName} Command Center`;
-            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${todaName} drivers.`;
-            
-            loadLiveTodaData();
-            setInterval(loadLiveTodaData, 10000); 
-        }
-
         // --- Live Backend Fetching ---
         async function loadLiveTodaData() {
             if(!activeTodaName) return;
