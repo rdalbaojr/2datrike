@@ -3,6 +3,7 @@ import shutil
 import json
 import random
 from datetime import datetime
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
@@ -275,17 +276,53 @@ def register_account(
     clean_full_name = sanitize_name(full_name)
     
     existing_user = db.query(User).filter(User.username == clean_user).first()
-    if existing_user: raise HTTPException(status_code=400, detail="Username already registered")
+    if existing_user: 
+        return HTMLResponse("<script>alert('Username already registered!'); history.back();</script>")
 
     file_path = None
     if role == "driver" and toda_id and toda_id.filename:
         file_path = f"uploads/{clean_user}_{toda_id.filename}"
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
-class TodaLoginSchema(BaseModel):
-    username: str
-    password: str
 
+    # Auto-format to eliminate case-sensitivity issues
+    safe_city = city.strip().title() if city else "Pasig City"
+    safe_brgy = barangay.strip().title() if barangay else ""
+    safe_toda = toda_name.strip().upper() if toda_name else ""
+
+    assigned_branch = f"{safe_city} - {safe_brgy} ({safe_toda})" if role == "driver" else "Passenger"
+    generated_ref = generate_local_ref(safe_brgy, safe_toda) if role == "driver" else "PASSENGER"
+
+    new_user = User(
+        username=clean_user, password=password, role=role, full_name=clean_full_name,
+        address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
+        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
+        city=safe_city, barangay=safe_brgy, toda_name=safe_toda, branch=assigned_branch, local_ref=generated_ref
+    )
+    db.add(new_user)
+    db.commit()
+    
+    # 🟢 FIXED: Bulletproof HTML auto-redirect to prevent the "null" screen!
+    success_html = """
+    <html>
+        <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Registration Successful</title>
+        </head>
+        <body style="background-color: #C87F37; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+            <div style="text-align: center; background: #E3BC90; padding: 40px 30px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4); max-width: 320px; width: 90%; border: 1px solid #c99c6b;">
+                <h2 style="color: #175d33; margin-top: 0; font-size: 24px; font-weight: 800;">✅ Success!</h2>
+                <p style="color: #0f172a; font-weight: 700; margin-bottom: 20px;">Your account is ready.</p>
+                <p style="font-size: 13px; color: #78350f; font-weight: bold;">Routing you to login...</p>
+            </div>
+            <script>
+                // Automatically redirect to the login page after 1.5 seconds
+                setTimeout(() => { window.location.href = "/login.html"; }, 1500);
+            </script>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=success_html)
 @app.post("/api/toda/login")
 def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
     # 1. Check the database for officially registered TODA Admins
