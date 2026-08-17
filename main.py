@@ -265,43 +265,54 @@ def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
 
 @app.post("/register-account/")
 def register_account(
-    role: str = Form(...), username: str = Form(...), password: str = Form(...),
-    full_name: str = Form(...), address: str = Form(...), whatsapp_number: str = Form(...),
-    toda_number: Optional[str] = Form(None), gcash_account: Optional[str] = Form(None), 
-    bank_name: Optional[str] = Form("GCash"), 
-    city: Optional[str] = Form("Pasig City"),
-    barangay: Optional[str] = Form(""),
-    toda_name: Optional[str] = Form(""),
-    toda_id: Optional[UploadFile] = File(None), db: Session = Depends(get_db)
+    role: str = Form(...),
+    full_name: str = Form(None),
+    username: str = Form(...),
+    whatsapp_number: str = Form(...),
+    password: str = Form(...),
+    address: str = Form(""),
+    city: str = Form("Pasig City"),
+    barangay: str = Form(""),          # 🟢 NEW: Catch the Barangay
+    toda_name: str = Form(""),         # 🟢 NEW: Catch the TODA Name
+    toda_number: str = Form(None),
+    plate_number: str = Form(None),
+    bank_name: str = Form("GCash"),
+    gcash_account: str = Form(""),
+    db: Session = Depends(get_db)
 ):
-    clean_user = sanitize_name(username)
-    clean_full_name = sanitize_name(full_name)
-    
-    existing_user = db.query(User).filter(User.username == clean_user).first()
-    if existing_user: 
-        return HTMLResponse("<script>alert('Username already registered!'); history.back();</script>")
+    clean_username = sanitize_name(username)
+    clean_full_name = sanitize_name(full_name) if full_name else clean_username
 
-    file_path = None
-    if role == "driver" and toda_id and toda_id.filename:
-        file_path = f"uploads/{clean_user}_{toda_id.filename}"
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(toda_id.file, buffer)
+    # Check if user already exists
+    existing = db.query(User).filter(User.username == clean_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
 
-    safe_city = city.strip().title() if city else "Pasig City"
-    safe_brgy = barangay.strip().title() if barangay else ""
-    safe_toda = toda_name.strip().upper() if toda_name else ""
-
-    assigned_branch = f"{safe_city} - {safe_brgy} ({safe_toda})" if role == "driver" else "Passenger"
-    generated_ref = generate_local_ref(safe_brgy, safe_toda) if role == "driver" else "PASSENGER"
+    # 🟢 NEW: Ensure TODA name is always uppercase so filters work perfectly
+    formatted_toda = toda_name.upper() if toda_name else ""
 
     new_user = User(
-        username=clean_user, password=password, role=role, full_name=clean_full_name,
-        address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
-        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
-        city=safe_city, barangay=safe_brgy, toda_name=safe_toda, branch=assigned_branch, local_ref=generated_ref
+        username=clean_username,
+        full_name=clean_full_name,
+        password=password,
+        role=role,
+        whatsapp_number=whatsapp_number,
+        address=address,
+        city=city,
+        barangay=barangay,         # 🟢 NEW: Save to Database
+        toda_name=formatted_toda,  # 🟢 NEW: Save to Database
+        local_ref=toda_number,
+        plate_number=plate_number,
+        bank_name=bank_name,
+        gcash_account=gcash_account,
+        rating_sum=25.0,
+        rating_count=5
     )
+    
     db.add(new_user)
     db.commit()
+
+    return RedirectResponse(url="/login.html", status_code=303)
     
     # Decide where to send them based on their role!
     redirect_url = "/driver_dashboard.html" if role == "driver" else "/booking.html"
