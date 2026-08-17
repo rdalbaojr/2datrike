@@ -382,24 +382,30 @@
             if(!msg.trim()) return alert("Please type a message first.");
 
             try {
-                // 🟢 FIXED: Point to the new Multi-Tenant endpoint and include the TODA name!
+                // 1. Package the data
+                const payload = { 
+                    toda_name: activeTodaName, 
+                    message: msg 
+                };
+                
+                // 2. Send to the new Multi-Tenant endpoint
                 const response = await fetch('/api/toda/broadcast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        toda_name: activeTodaName, 
-                        message: msg 
-                    })
+                    body: JSON.stringify(payload)
                 });
 
+                // 3. Handle the response
                 if (response.ok) {
                     alert(`✅ BROADCAST SENT TO ALL ${activeTodaName} DRIVERS:\n\n"${msg}"`);
                     document.getElementById('broadcast-msg').value = '';
                 } else {
-                    alert("Failed to transmit broadcast to the server.");
+                    // 🟢 NEW: If it fails, read the exact error from the Python backend!
+                    const errorDetails = await response.text();
+                    alert(`❌ Server rejected broadcast.\n\nReason: ${errorDetails}`);
                 }
             } catch (error) {
-                alert("Network error while sending broadcast.");
+                alert("Network error while sending broadcast. Is the server offline?");
             }
         }
     </script>
