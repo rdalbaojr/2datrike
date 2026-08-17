@@ -303,7 +303,10 @@ def register_account(
     db.add(new_user)
     db.commit()
     
-    success_html = """
+    # Decide where to send them based on their role!
+    redirect_url = "/driver_dashboard.html" if role == "driver" else "/booking.html"
+
+    success_html = f"""
     <html>
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -316,7 +319,8 @@ def register_account(
                 <p style="font-size: 13px; color: #78350f; font-weight: bold;">Routing you to login...</p>
             </div>
             <script>
-                setTimeout(() => { window.location.href = "/login.html"; }, 1500);
+                // 🟢 FIXED: Uses the dynamic redirect_url! (Note the double brackets {{ }} for Python f-strings)
+                setTimeout(() => {{ window.location.href = "{redirect_url}"; }}, 1500);
             </script>
         </body>
     </html>
