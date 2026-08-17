@@ -789,11 +789,18 @@ def send_broadcast(data: BroadcastSchema):
     return {"status": "success", "message": "Broadcast sent"}
 
 @app.get("/api/driver/broadcast")
-def get_driver_broadcast(): return latest_broadcast
-
-app.mount("/", StaticFiles(directory="web", html=True), name="web")
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)): 
+    clean_name = sanitize_name(driver_name)
+    
+    # Find the driver in the database
+    driver = db.query(User).filter(
+        (User.full_name == clean_name) | (User.username == clean_name), 
+        User.role == 'driver'
+    ).first()
+    
+    # If the driver has a TODA, return their specific broadcast!
+    if driver and driver.toda_name:
+        clean_toda = driver.toda_name.strip().upper()
+        return {"message": toda_broadcasts.get(clean_toda, ""), "toda_name": clean_toda}
+        
+    return {"message": "", "toda_name": ""}
