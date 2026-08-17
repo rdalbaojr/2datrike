@@ -595,7 +595,7 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         "total_platform": total_platform,
         "katoda_bank": config.katoda_bank if config and config.katoda_bank else "GCash",
         "katoda_account": config.katoda_account if config and config.katoda_account else "Not Configured"
-    }    
+    }   
 
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
@@ -779,14 +779,53 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
     except WebSocketDisconnect:
         chat_manager.disconnect(websocket, ride_id)
 
-latest_broadcast = {"message": ""}
-class BroadcastSchema(BaseModel): message: str
+# ==========================================
+# 🟢 MULTI-TENANT FINANCES & BROADCASTS
+# ==========================================
+@app.get("/api/toda/finances")
+def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
+    config = db.query(SystemConfig).first()
+    toda_pct = (config.katoda_share if config else 3) / 100
 
-@app.post("/api/katoda/broadcast")
-def send_broadcast(data: BroadcastSchema):
-    global latest_broadcast
-    latest_broadcast["message"] = data.message
-    return {"status": "success", "message": "Broadcast sent"}
+    search_term = f"%{toda_name.strip()}%"
+    
+    # 1. Get all drivers belonging strictly to this TODA
+    drivers = db.query(User).filter(User.toda_name.ilike(search_term), User.role == 'driver').all()
+    driver_names = [sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username) for d in drivers]
+
+    # 2. Get all settled rides
+    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+
+    # 3. Calculate this TODA's specific revenue share
+    total_toda_share = 0.0
+    for r in rides:
+        clean_driver = sanitize_name(r.driver_name) if r.driver_name else ""
+        if clean_driver in driver_names:
+            try:
+                clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
+                total_toda_share += clean_fare * toda_pct
+            except ValueError:
+                continue
+
+    return {
+        "today": 0.0, 
+        "week": 0.0,
+        "month": 0.0,
+        "ytd": total_toda_share
+    }
+
+# Dictionary to hold independent broadcasts for EACH Toda
+toda_broadcasts = {}
+
+class TodaBroadcastSchema(BaseModel): 
+    toda_name: str
+    message: str
+
+@app.post("/api/toda/broadcast")
+def send_toda_broadcast(data: TodaBroadcastSchema):
+    clean_toda = data.toda_name.strip().upper()
+    toda_broadcasts[clean_toda] = data.message
+    return {"status": "success", "message": f"Broadcast sent to {clean_toda}"}
 
 @app.get("/api/driver/broadcast")
 def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)): 
@@ -804,3 +843,13 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
         return {"message": toda_broadcasts.get(clean_toda, ""), "toda_name": clean_toda}
         
     return {"message": "", "toda_name": ""}
+
+# ==========================================
+# 7. MOUNT WEB FOLDER & START SERVER
+# ==========================================
+app.mount("/", StaticFiles(directory="web", html=True), name="web")
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
