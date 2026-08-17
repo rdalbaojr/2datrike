@@ -21,14 +21,15 @@
 
     <div class="w-full max-w-[1000px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
+        <!-- 🟢 UPGRADED SECURE LOCK OVERLAY -->
         <div id="lockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
             <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
             <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Master Access is required to view and modify system configuration rules.</p>
             
             <form onsubmit="handleMasterLogin(event)" class="w-full max-w-[320px] flex flex-col gap-3">
-                <input type="text" id="masterUser" value="masterom" required placeholder="Username" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
-                <input type="password" id="masterPass" value="qZ82118@@" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                <input type="text" id="masterUser" required placeholder="Username" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                <input type="password" id="masterPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
                     <i class="fa-solid fa-key"></i> Unlock Dashboard
                 </button>
@@ -57,7 +58,7 @@
                 <h2 class="text-xl font-extrabold text-[#0f172a] mb-4">Fare Config</h2>
                 <form id="fareConfigForm" onsubmit="updateFareSettings(event)" class="flex flex-col gap-5">
                     
-                    <!-- ================= BASE FARES (RESTORED) ================= -->
+                    <!-- ================= BASE FARES ================= -->
                     <div>
                         <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Base Fares</h3>
                         <div class="flex flex-col gap-3">
@@ -68,7 +69,6 @@
                                     <input type="number" id="cfg-pasundo" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                 </div>
                             </div>
-                            <!-- 🟢 RESTORED PABILI -->
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
                                 <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Pabili</label>
                                 <div class="relative w-28">
@@ -76,7 +76,6 @@
                                     <input type="number" id="cfg-pabili" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-7 pr-3 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                 </div>
                             </div>
-                            <!-- 🟢 RESTORED PAPICKUP -->
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
                                 <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Papickup</label>
                                 <div class="relative w-28">
@@ -87,28 +86,26 @@
                         </div>
                     </div>
 
-                    <!-- ================= REVENUE SHARING & PAYOUTS ================= -->
+                    <!-- ================= REVENUE SHARING ================= -->
                     <div>
                         <h3 class="text-[11px] font-extrabold uppercase tracking-widest text-[#78350f] mb-3">Revenue Sharing & Payouts</h3>
                         <div class="flex flex-col gap-3">
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
                                 <label class="text-xs font-bold uppercase text-[#78350f] ml-1">Platform</label>
                                 <div class="relative w-24">
-                                    <input type="number" id="platformShareInput" value="17" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                    <input type="number" id="platformShareInput" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                     <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
                                 </div>
                             </div>
                             
-                            <!-- 🟢 DYNAMIC TODA SHARE -->
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex items-center justify-between shadow-sm">
                                 <label id="label-toda-share" class="text-xs font-bold uppercase text-[#78350f] ml-1">LOCAL TODA</label>
                                 <div class="relative w-24">
-                                    <input type="number" id="katodaShareInput" value="3" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
+                                    <input type="number" id="katodaShareInput" step="0.1" required class="w-full bg-[#E3BC90]/50 border border-[#c99c6b] rounded-xl py-2 pl-2 pr-6 text-base font-extrabold text-[#0f172a] outline-none text-right focus:border-[#78350f]">
                                     <span class="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-[#78350f] text-xs">%</span>
                                 </div>
                             </div>
                             
-                            <!-- 🟢 DYNAMIC TODA ACCOUNT -->
                             <div class="bg-[#F5E6D3] p-3 rounded-2xl border border-[#d4aa7c] flex flex-col gap-2 shadow-sm">
                                 <label id="label-toda-acct" class="text-xs font-bold uppercase text-[#78350f] ml-1">LOCAL TODA Payout Acct</label>
                                 <div class="flex gap-2">
@@ -151,7 +148,6 @@
                                     <th class="py-3 px-4 text-center">Rides</th>
                                     <th class="py-3 px-4 text-right">Gross</th>
                                     <th class="py-3 px-4 text-right text-[#175d33]">Net (80%)</th>
-                                    <!-- 🟢 ADDED ID for dynamic table header -->
                                     <th id="toda-label-3" class="py-3 px-4 text-right">KATODA</th>
                                     <th class="py-3 px-4 text-right">Platform</th>
                                 </tr>
@@ -169,32 +165,65 @@
         </div>
     </div>
 
+    <!-- 🟢 UPGRADED SECURITY JAVASCRIPT -->
     <script>
-        function handleMasterLogin(event) {
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return match[2];
+            return null;
+        }
+
+        async function handleMasterLogin(event) {
             event.preventDefault();
             const u = document.getElementById('masterUser').value.trim();
             const p = document.getElementById('masterPass').value;
+            const btn = event.target.querySelector('button[type="submit"]');
             
-            if (u === 'masterom' && p === 'qZ82118@@') {
-                sessionStorage.setItem("admin_session", "masterom_active");
-                const overlay = document.getElementById('lockOverlay');
-                overlay.style.transition = "opacity 0.3s ease";
-                overlay.style.opacity = "0";
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            } else {
-                alert("❌ Invalid master credentials. Access denied.");
+            if (!u || !p) return;
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+            try {
+                // Securely check password with Python backend
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    // Success! Python gave us a secure cookie.
+                    const overlay = document.getElementById('lockOverlay');
+                    overlay.style.transition = "opacity 0.3s ease";
+                    overlay.style.opacity = "0";
+                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                } else {
+                    alert("❌ Invalid master credentials. Access denied.");
+                }
+            } catch (error) {
+                alert("Network error. Could not reach server.");
+            } finally {
+                btn.innerHTML = originalText;
             }
         }
 
         function lockDashboard() {
-            sessionStorage.removeItem("admin_session");
+            // Delete the secure cookie
+            document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
             const overlay = document.getElementById('lockOverlay');
             overlay.style.display = 'flex';
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+            
+            // Clear inputs so they have to type it again
+            document.getElementById('masterUser').value = "";
+            document.getElementById('masterPass').value = "";
         }
 
         window.onload = async function() {
-            if (sessionStorage.getItem('admin_session') === 'masterom_active') {
+            // Check for secure backend cookie instead of browser session storage
+            if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
             }
 
@@ -282,7 +311,6 @@
             
             const displayTodaName = selectedBranch === "All" ? "LOCAL TODA" : selectedBranch.toUpperCase();
             
-            // 🟢 UPDATED: Dynamically change all three labels!
             document.getElementById('label-toda-share').innerText = displayTodaName;
             document.getElementById('label-toda-acct').innerText = displayTodaName + " PAYOUT ACCT";
             document.getElementById('toda-label-3').innerText = displayTodaName;
