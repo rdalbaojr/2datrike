@@ -51,19 +51,18 @@
             <div class="text-right">
                 <p class="text-xs text-[#78350f] font-medium">Welcome,</p>
                 <p id="driver-welcome-name" class="font-extrabold text-sm text-[#0f172a]">Driver</p>
-                <!-- Star Rating Display -->
                 <p id="driver-rating-display" class="text-xs font-bold text-yellow-600 mt-0.5 hidden"><i class="fa-solid fa-star"></i> <span id="driver-star-val">5.0</span></p>
             </div>
         </div>
 
-        <!-- 🔴 KATODA Broadcast Feed Container -->
+        <!-- 🟢 DYNAMIC TODA Broadcast Feed Container -->
         <div id="driver-broadcast-container" class="bg-[#F5E6D3] rounded-2xl p-4 mb-6 border border-[#78350f] shadow-sm hidden">
             <div class="flex items-start gap-3">
                 <div class="bg-[#78350f] text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
                     <i class="fa-solid fa-bullhorn text-xs"></i>
                 </div>
                 <div>
-                    <h4 class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider">KATODA Official Broadcast</h4>
+                    <h4 id="driver-broadcast-title" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider">TODA Official Broadcast</h4>
                     <p id="driver-broadcast-text" class="text-xs font-semibold text-[#0f172a] mt-1 leading-relaxed"></p>
                 </div>
             </div>
@@ -116,7 +115,7 @@
                             <td id="amt-platform" class="px-4 py-1 text-right text-xs">- ₱0.00</td>
                         </tr>
                         <tr class="text-rose-700">
-                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider">KATODA (3%):</td>
+                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider">TODA (3%):</td>
                             <td id="amt-katoda" class="px-4 py-1 text-right text-xs">- ₱0.00</td>
                         </tr>
                         <tr class="bg-green-900 text-white border-t border-green-800">
@@ -336,17 +335,20 @@
             }
         }
 
-        // --- Polling for Broadcasts ---
+        // 🟢 FIXED: Fetch the specific broadcast for THIS driver!
         async function checkDriverBroadcasts() {
+            if (!currentDriverName || currentDriverName === "Unknown") return;
             try {
-                const response = await fetch(`/api/driver/broadcast?t=${new Date().getTime()}`);
+                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
                 const data = await response.json();
                 
                 const container = document.getElementById('driver-broadcast-container');
                 const textElement = document.getElementById('driver-broadcast-text');
+                const titleElement = document.getElementById('driver-broadcast-title');
 
                 if (data && data.message && data.message.trim() !== "") {
                     textElement.innerText = data.message;
+                    titleElement.innerText = `${data.toda_name || 'TODA'} Official Broadcast`;
                     container.classList.remove('hidden');
                 } else {
                     container.classList.add('hidden');
@@ -385,7 +387,6 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
                         
-                        // 🟢 ADDED REF NUMBER IN THE INNER HTML BELOW
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
@@ -435,7 +436,6 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
-                        // 🟢 ADDED REF NUMBER IN THE INNER HTML BELOW
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-start mb-3">
                                 <div>
@@ -528,7 +528,7 @@
             const katodaPct = config.katoda_share || 3;
 
             document.getElementById('label-platform').innerText = `Platform (${platformPct}%):`;
-            document.getElementById('label-katoda').innerText = `KATODA (${katodaPct}%):`;
+            document.getElementById('label-katoda').innerText = `TODA Share (${katodaPct}%):`;
 
             let data = {
                 pasundo: { qty: 0 },
