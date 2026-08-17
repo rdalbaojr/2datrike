@@ -7,7 +7,6 @@ from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, text
 from sqlalchemy.ext.declarative import declarative_base
@@ -104,7 +103,7 @@ def generate_local_ref(barangay: str, toda: str) -> str:
     return f"{brgy_code}-{toda_code}-{rand_5digit}"
 
 # ==========================================
-# 5. STARTUP SCRIPT (Safely updates existing databases)
+# 5. STARTUP SCRIPT & PYDANTIC SCHEMAS
 # ==========================================
 class SystemConfig(Base):
     __tablename__ = "system_config"
@@ -157,6 +156,10 @@ class LoginRequest(BaseModel):
     password: str
     role: str = None
 
+class TodaLoginSchema(BaseModel):
+    username: str
+    password: str
+
 class RideRequestCreate(BaseModel):
     passenger_name: str
     pickup_location: str
@@ -173,7 +176,6 @@ class ProfileUpdateSchema(BaseModel):
     gcash_account: str
     whatsapp_number: str
     address: str
-    # 🟢 ADD THESE THREE LINES:
     city: Optional[str] = None
     barangay: Optional[str] = None
     toda_name: Optional[str] = None
@@ -285,7 +287,6 @@ def register_account(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(toda_id.file, buffer)
 
-    # Auto-format to eliminate case-sensitivity issues
     safe_city = city.strip().title() if city else "Pasig City"
     safe_brgy = barangay.strip().title() if barangay else ""
     safe_toda = toda_name.strip().upper() if toda_name else ""
@@ -302,7 +303,6 @@ def register_account(
     db.add(new_user)
     db.commit()
     
-    # 🟢 FIXED: Bulletproof HTML auto-redirect to prevent the "null" screen!
     success_html = """
     <html>
         <head>
@@ -316,16 +316,15 @@ def register_account(
                 <p style="font-size: 13px; color: #78350f; font-weight: bold;">Routing you to login...</p>
             </div>
             <script>
-                // Automatically redirect to the login page after 1.5 seconds
                 setTimeout(() => { window.location.href = "/login.html"; }, 1500);
             </script>
         </body>
     </html>
     """
     return HTMLResponse(content=success_html)
+
 @app.post("/api/toda/login")
 def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
-    # 1. Check the database for officially registered TODA Admins
     user = db.query(User).filter(
         User.username == data.username, 
         User.password == data.password, 
@@ -335,37 +334,16 @@ def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
     if user and user.toda_name:
         return {"status": "success", "toda_name": user.toda_name.upper()}
     
-    # 2. Smart Fallback (For testing before official admin accounts are registered)
-    # If they type username="maytoda" and password="1234", it securely unlocks MAYTODA
     if data.password == "1234":
         clean_toda = data.username.lower().replace("_admin", "").replace("admin", "").strip()
         if clean_toda:
             return {"status": "success", "toda_name": clean_toda.upper()}
 
     raise HTTPException(status_code=401, detail="Invalid TODA Admin credentials")
-    # 🟢 NEW: Auto-format to completely eliminate case-sensitivity issues!
-    safe_city = city.strip().title() if city else "Pasig City"
-    safe_brgy = barangay.strip().title() if barangay else ""
-    safe_toda = toda_name.strip().upper() if toda_name else ""
-
-    assigned_branch = f"{safe_city} - {safe_brgy} ({safe_toda})" if role == "driver" else "Passenger"
-    generated_ref = generate_local_ref(safe_brgy, safe_toda) if role == "driver" else "PASSENGER"
-
-    new_user = User(
-        username=clean_user, password=password, role=role, full_name=clean_full_name,
-        address=address, whatsapp_number=whatsapp_number, toda_number=toda_number,
-        gcash_account=gcash_account, bank_name=bank_name, toda_id_path=file_path,
-        city=safe_city, barangay=safe_brgy, toda_name=safe_toda, branch=assigned_branch, local_ref=generated_ref
-    )
-    db.add(new_user)
-    db.commit()
-    return RedirectResponse(url="/login.html", status_code=303)
 
 @app.get("/api/admin/locations")
 def get_registered_locations(db: Session = Depends(get_db)):
     drivers = db.query(User).filter(User.role == 'driver').all()
-    
-    # Map TODAs to their respective Barangays
     location_map = {}
     for d in drivers:
         brgy = d.barangay.strip() if d.barangay else "Unassigned"
@@ -375,7 +353,6 @@ def get_registered_locations(db: Session = Depends(get_db)):
             location_map[brgy] = set()
         location_map[brgy].add(toda)
         
-    # Convert to sorted lists for clean JSON output
     return {b: sorted(list(t)) for b, t in location_map.items()}
 
 @app.get("/api/profile/{display_name}")
@@ -413,12 +390,10 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     user.whatsapp_number = data.whatsapp_number
     user.address = data.address 
     
-    # 🟢 ADD THESE LINES TO UPDATE THEIR LOCAL TODA ROUTING
     if data.city: user.city = data.city
     if data.barangay: user.barangay = data.barangay
     if data.toda_name: user.toda_name = data.toda_name
     
-    # Update their branch label in the database
     if data.city and data.barangay and data.toda_name:
         assigned_branch = f"{data.city} - {data.barangay} ({data.toda_name})"
         user.branch = assigned_branch if user.role == "driver" else f"Passenger - {assigned_branch}"
@@ -435,7 +410,6 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
 
-    # TO THIS:
     origin_ref = generate_local_ref(brgy_str, toda_str)
 
     new_ride = RideRequest(
@@ -515,7 +489,6 @@ def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
 def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
     search_term = f"%{toda_name.strip()}%"
     
-    # 🟢 FIXED: Strictly fetch ONLY drivers belonging to this TODA
     drivers = db.query(User).filter(
         User.toda_name.ilike(search_term),
         User.role == 'driver'
@@ -531,12 +504,11 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
             "toda_number": d.toda_number,
             "is_suspended": d.is_suspended,
             "warnings": d.warnings or 0,
-            "rating": 5.0, # Replace with actual rating if tracked
-            "totalRides": 0 # Replace with actual rides if tracked
+            "rating": 5.0,
+            "totalRides": 0
         })
         
     return results
-    return driver_list
 
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
@@ -548,11 +520,9 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     payouts = {}
     clean_branch = branch.strip()
 
-    # Base query for drivers
     query = db.query(User).filter(User.role == 'driver')
     
     if clean_branch != "All":
-        # Search flexibly across all location-related fields
         query = query.filter(
             (User.toda_name.ilike(f"%{clean_branch}%")) |
             (User.barangay.ilike(f"%{clean_branch}%")) |
@@ -584,7 +554,6 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             "local_ref": driver.local_ref if driver.local_ref else "N/A"
         }
 
-    # Fetch completed and paid rides
     unsettled_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     total_katoda = 0.0
     total_platform = 0.0
@@ -594,7 +563,6 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             continue
         clean_driver_name = sanitize_name(ride.driver_name)
         
-        # When filtered by a specific branch, only include rides for matched drivers
         if clean_branch != "All" and clean_driver_name not in payouts:
             continue
             
@@ -623,7 +591,7 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         "total_platform": total_platform,
         "katoda_bank": config.katoda_bank if config and config.katoda_bank else "GCash",
         "katoda_account": config.katoda_account if config and config.katoda_account else "Not Configured"
-    }   
+    }    
 
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
@@ -740,7 +708,6 @@ def get_available_rides(request: Request, db: Session = Depends(get_db)):
     driver_branch = None
     driver_brgy = None
 
-    # 1. Identify which driver is looking at the dashboard
     if driver_name:
         clean_name = sanitize_name(driver_name)
         driver = db.query(User).filter((User.full_name == clean_name) | (User.username == clean_name), User.role == 'driver').first()
@@ -759,7 +726,6 @@ def get_available_rides(request: Request, db: Session = Depends(get_db)):
             "branch": r.branch, "local_ref": r.local_ref
         }
 
-        # 2. OVERRIDE: If the ride is pending and in the driver's Barangay, force the text to match perfectly!
         if driver_brgy and r.status == "pending" and r.branch:
             if driver_brgy.lower() in r.branch.lower():
                 ride_data["branch"] = driver_branch
@@ -823,7 +789,6 @@ def get_driver_broadcast(): return latest_broadcast
 
 app.mount("/", StaticFiles(directory="web", html=True), name="web")
 
-# 🟢 PUT IT RIGHT HERE AT THE VERY BOTTOM:
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 10000))
