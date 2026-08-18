@@ -239,7 +239,7 @@
             if(!activeTodaName) return;
 
             try {
-                const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}`);
+                const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
                 if(driverRes.ok) {
                     allDrivers = await driverRes.json();
                     renderDrivers();
