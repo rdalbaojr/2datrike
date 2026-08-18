@@ -520,22 +520,35 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
         User.role == 'driver'
     ).all()
     
+    # 🟢 Fetch all settled rides from the database
+    all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    
     results = []
     for d in drivers:
+        d_name = sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username)
+        
+        # 🟢 Calculate actual rides for this specific driver
+        driver_rides = 0
+        for r in all_rides:
+            if r.driver_name and sanitize_name(r.driver_name).lower() == d_name.lower():
+                driver_rides += 1
+        
+        # Calculate actual rating
+        actual_rating = d.rating_sum / d.rating_count if d.rating_count and d.rating_count > 0 else 5.0
+        
         results.append({
             "id": d.id,
-            "name": sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username),
+            "name": d_name,
             "whatsapp_number": d.whatsapp_number,
             "status": d.status,
             "toda_number": d.toda_number,
             "is_suspended": d.is_suspended,
             "warnings": d.warnings or 0,
-            "rating": 5.0,
-            "totalRides": 0
+            "rating": round(actual_rating, 1),
+            "totalRides": driver_rides  # 🟢 This officially replaces the hardcoded 0!
         })
         
     return results
-
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
