@@ -274,8 +274,8 @@ def register_account(
     password: str = Form(...),
     address: str = Form(""),
     city: str = Form("Pasig City"),
-    barangay: str = Form(""),          # 🟢 NEW: Catch the Barangay
-    toda_name: str = Form(""),         # 🟢 NEW: Catch the TODA Name
+    barangay: str = Form(""),          
+    toda_name: str = Form(""),         
     toda_number: str = Form(None),
     plate_number: str = Form(None),
     bank_name: str = Form("GCash"),
@@ -283,28 +283,37 @@ def register_account(
     db: Session = Depends(get_db)
 ):
     clean_username = sanitize_name(username)
-    clean_full_name = sanitize_name(full_name) if full_name else clean_username
+    
+    # Force Proper Title Case for Name (e.g. "Juan Dela Cruz")
+    clean_full_name = sanitize_name(full_name).title() if full_name else clean_username
 
     # Check if user already exists
     existing = db.query(User).filter(User.username == clean_username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # 🟢 NEW: Ensure TODA name is always uppercase so filters work perfectly
+    # Force UPPERCASE for TODA Name
     formatted_toda = toda_name.upper() if toda_name else ""
+    
+    # Force Proper Title Case for Barangay
+    formatted_barangay = barangay.title() if barangay else ""
+    
+    # 🟢 NEW: Force UPPERCASE for License (toda_number) and Plate No.
+    formatted_toda_number = toda_number.upper() if toda_number else ""
+    formatted_plate = plate_number.upper() if plate_number else ""
 
     new_user = User(
         username=clean_username,
-        full_name=clean_full_name,
+        full_name=clean_full_name,   
         password=password,
         role=role,
         whatsapp_number=whatsapp_number,
         address=address,
         city=city,
-        barangay=barangay,         # 🟢 NEW: Save to Database
-        toda_name=formatted_toda,  # 🟢 NEW: Save to Database
-        local_ref=toda_number,
-        plate_number=plate_number,
+        barangay=formatted_barangay, 
+        toda_name=formatted_toda,
+        local_ref=formatted_toda_number,  # 🟢 Saves beautiful uppercase License
+        plate_number=formatted_plate,     # 🟢 Saves beautiful uppercase Plate
         bank_name=bank_name,
         gcash_account=gcash_account,
         rating_sum=25.0,
