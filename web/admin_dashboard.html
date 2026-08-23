@@ -5,7 +5,414 @@
     <title>2DA — Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>2DA — Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body::-webkit-scrollbar { display: none; }
+        .table-scroll::-webkit-scrollbar { height: 8px; }
+        .table-scroll::-webkit-scrollbar-track { background: #F5E6D3; border-radius: 8px; }
+        .table-scroll::-webkit-scrollbar-thumb { background: #c99c6b; border-radius: 8px; }
+        .table-scroll::-webkit-scrollbar-thumb:hover { background: #a35c27; }
+    </style>
+</head>
+<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
+
+    <div class="w-full max-w-[1000px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+        
+        <!-- 🟢 UPGRADED SECURE LOCK OVERLAY -->
+        <div id="lockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
+            <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
+            <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
+            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Master Access is required to view and modify system configuration rules.</p>
+            
+            <form onsubmit="handleMasterLogin(event)" class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="masterUser" required placeholder="Username" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                <input type="password" id="masterPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                    <i class="fa-solid fa-key"></i> Unlock Dashboard
+                </button>
+            </form>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#d4aa7c]/50 mb-6 relative gap-4">
+            <button onclick="lockDashboard()" class="absolute top-0 right-0 text-white bg-red-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-power-off"></i> Lock System
+            </button>
+            <div>
+                <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight pr-12">2DA Master Admin</h2>
+                <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
+            </div>
+
+            <!-- Global Payout Branch Selector -->
+            <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
+                <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Payout View:</label>
+                <select id="branchSelector" onchange="loadPayoutSummary()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                    <option value="All">🌐 All Branches (Master)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 🟢 LEFT COLUMN: 5-SLOT BRANCH CONFIGURATOR -->
+            <div class="lg:col-span-1">
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-3xl p-6 shadow-sm">
+                    <h2 class="text-xl font-extrabold text-[#0f172a] mb-5 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-[#78350f]"></i> Branch Configurator
+                    </h2>
+                    
+                    <form onsubmit="saveBranchConfig(event)" class="flex flex-col gap-5">
+                        
+                        <!-- 1. SELECT TODA -->
+                        <div class="bg-white p-3 rounded-2xl border border-[#c99c6b] shadow-sm">
+                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-1 block">1. Select Branch to Edit</label>
+                            <select id="config-branch-select" onchange="loadBranchConfig()" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2.5 text-sm font-bold text-[#0f172a] outline-none cursor-pointer focus:border-[#78350f]">
+                                <option value="">-- Choose TODA --</option>
+                            </select>
+                        </div>
+
+                        <!-- 2. THE 5 BLANK SERVICE SLOTS -->
+                        <div>
+                            <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-[#78350f] mb-2 block">2. Custom Services & Fares</h3>
+                            <div class="flex flex-col gap-2">
+                                <div class="flex gap-2">
+                                    <input type="text" id="s1-name" placeholder="Service 1" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                                    <input type="number" id="s1-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="s2-name" placeholder="Service 2" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                                    <input type="number" id="s2-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="s3-name" placeholder="Service 3" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                                    <input type="number" id="s3-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="s4-name" placeholder="Service 4 (Optional)" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                                    <input type="number" id="s4-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="flex gap-2">
+                                    <input type="text" id="s5-name" placeholder="Service 5 (Optional)" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                                    <input type="number" id="s5-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. REVENUE SHARING -->
+                        <div>
+                            <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-[#78350f] mb-2 block">3. Branch Revenue Rules</h3>
+                            <div class="bg-white p-3 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-3">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs font-bold text-[#78350f]">Platform %</label>
+                                    <input type="number" id="cfg-plat" step="0.1" placeholder="17" class="w-20 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1 px-2 text-sm font-extrabold text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <label class="text-xs font-bold text-[#78350f]">TODA %</label>
+                                    <input type="number" id="cfg-toda" step="0.1" placeholder="3" class="w-20 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1 px-2 text-sm font-extrabold text-right outline-none focus:border-[#78350f]">
+                                </div>
+                                <div class="pt-2 border-t border-[#d4aa7c]/50">
+                                    <label class="text-[9px] font-extrabold uppercase text-[#78350f] block mb-1">TODA Payout Account</label>
+                                    <div class="flex gap-2">
+                                        <select id="cfg-bank" class="w-1/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-2 text-xs font-bold outline-none cursor-pointer focus:border-[#78350f]">
+                                            <option value="GCash">GCash</option>
+                                            <option value="Maya">Maya</option>
+                                        </select>
+                                        <input type="text" id="cfg-acct" placeholder="Account #" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1.5 px-3 text-xs font-bold outline-none focus:border-[#78350f]">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm mt-2 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Branch Config
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: PAYOUT TABLE -->
+            <div class="lg:col-span-2">
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-3xl p-6 shadow-sm h-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Payouts</h2>
+                            <p class="text-xs text-[#78350f] font-bold mt-1">Real-time collective settlement</p>
+                        </div>
+                        <a id="exportBizLinkBtn" href="/api/admin/generate-bizlink-payout?branch=All" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
+                            <i class="fa-solid fa-download"></i> Export for BizLink
+                        </a>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-[#c99c6b] table-scroll pb-2">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-[#E3BC90]/50">
+                                <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
+                                    <th class="py-3 px-4">Entity / Driver</th>
+                                    <th class="py-3 px-4">Provider</th>
+                                    <th class="py-3 px-4">Account Number</th>
+                                    <th class="py-3 px-4 text-center">Rides</th>
+                                    <th class="py-3 px-4 text-right">Gross</th>
+                                    <th class="py-3 px-4 text-right text-[#175d33]">Net (80%)</th>
+                                    <th id="toda-label-3" class="py-3 px-4 text-right">LOCAL TODA</th>
+                                    <th class="py-3 px-4 text-right">Platform</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a] bg-white/40">
+                                <tr>
+                                    <td colspan="8" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 🟢 UPGRADED SECURITY JAVASCRIPT -->
+    <script>
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) return match[2];
+            return null;
+        }
+
+        async function handleMasterLogin(event) {
+            event.preventDefault();
+            const u = document.getElementById('masterUser').value.trim();
+            const p = document.getElementById('masterPass').value;
+            const btn = event.target.querySelector('button[type="submit"]');
+            
+            if (!u || !p) return;
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    const overlay = document.getElementById('lockOverlay');
+                    overlay.style.transition = "opacity 0.3s ease";
+                    overlay.style.opacity = "0";
+                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                } else {
+                    alert("❌ Invalid master credentials. Access denied.");
+                }
+            } catch (error) {
+                alert("Network error. Could not reach server.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function lockDashboard() {
+            document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            
+            const overlay = document.getElementById('lockOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => { overlay.style.opacity = "1"; }, 10);
+            
+            document.getElementById('masterUser').value = "";
+            document.getElementById('masterPass').value = "";
+        }
+
+        window.onload = async function() {
+            if (getCookie('admin_session') === 'masterom_active') {
+                document.getElementById('lockOverlay').style.display = 'none';
+            }
+
+            try {
+                const locRes = await fetch('/api/admin/locations');
+                if (locRes.ok) {
+                    const data = await locRes.json();
+                    const selector = document.getElementById('branchSelector');
+                    const configSelector = document.getElementById('config-branch-select');
+                    
+                    selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+                    configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
+                    
+                    let uniqueTodasForConfig = new Set(); 
+
+                    for (const [brgy, todas] of Object.entries(data)) {
+                        const group = document.createElement('optgroup');
+                        group.label = `📍 Brgy. ${brgy}`;
+                        
+                        todas.forEach(toda => {
+                            const opt = document.createElement('option');
+                            opt.value = toda; 
+                            opt.textContent = toda; 
+                            group.appendChild(opt);
+
+                            if(toda && toda !== "No TODA") uniqueTodasForConfig.add(toda);
+                        });
+                        selector.appendChild(group);
+                    }
+
+                    uniqueTodasForConfig.forEach(toda => {
+                        const opt = document.createElement('option');
+                        opt.value = toda;
+                        opt.textContent = toda;
+                        configSelector.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Could not load dynamic locations", e);
+            }
+
+            loadPayoutSummary();
+        };
+
+        // 🟢 FETCH BRANCH CONFIGURATION (5 SLOTS)
+        async function loadBranchConfig() {
+            const selectedToda = document.getElementById('config-branch-select').value;
+            if (!selectedToda) {
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById(`s${i}-name`).value = '';
+                    document.getElementById(`s${i}-price`).value = '';
+                }
+                document.getElementById('cfg-plat').value = '';
+                document.getElementById('cfg-toda').value = '';
+                document.getElementById('cfg-acct').value = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`);
+                if (response.ok) {
+                    const config = await response.json();
+                    for (let i = 1; i <= 5; i++) {
+                        document.getElementById(`s${i}-name`).value = config[`s${i}_name`] || '';
+                        document.getElementById(`s${i}-price`).value = config[`s${i}_price`] || '';
+                    }
+                    document.getElementById('cfg-plat').value = config.platform_share || 17;
+                    document.getElementById('cfg-toda').value = config.katoda_share || 3;
+                    document.getElementById('cfg-bank').value = config.katoda_bank || 'GCash';
+                    document.getElementById('cfg-acct').value = config.katoda_account || '';
+                }
+            } catch (error) {
+                console.error("Failed to load specific TODA config");
+            }
+        }
+
+        // 🟢 SAVE BRANCH CONFIGURATION (5 SLOTS)
+        async function saveBranchConfig(event) {
+            event.preventDefault();
+            const selectedToda = document.getElementById('config-branch-select').value;
+            if (!selectedToda) return alert("Please select a Branch to edit first!");
+
+            const btn = event.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
+
+            const payload = {
+                s1_name: document.getElementById('s1-name').value,
+                s1_price: parseInt(document.getElementById('s1-price').value) || 0,
+                s2_name: document.getElementById('s2-name').value,
+                s2_price: parseInt(document.getElementById('s2-price').value) || 0,
+                s3_name: document.getElementById('s3-name').value,
+                s3_price: parseInt(document.getElementById('s3-price').value) || 0,
+                s4_name: document.getElementById('s4-name').value,
+                s4_price: parseInt(document.getElementById('s4-price').value) || 0,
+                s5_name: document.getElementById('s5-name').value,
+                s5_price: parseInt(document.getElementById('s5-price').value) || 0,
+                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17,
+                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3,
+                katoda_bank: document.getElementById('cfg-bank').value,
+                katoda_account: document.getElementById('cfg-acct').value.trim()
+            };
+
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert(`✅ Branch Configuration successfully saved for ${selectedToda}!`);
+                    loadPayoutSummary(); // Refresh payouts instantly to reflect any new Rev Share rules
+                } else {
+                    alert("❌ Failed to save configuration.");
+                }
+            } catch (error) {
+                alert("Network error. Make sure the server is online.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        async function loadPayoutSummary() {
+            const selectedBranch = document.getElementById('branchSelector').value;
+            
+            const displayTodaName = selectedBranch === "All" ? "LOCAL TODA" : selectedBranch.toUpperCase();
+            document.getElementById('toda-label-3').innerText = displayTodaName;
+
+            document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
+
+            try {
+                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const tbody = document.getElementById('payout-table-body');
+                tbody.innerHTML = '';
+
+                if (data.drivers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
+                    return;
+                }
+
+                data.drivers.forEach(driver => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
+                        <td class="py-4 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
+                        <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
+                        <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
+                        <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
+                        <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                const totalRow = document.createElement('tr');
+                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
+                totalRow.innerHTML = `
+                    <td class="py-4 px-4 font-black text-[#0f172a] uppercase">${displayTodaName} TOTAL</td>
+                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank}</td>
+                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
+                    <td class="py-4 px-4 text-center">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right">--</td>
+                    <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
+                `;
+                tbody.appendChild(totalRow);
+
+            } catch (error) {
+                console.error("Error loading payouts summary:", error);
+            }
+        } 
+    </script>
+</body>
+</html>="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
