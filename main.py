@@ -566,16 +566,25 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
-    # Platform defaults
+    # Default fallbacks
     platform_pct = 17.0 / 100
     katoda_pct = 3.0 / 100
+    display_bank = "GCash"
+    display_account = "Not Configured"
     
-    # Try to load branch-specific rev share
+    # 🟢 FIXED: Now dynamically grabs the actual Bank & Account Number from the Database!
     if branch != "All":
         branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == branch.strip().upper()).first()
         if branch_config:
             platform_pct = branch_config.platform_share / 100
             katoda_pct = branch_config.katoda_share / 100
+            display_bank = branch_config.katoda_bank if branch_config.katoda_bank else "GCash"
+            display_account = branch_config.katoda_account if branch_config.katoda_account else "Not Configured"
+    else:
+        config = db.query(SystemConfig).first()
+        if config:
+            display_bank = config.katoda_bank if config.katoda_bank else "GCash"
+            display_account = config.katoda_account if config.katoda_account else "Not Configured"
 
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
@@ -651,8 +660,8 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         "drivers": list(payouts.values()),
         "total_katoda": total_katoda,
         "total_platform": total_platform,
-        "katoda_bank": "GCash",
-        "katoda_account": "Not Configured"
+        "katoda_bank": display_bank,
+        "katoda_account": display_account
     }   
 
 @app.get("/api/admin/generate-bizlink-payout")
