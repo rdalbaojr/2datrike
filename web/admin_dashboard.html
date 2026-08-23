@@ -222,13 +222,14 @@
             document.getElementById('masterPass').value = "";
         }
 
-        window.onload = async function() {
+       window.onload = async function() {
             if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
             }
 
             try {
-                const locRes = await fetch('/api/admin/locations');
+                // 🟢 ADDED CACHE-BUSTER HERE
+                const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
                 if (locRes.ok) {
                     const data = await locRes.json();
                     const selector = document.getElementById('branchSelector');
@@ -263,6 +264,23 @@
                 }
             } catch (e) {
                 console.error("Could not load dynamic locations", e);
+            }
+
+            try {
+                // 🟢 ADDED CACHE-BUSTER HERE TOO
+                const response = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('cfg-pasundo').value = config.pasundo_price;
+                    document.getElementById('cfg-pabili').value = config.pabili_price;
+                    document.getElementById('cfg-deliver').value = config.deliver_price;
+                    document.getElementById('platformShareInput').value = config.platform_share;
+                    document.getElementById('katodaShareInput').value = config.katoda_share || 3;
+                    document.getElementById('katodaBankInput').value = config.katoda_bank || "GCash";
+                    document.getElementById('katodaAccountInput').value = config.katoda_account || "";
+                }
+            } catch (error) {
+                console.error("Error loading config from server:", error);
             }
 
             loadPayoutSummary();
