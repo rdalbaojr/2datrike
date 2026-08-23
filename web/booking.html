@@ -46,7 +46,7 @@
             <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ Driver Dash
             </a>  
-            <a href="Toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ TODA Dash
             </a>  
             
@@ -67,24 +67,11 @@
             </div>
         </div>
 
-        <!-- 🟢 DYNAMIC TODA SERVICE SELECTION -->
+        <!-- 🟢 5-SLOT DYNAMIC SERVICE SELECTION -->
         <div id="service-selection-box">
             <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
             <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                <!-- Standard Buttons -->
-                <button type="button" onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#white] shadow-sm">
-                    <i class="fa-solid fa-person-walking-luggage text-xl mb-2"></i>
-                    <span class="text-[10px] font-bold uppercase">Pasundo</span>
-                </button>
-                <button type="button" onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                    <i class="fa-solid fa-basket-shopping text-xl mb-2"></i>
-                    <span class="text-[10px] font-bold uppercase">Pabili</span>
-                </button>
-                <button type="button" onclick="selectService('Papickup/Deliver')" id="btn-Deliver" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                    <i class="fa-solid fa-box-open text-xl mb-2"></i>
-                    <span class="text-[10px] font-bold uppercase text-center leading-tight">Papickup<br>Deliver</span>
-                </button>
-                <!-- Dynamic Custom Buttons will automatically append here! -->
+                <!-- Buttons are automatically injected here via JS from the Branch Configurator -->
             </div>
         </div>
 
@@ -238,68 +225,81 @@
             return "Guest"; 
         }
 
-        // 🟢 DYNAMIC PRICING ENGINE
-        let allServicePrices = { 'Pasundo': 50, 'Pabili': 50, 'Papickup/Deliver': 50 };
-        let currentService = 'Pasundo';
+        // 🟢 FULLY DYNAMIC 5-SLOT GRID GENERATOR
+        let allServicePrices = {};
+        let currentService = '';
         const currentPassenger = getCookie("passenger_name");
 
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("welcome-name").innerText = `${currentPassenger}`;
+            const container = document.getElementById("service-buttons-container");
+            container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-[#78350f] py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading Branch Services...</div>';
             
-            // 1. Fetch Global Prices
             try {
-                const res = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
-                if (res.ok) {
-                    const config = await res.json();
-                    allServicePrices['Pasundo'] = config.pasundo_price;
-                    allServicePrices['Pabili'] = config.pabili_price;
-                    allServicePrices['Papickup/Deliver'] = config.deliver_price;
-                }
-            } catch(e) { console.log("Using default prices."); }
-
-            // 2. Fetch TODA-Specific Custom Services
-            if(currentPassenger && currentPassenger !== "Guest") {
-                try {
+                let branchToLoad = 'MASTER'; // Default Fallback
+                if (currentPassenger && currentPassenger !== "Guest") {
                     const profileRes = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}`);
                     if (profileRes.ok) {
                         const profile = await profileRes.json();
-                        const todaName = profile.toda_name;
-                        
-                        if (todaName) {
-                            const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(todaName)}`);
-                            if (configRes.ok) {
-                                const tConfig = await configRes.json();
-                                const container = document.getElementById("service-buttons-container");
-                                
-                                // Inject Custom Service 1
-                                if (tConfig.custom_1_name) {
-                                    allServicePrices[tConfig.custom_1_name] = tConfig.custom_1_price;
-                                    const safeId = `btn-${tConfig.custom_1_name.replace(/\s+/g, '')}`;
-                                    container.innerHTML += `
-                                        <button type="button" onclick="selectService('${tConfig.custom_1_name}')" id="${safeId}" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                                            <i class="fa-solid fa-star text-xl mb-2 text-amber-700"></i>
-                                            <span class="text-[10px] font-bold uppercase text-center leading-tight">${tConfig.custom_1_name}</span>
-                                        </button>
-                                    `;
-                                }
-                                
-                                // Inject Custom Service 2
-                                if (tConfig.custom_2_name) {
-                                    allServicePrices[tConfig.custom_2_name] = tConfig.custom_2_price;
-                                    const safeId = `btn-${tConfig.custom_2_name.replace(/\s+/g, '')}`;
-                                    container.innerHTML += `
-                                        <button type="button" onclick="selectService('${tConfig.custom_2_name}')" id="${safeId}" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
-                                            <i class="fa-solid fa-bolt text-xl mb-2 text-amber-700"></i>
-                                            <span class="text-[10px] font-bold uppercase text-center leading-tight">${tConfig.custom_2_name}</span>
-                                        </button>
-                                    `;
-                                }
+                        if (profile.toda_name) branchToLoad = profile.toda_name;
+                    }
+                }
+
+                // Fetch the exact 5 slots configured for this Branch
+                const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(branchToLoad)}`);
+                if (configRes.ok) {
+                    const config = await configRes.json();
+                    container.innerHTML = ''; 
+
+                    // Awesome icons mapped directly to slots 1 through 5
+                    const icons = ['fa-person-walking-luggage', 'fa-basket-shopping', 'fa-box-open', 'fa-star', 'fa-bolt'];
+                    let isFirst = true;
+
+                    for (let i = 1; i <= 5; i++) {
+                        let sName = config[`s${i}_name`];
+                        let sPrice = config[`s${i}_price`];
+
+                        if (sName && sName.trim() !== "") {
+                            allServicePrices[sName] = sPrice;
+                            
+                            if (isFirst) {
+                                currentService = sName;
+                                isFirst = false;
                             }
+
+                            let activeClass = currentService === sName ? 'active text-white' : 'text-[#78350f]';
+                            let safeId = `btn-${sName.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+                            container.innerHTML += `
+                                <button type="button" onclick="selectService('${sName}')" id="${safeId}" class="service-btn ${activeClass} flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
+                                    <i class="fa-solid ${icons[i-1]} text-xl mb-2"></i>
+                                    <span class="text-[10px] font-bold uppercase text-center leading-tight">${sName}</span>
+                                </button>
+                            `;
                         }
                     }
-                } catch(e) { console.error("Error loading custom services", e); }
+                    
+                    if (Object.keys(allServicePrices).length === 0) {
+                         container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">No services currently configured for this branch.</div>';
+                    }
+                    
+                    toggleBudgetContainer(currentService);
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">Error loading services.</div>';
             }
         });
+
+        function toggleBudgetContainer(service) {
+            const pabiliContainer = document.getElementById('pabili-budget-container');
+            // If the custom name has "pabili" or "buy" inside it, auto-show the budget box!
+            if (service && (service.toLowerCase().includes('pabili') || service.toLowerCase().includes('buy'))) {
+                pabiliContainer.classList.remove('hidden');
+            } else {
+                pabiliContainer.classList.add('hidden');
+                document.getElementById('pabili-budget').value = '';
+            }
+        }
 
         function selectService(service) {
             currentService = service;
@@ -308,21 +308,14 @@
                 btn.classList.add('text-[#78350f]');
             });
             
-            // Handle active styling safely
-            let btnId = service === 'Papickup/Deliver' ? 'btn-Deliver' : `btn-${service.replace(/\s+/g, '')}`;
-            const activeBtn = document.getElementById(btnId);
-            if(activeBtn) {
+            let safeId = `btn-${service.replace(/[^a-zA-Z0-9]/g, '')}`;
+            const activeBtn = document.getElementById(safeId);
+            if (activeBtn) {
                 activeBtn.classList.add('active', 'text-white');
                 activeBtn.classList.remove('text-[#78350f]');
             }
             
-            const pabiliContainer = document.getElementById('pabili-budget-container');
-            if(service === 'Pabili') {
-                pabiliContainer.classList.remove('hidden');
-            } else {
-                pabiliContainer.classList.add('hidden');
-                document.getElementById('pabili-budget').value = '';
-            }
+            toggleBudgetContainer(service);
             
             document.getElementById('fare-estimate').classList.add('hidden');
             document.getElementById('submit-btn').classList.remove('hidden');
@@ -334,8 +327,7 @@
             document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
             
             setTimeout(() => {
-                // 🟢 Calculate fare based on Dynamic Price Engine
-                let baseFare = allServicePrices[currentService] || 50; 
+                let baseFare = allServicePrices[currentService] || 0; 
                 let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
                 let total = baseFare + pabiliBudget;
 
