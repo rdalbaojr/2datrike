@@ -33,7 +33,9 @@
             <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
                 🏍️ TODA Dash
             </a>
-            
+            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
+                <i class="fa-solid fa-lock mr-1"></i> Admin Dash
+            </a>
         </div>
     </div>
 
@@ -66,7 +68,7 @@
             </div>
         </div>
 
-        <!-- Financial Summary Section -->
+        <!-- 🟢 FULLY DYNAMIC SHIFT REPORT -->
         <div class="mt-4 bg-[#F5E6D3] rounded-2xl border border-[#d4aa7c] overflow-hidden shadow-md">
             <div class="p-4 bg-[#e8cda8] border-b border-[#d4aa7c] flex justify-between items-center">
                 <h2 class="text-lg font-bold text-[#78350f] flex items-center gap-2">
@@ -81,26 +83,14 @@
                 <table class="w-full text-sm text-left text-slate-800">
                     <thead class="text-[11px] text-[#78350f] uppercase bg-[#F5E6D3] border-b border-[#d4aa7c]">
                         <tr>
-                            <th scope="col" class="px-4 py-3">Category</th>
+                            <th scope="col" class="px-4 py-3">Service</th>
                             <th scope="col" class="px-2 py-3 text-center">Qty</th>
                             <th scope="col" class="px-4 py-3 text-right">Gross (₱)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-[#d4aa7c]/50 font-medium bg-[#F5E6D3]">
+                    <tbody id="shift-report-body" class="divide-y divide-[#d4aa7c]/50 font-medium bg-[#F5E6D3]">
                         <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-2.5">Pasundo</td>
-                            <td id="qty-pasundo" class="px-2 py-2.5 text-center">0</td>
-                            <td id="amt-pasundo" class="px-4 py-2.5 text-right font-bold text-[#0f172a]">0.00</td>
-                        </tr>
-                        <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-2.5">Pabili</td>
-                            <td id="qty-pabili" class="px-2 py-2.5 text-center">0</td>
-                            <td id="amt-pabili" class="px-4 py-2.5 text-right font-bold text-[#0f172a]">0.00</td>
-                        </tr>
-                        <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-2.5 text-xs">Papickup</td>
-                            <td id="qty-deliver" class="px-2 py-2.5 text-center">0</td>
-                            <td id="amt-deliver" class="px-4 py-2.5 text-right font-bold text-[#0f172a]">0.00</td>
+                            <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Loading shift data...</td>
                         </tr>
                     </tbody>
                     <tfoot class="bg-[#e8cda8] border-t border-[#d4aa7c] font-bold">
@@ -333,7 +323,6 @@
             }
         }
 
-        // 🟢 FIXED: Fetch the specific broadcast for THIS driver!
         async function checkDriverBroadcasts() {
             if (!currentDriverName || currentDriverName === "Unknown") return;
             try {
@@ -506,71 +495,88 @@
             }
         }
 
+        // 🟢 DYNAMIC 5-SLOT EARNINGS TABLE
         async function updateEarningsTable(allRides, driverName) {
             if (!Array.isArray(allRides)) return;
 
-            let config = { pasundo_price: 50, pabili_price: 50, deliver_price: 50, platform_share: 17, katoda_share: 3 };
+            let platformPct = 17;
+            let katodaPct = 3;
+
+            // 1. Check Driver's Branch to get the exact percentages
             try {
-                const res = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
-                if (res.ok) {
-                    const fetchedConfig = await res.json();
-                    if (fetchedConfig && typeof fetchedConfig === 'object') {
-                        config = { ...config, ...fetchedConfig };
+                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.toda_name) {
+                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
+                        if (configRes.ok) {
+                            const config = await configRes.json();
+                            platformPct = config.platform_share !== undefined ? config.platform_share : 17;
+                            katodaPct = config.katoda_share !== undefined ? config.katoda_share : 3;
+                        }
                     }
                 }
             } catch (error) {
-                console.log("Could not fetch admin config, using defaults.");
+                console.log("Could not load specific config, using defaults.");
             }
 
-            const platformPct = config.platform_share || 17;
-            const katodaPct = config.katoda_share || 3;
-
             document.getElementById('label-platform').innerText = `Platform (${platformPct}%):`;
-            document.getElementById('label-katoda').innerText = `TODA Share (${katodaPct}%):`;
-
-            let data = {
-                pasundo: { qty: 0 },
-                pabili: { qty: 0 },
-                deliver: { qty: 0 }
-            };
+            document.getElementById('label-katoda').innerText = `TODA (${katodaPct}%):`;
 
             const completedRides = allRides.filter(ride => 
                 (ride.status === 'paid' || ride.status === 'completed') && ride.driver_name === driverName
             );
 
+            // 2. Loop through all completed rides and dynamically sum their exact fares
+            let serviceStats = {};
+            let totalGross = 0;
+
             completedRides.forEach(ride => {
-                const service = (ride.service_type || 'pasundo').toLowerCase();
-                if (service.includes('pasundo')) data.pasundo.qty++;
-                else if (service.includes('pabili')) data.pabili.qty++;
-                else if (service.includes('deliver') || service.includes('papickup')) data.deliver.qty++;
-                else data.pasundo.qty++; 
+                const sType = ride.service_type || 'Pasundo';
+                
+                // Safely convert string "₱50.00" to math number 50.00
+                let fareVal = 0;
+                if (ride.fare) {
+                    fareVal = parseFloat(ride.fare.replace(/[^0-9.]/g, '')) || 0;
+                }
+
+                if (!serviceStats[sType]) {
+                    serviceStats[sType] = { qty: 0, amount: 0 };
+                }
+                
+                serviceStats[sType].qty += 1;
+                serviceStats[sType].amount += fareVal;
+                totalGross += fareVal;
             });
 
-            const pasundoBase = data.pasundo.qty * (config.pasundo_price || 50);
-            const pabiliBase = data.pabili.qty * (config.pabili_price || 50);
-            const deliverBase = data.deliver.qty * (config.deliver_price || 50);
+            // 3. Slice exactly from the Gross Fare
+            const platformCut = totalGross * (platformPct / 100);
+            const katodaCut = totalGross * (katodaPct / 100);
+            const netEarnings = totalGross - platformCut - katodaCut;
 
-            const totalBase = pasundoBase + pabiliBase + deliverBase;
+            // 4. Dynamically generate the rows
+            const tbody = document.getElementById('shift-report-body');
+            tbody.innerHTML = '';
 
-            const platformCut = totalBase * (platformPct / 100);
-            const katodaCut = totalBase * (katodaPct / 100);
-            
-            const grossTotal = totalBase + platformCut + katodaCut;
-            const netEarnings = totalBase;
+            if (Object.keys(serviceStats).length === 0) {
+                tbody.innerHTML = `
+                    <tr class="hover:bg-[#e8cda8]/50 transition">
+                        <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
+                    </tr>
+                `;
+            } else {
+                for (const [sType, data] of Object.entries(serviceStats)) {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-[#e8cda8]/50 transition">
+                            <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                            <td class="px-2 py-2.5 text-center">${data.qty}</td>
+                            <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }
+            }
 
-            const multiplier = 1 + ((platformPct + katodaPct) / 100);
-            const pasundoGross = pasundoBase * multiplier;
-            const pabiliGross = pabiliBase * multiplier;
-            const deliverGross = deliverBase * multiplier;
-
-            document.getElementById('qty-pasundo').innerText = data.pasundo.qty;
-            document.getElementById('amt-pasundo').innerText = pasundoGross.toFixed(2);
-            document.getElementById('qty-pabili').innerText = data.pabili.qty;
-            document.getElementById('amt-pabili').innerText = pabiliGross.toFixed(2);
-            document.getElementById('qty-deliver').innerText = data.deliver.qty;
-            document.getElementById('amt-deliver').innerText = deliverGross.toFixed(2);
-
-            document.getElementById('amt-gross').innerText = "₱" + grossTotal.toFixed(2);
+            document.getElementById('amt-gross').innerText = "₱" + totalGross.toFixed(2);
             document.getElementById('amt-platform').innerText = "- ₱" + platformCut.toFixed(2);
             document.getElementById('amt-katoda').innerText = "- ₱" + katodaCut.toFixed(2);
             document.getElementById('amt-net').innerText = "₱" + netEarnings.toFixed(2);
