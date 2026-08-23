@@ -123,6 +123,49 @@
                         <i class="fa-solid fa-floppy-disk"></i> Save & Apply
                     </button>
                 </form>
+
+                <!-- 🟢 DYNAMIC TODA FARE CONFIGURATOR (NEW) -->
+                <div class="mt-8 bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-6 shadow-sm">
+                    <h2 class="text-lg font-extrabold text-[#0f172a] flex items-center gap-2 mb-2">
+                        <i class="fa-solid fa-tags text-[#78350f]"></i> TODA Custom Services
+                    </h2>
+                    <p class="text-[11px] text-[#78350f] mb-4 font-bold leading-relaxed">Select a branch to add up to 2 custom services (e.g., "Pahatid", "Hakot") exclusively for their local passenger app.</p>
+
+                    <!-- 1. The Dynamic Dropdown -->
+                    <div class="mb-4">
+                        <label class="text-[10px] font-bold text-[#78350f] uppercase tracking-wider mb-1 block">Select Branch / TODA</label>
+                        <select id="config-toda-select" onchange="loadTodaConfig()" class="w-full bg-white border border-[#d4aa7c] rounded-xl px-4 py-2.5 text-sm font-bold text-[#0f172a] outline-none cursor-pointer focus:border-[#78350f]">
+                            <option value="">-- Select a TODA --</option>
+                            <!-- Populated automatically via JS -->
+                        </select>
+                    </div>
+
+                    <!-- 2. The Custom Inputs -->
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="text-[10px] font-bold text-[#78350f] uppercase tracking-wider mb-1 block">Custom 1 Name</label>
+                            <input type="text" id="custom1-name" placeholder="e.g. Pahatid" class="w-full bg-white border border-[#d4aa7c] rounded-xl px-3 py-2 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="text-[10px] font-bold text-[#78350f] uppercase tracking-wider mb-1 block">Base Fare (₱)</label>
+                            <input type="number" id="custom1-price" placeholder="0" class="w-full bg-white border border-[#d4aa7c] rounded-xl px-3 py-2 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                        </div>
+                        
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="text-[10px] font-bold text-[#78350f] uppercase tracking-wider mb-1 block">Custom 2 Name</label>
+                            <input type="text" id="custom2-name" placeholder="e.g. Hakot" class="w-full bg-white border border-[#d4aa7c] rounded-xl px-3 py-2 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                        </div>
+                        <div class="col-span-2 sm:col-span-1">
+                            <label class="text-[10px] font-bold text-[#78350f] uppercase tracking-wider mb-1 block">Base Fare (₱)</label>
+                            <input type="number" id="custom2-price" placeholder="0" class="w-full bg-white border border-[#d4aa7c] rounded-xl px-3 py-2 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                        </div>
+                    </div>
+
+                    <!-- 3. Save Button -->
+                    <button onclick="saveTodaConfig(event)" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3 rounded-xl shadow-md transition text-sm flex items-center justify-center gap-2 mt-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Custom Services
+                    </button>
+                </div>
             </div>
 
             <!-- RIGHT COLUMN: PAYOUT TABLE -->
@@ -185,7 +228,6 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
 
             try {
-                // Securely check password with Python backend
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -193,7 +235,6 @@
                 });
 
                 if (response.ok) {
-                    // Success! Python gave us a secure cookie.
                     const overlay = document.getElementById('lockOverlay');
                     overlay.style.transition = "opacity 0.3s ease";
                     overlay.style.opacity = "0";
@@ -209,20 +250,17 @@
         }
 
         function lockDashboard() {
-            // Delete the secure cookie
             document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             
             const overlay = document.getElementById('lockOverlay');
             overlay.style.display = 'flex';
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
             
-            // Clear inputs so they have to type it again
             document.getElementById('masterUser').value = "";
             document.getElementById('masterPass').value = "";
         }
 
         window.onload = async function() {
-            // Check for secure backend cookie instead of browser session storage
             if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
             }
@@ -232,8 +270,13 @@
                 if (locRes.ok) {
                     const data = await locRes.json();
                     const selector = document.getElementById('branchSelector');
-                    selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+                    const configSelector = document.getElementById('config-toda-select');
                     
+                    selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+                    configSelector.innerHTML = '<option value="">-- Select a TODA --</option>';
+                    
+                    let uniqueTodasForConfig = new Set(); 
+
                     for (const [brgy, todas] of Object.entries(data)) {
                         const group = document.createElement('optgroup');
                         group.label = `📍 Brgy. ${brgy}`;
@@ -243,9 +286,20 @@
                             opt.value = toda; 
                             opt.textContent = toda; 
                             group.appendChild(opt);
+
+                            // Collect for the Dynamic Custom Services Dropdown
+                            if(toda && toda !== "No TODA") uniqueTodasForConfig.add(toda);
                         });
                         selector.appendChild(group);
                     }
+
+                    // Populate the Custom Services Dropdown
+                    uniqueTodasForConfig.forEach(toda => {
+                        const opt = document.createElement('option');
+                        opt.value = toda;
+                        opt.textContent = toda;
+                        configSelector.appendChild(opt);
+                    });
                 }
             } catch (e) {
                 console.error("Could not load dynamic locations", e);
@@ -301,6 +355,66 @@
                 }
             } catch (error) {
                 alert("⚠️ Network error. Could not connect to the database.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // 🟢 FETCH SPECIFIC TODA CONFIGURATIONS
+        async function loadTodaConfig() {
+            const selectedToda = document.getElementById('config-toda-select').value;
+            if (!selectedToda) {
+                document.getElementById('custom1-name').value = "";
+                document.getElementById('custom1-price').value = "";
+                document.getElementById('custom2-name').value = "";
+                document.getElementById('custom2-price').value = "";
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`);
+                if (response.ok) {
+                    const config = await response.json();
+                    document.getElementById('custom1-name').value = config.custom_1_name || "";
+                    document.getElementById('custom1-price').value = config.custom_1_price || "";
+                    document.getElementById('custom2-name').value = config.custom_2_name || "";
+                    document.getElementById('custom2-price').value = config.custom_2_price || "";
+                }
+            } catch (error) {
+                console.error("Failed to load specific TODA config");
+            }
+        }
+
+        // 🟢 SAVE SPECIFIC TODA CONFIGURATIONS
+        async function saveTodaConfig(event) {
+            const selectedToda = document.getElementById('config-toda-select').value;
+            if (!selectedToda) return alert("Please select a TODA from the dropdown first!");
+
+            const payload = {
+                custom_1_name: document.getElementById('custom1-name').value,
+                custom_1_price: parseInt(document.getElementById('custom1-price').value) || 0,
+                custom_2_name: document.getElementById('custom2-name').value,
+                custom_2_price: parseInt(document.getElementById('custom2-price').value) || 0
+            };
+
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
+
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert(`✅ Custom services successfully updated for ${selectedToda}!`);
+                } else {
+                    alert("❌ Failed to save configuration.");
+                }
+            } catch (error) {
+                alert("Network error. Make sure the server is online.");
             } finally {
                 btn.innerHTML = originalText;
             }
