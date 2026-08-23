@@ -4,7 +4,6 @@ import json
 import random
 from datetime import datetime
 from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
-
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -55,7 +54,6 @@ class User(Base):
     rating_sum = Column(Float, default=0.0)
     rating_count = Column(Integer, default=0)
     
-    # 🟢 Organic LGU, Branch, & Secure Local Prefix Fields
     city = Column(String, nullable=True, default="Pasig City")
     barangay = Column(String, nullable=True, default="")
     toda_name = Column(String, nullable=True, default="")
@@ -75,7 +73,7 @@ class RideRequest(Base):
     driver_name = Column(String, nullable=True)
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
-    local_ref = Column(String, nullable=True, default="") # 🟢 Origin Reference Stamped on Orders
+    local_ref = Column(String, nullable=True, default="") 
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -96,15 +94,29 @@ class SystemConfig(Base):
     katoda_bank = Column(String, default="GCash")
     katoda_account = Column(String, default="")  
 
-# 🟢 NEW: TODA Custom Services Model
+# 🟢 UPGRADED: 5-Slot Per-Branch Configuration Model
 class TodaConfig(Base):
     __tablename__ = "toda_configs"
     id = Column(Integer, primary_key=True, index=True)
     toda_name = Column(String, unique=True, index=True)
-    custom_1_name = Column(String, default="")
-    custom_1_price = Column(Integer, default=0)
-    custom_2_name = Column(String, default="")
-    custom_2_price = Column(Integer, default=0)
+    
+    # 5 Fully Blank Custom Services
+    s1_name = Column(String, default="Pasundo")
+    s1_price = Column(Integer, default=50)
+    s2_name = Column(String, default="Pabili")
+    s2_price = Column(Integer, default=50)
+    s3_name = Column(String, default="Papickup")
+    s3_price = Column(Integer, default=50)
+    s4_name = Column(String, default="")
+    s4_price = Column(Integer, default=0)
+    s5_name = Column(String, default="")
+    s5_price = Column(Integer, default=0)
+    
+    # Branch-Specific Revenue Rules
+    platform_share = Column(Float, default=17.0)
+    katoda_share = Column(Float, default=3.0)
+    katoda_bank = Column(String, default="GCash")
+    katoda_account = Column(String, default="")
 
 Base.metadata.create_all(bind=engine)
 
@@ -129,7 +141,6 @@ def generate_local_ref(barangay: str, toda: str) -> str:
 # ==========================================
 @app.on_event("startup")
 def initialize_config():
-    # 🟢 Auto-build both config tables
     SystemConfig.__table__.create(bind=engine, checkfirst=True)
     TodaConfig.__table__.create(bind=engine, checkfirst=True)
     
@@ -215,12 +226,22 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
-# 🟢 NEW: Schema for Dynamic TODA Configuration
+# 🟢 UPGRADED: 5-Slot Schema
 class TodaConfigUpdateSchema(BaseModel):
-    custom_1_name: str
-    custom_1_price: int
-    custom_2_name: str
-    custom_2_price: int
+    s1_name: str
+    s1_price: int
+    s2_name: str
+    s2_price: int
+    s3_name: str
+    s3_price: int
+    s4_name: str
+    s4_price: int
+    s5_name: str
+    s5_price: int
+    platform_share: float
+    katoda_share: float
+    katoda_bank: str
+    katoda_account: str
 
 def sanitize_name(name: str) -> str:
     if not name: return ""
@@ -235,7 +256,8 @@ def read_root():
 
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
-    if request.username == "masterom" and request.password == "qZ82118@@":
+    # 🟢 FIXED: .strip().lower() ignores accidental spaces and capital letters!
+    if request.username.strip().lower() == "masterom" and request.password == "qZ82118@@":
         response = JSONResponse(content={"status": "success", "redirect": "admin_dashboard.html"})
         response.set_cookie(key="admin_session", value="masterom_active")
         return response
@@ -243,7 +265,8 @@ async def admin_login(request: LoginRequest):
 
 @app.post("/login")
 def login_user(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    if username == "masterom" and password == "qZ82118@@":
+    # 🟢 FIXED: .strip().lower() makes logging into admin much easier
+    if username.strip().lower() == "masterom" and password == "qZ82118@@":
         response = RedirectResponse(url="/admin_dashboard.html", status_code=303)
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
         return response
@@ -302,22 +325,14 @@ def register_account(
     db: Session = Depends(get_db)
 ):
     clean_username = sanitize_name(username)
-    
-    # Force Proper Title Case for Name
     clean_full_name = sanitize_name(full_name).title() if full_name else clean_username
 
-    # Check if user already exists
     existing = db.query(User).filter(User.username == clean_username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
-    # Force UPPERCASE for TODA Name
     formatted_toda = toda_name.upper() if toda_name else ""
-    
-    # Force Proper Title Case for Barangay
     formatted_barangay = barangay.title() if barangay else ""
-    
-    # Force UPPERCASE for License and Plate No.
     formatted_toda_number = toda_number.upper() if toda_number else ""
     formatted_plate = plate_number.upper() if plate_number else ""
 
@@ -395,7 +410,7 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "gcash_account": user.gcash_account if user.gcash_account else "",
         "address": user.address if user.address else "", "rating": avg_rating,
         "local_ref": user.local_ref if user.local_ref else "N/A",
-        "toda_name": user.toda_name if user.toda_name else "" # 🟢 ADDED SO PASSENGER APP KNOWS TODA
+        "toda_name": user.toda_name if user.toda_name else "" 
     }
 
 @app.post("/api/update-profile")
@@ -545,9 +560,17 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
-    config = db.query(SystemConfig).first()
-    platform_pct = (config.platform_share if config else 17) / 100
-    katoda_pct = (config.katoda_share if config else 3) / 100
+    # Platform defaults
+    platform_pct = 17.0 / 100
+    katoda_pct = 3.0 / 100
+    
+    # Try to load branch-specific rev share
+    if branch != "All":
+        branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == branch.strip().upper()).first()
+        if branch_config:
+            platform_pct = branch_config.platform_share / 100
+            katoda_pct = branch_config.katoda_share / 100
+
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     payouts = {}
@@ -622,15 +645,25 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         "drivers": list(payouts.values()),
         "total_katoda": total_katoda,
         "total_platform": total_platform,
-        "katoda_bank": config.katoda_bank if config and config.katoda_bank else "GCash",
-        "katoda_account": config.katoda_account if config and config.katoda_account else "Not Configured"
+        "katoda_bank": "GCash",
+        "katoda_account": "Not Configured"
     }   
 
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
-    config = db.query(SystemConfig).first()
-    platform_pct = (config.platform_share if config else 17) / 100
-    katoda_pct = (config.katoda_share if config else 3) / 100
+    platform_pct = 17.0 / 100
+    katoda_pct = 3.0 / 100
+    katoda_bank = "GCash"
+    katoda_account = "MISSING_KATODA_ACCOUNT"
+
+    if branch != "All":
+        branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == branch.strip().upper()).first()
+        if branch_config:
+            platform_pct = branch_config.platform_share / 100
+            katoda_pct = branch_config.katoda_share / 100
+            katoda_bank = branch_config.katoda_bank
+            katoda_account = branch_config.katoda_account
+
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
     driver_payouts = {}
@@ -679,9 +712,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
             writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout [{local_tag}] ({bank_provider})"])
 
     if total_katoda_payout > 0:
-        katoda_bank = config.katoda_bank if config and config.katoda_bank else "GCash"
-        katoda_acct = config.katoda_account if config and config.katoda_account else "MISSING_KATODA_ACCOUNT"
-        writer.writerow([katoda_acct, "KATODA Organization", f"{total_katoda_payout:.2f}", f"2DA Daily Katoda Share ({katoda_bank})"])
+        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"2DA Daily Katoda Share ({katoda_bank})"])
         
     output.seek(0)
     current_date = datetime.now().strftime("%Y-%m-%d")
@@ -689,7 +720,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Payout_{current_date}.csv"})
 
 # ==========================================
-# 🟢 DYNAMIC TODA SERVICE ENDPOINTS (NEW)
+# 🟢 5-SLOT BRANCH CONFIGURATION ENDPOINTS
 # ==========================================
 @app.get("/api/admin/toda-config/{toda_name}")
 def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
@@ -698,13 +729,23 @@ def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
     
     if not config:
         return {
-            "custom_1_name": "", "custom_1_price": 0,
-            "custom_2_name": "", "custom_2_price": 0
+            "s1_name": "Pasundo", "s1_price": 50,
+            "s2_name": "Pabili", "s2_price": 50,
+            "s3_name": "Papickup", "s3_price": 50,
+            "s4_name": "", "s4_price": 0,
+            "s5_name": "", "s5_price": 0,
+            "platform_share": 17.0, "katoda_share": 3.0,
+            "katoda_bank": "GCash", "katoda_account": ""
         }
         
     return {
-        "custom_1_name": config.custom_1_name, "custom_1_price": config.custom_1_price,
-        "custom_2_name": config.custom_2_name, "custom_2_price": config.custom_2_price
+        "s1_name": config.s1_name, "s1_price": config.s1_price,
+        "s2_name": config.s2_name, "s2_price": config.s2_price,
+        "s3_name": config.s3_name, "s3_price": config.s3_price,
+        "s4_name": config.s4_name, "s4_price": config.s4_price,
+        "s5_name": config.s5_name, "s5_price": config.s5_price,
+        "platform_share": config.platform_share, "katoda_share": config.katoda_share,
+        "katoda_bank": config.katoda_bank, "katoda_account": config.katoda_account
     }
 
 @app.post("/api/admin/toda-config/{toda_name}")
@@ -716,13 +757,24 @@ def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session
         config = TodaConfig(toda_name=clean_toda)
         db.add(config)
         
-    config.custom_1_name = data.custom_1_name.strip().title()
-    config.custom_1_price = data.custom_1_price
-    config.custom_2_name = data.custom_2_name.strip().title()
-    config.custom_2_price = data.custom_2_price
+    config.s1_name = data.s1_name.strip().title()
+    config.s1_price = data.s1_price
+    config.s2_name = data.s2_name.strip().title()
+    config.s2_price = data.s2_price
+    config.s3_name = data.s3_name.strip().title()
+    config.s3_price = data.s3_price
+    config.s4_name = data.s4_name.strip().title()
+    config.s4_price = data.s4_price
+    config.s5_name = data.s5_name.strip().title()
+    config.s5_price = data.s5_price
+    
+    config.platform_share = data.platform_share
+    config.katoda_share = data.katoda_share
+    config.katoda_bank = data.katoda_bank
+    config.katoda_account = data.katoda_account
     
     db.commit()
-    return {"status": "success", "message": f"Custom services updated for {clean_toda}"}
+    return {"status": "success"}
 
 # ==========================================
 # MISC ENDPOINTS
@@ -846,19 +898,16 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
 
 @app.get("/api/toda/finances")
 def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
-    config = db.query(SystemConfig).first()
-    toda_pct = (config.katoda_share if config else 3) / 100
+    branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == toda_name.strip().upper()).first()
+    toda_pct = (branch_config.katoda_share if branch_config else 3) / 100
 
     search_term = f"%{toda_name.strip()}%"
     
-    # 1. Get all drivers belonging strictly to this TODA
     drivers = db.query(User).filter(User.toda_name.ilike(search_term), User.role == 'driver').all()
     driver_names = [sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username) for d in drivers]
 
-    # 2. Get all settled rides
     rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
 
-    # 3. Calculate this TODA's specific revenue share
     total_toda_share = 0.0
     for r in rides:
         clean_driver = sanitize_name(r.driver_name) if r.driver_name else ""
@@ -869,7 +918,6 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
             except ValueError:
                 continue
 
-    # 🟢 FIXED: Live revenue now actually replaces the hardcoded zeros!
     return {
         "today": total_toda_share,  
         "week": total_toda_share,
@@ -877,7 +925,6 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
         "ytd": total_toda_share
     }
 
-# Dictionary to hold independent broadcasts for EACH Toda
 toda_broadcasts = {}
 
 class TodaBroadcastSchema(BaseModel): 
@@ -894,13 +941,11 @@ def send_toda_broadcast(data: TodaBroadcastSchema):
 def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)): 
     clean_name = sanitize_name(driver_name)
     
-    # Find the driver in the database
     driver = db.query(User).filter(
         (User.full_name == clean_name) | (User.username == clean_name), 
         User.role == 'driver'
     ).first()
     
-    # If the driver has a TODA, return their specific broadcast!
     if driver and driver.toda_name:
         clean_toda = driver.toda_name.strip().upper()
         return {"message": toda_broadcasts.get(clean_toda, ""), "toda_name": clean_toda}
