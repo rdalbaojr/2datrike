@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2DA — Book a Service</title>
+    <title>2DA - Passenger Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Hide scrollbar for cleaner app look */
         ::-webkit-scrollbar { display: none; }
         .service-btn.active {
             background: #78350f; 
@@ -45,142 +46,60 @@
             </a>
             <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ Driver Dash
-            </a>  
-            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
+            </a>
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
                 🏍️ TODA Dash
             </a>  
-            
+            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
+                <i class="fa-solid fa-lock mr-1"></i> Admin Dash
+            </a>
         </div>
     </div>
+    <!-- ==================================================================== -->
 
     <!-- ==================== MAIN FLOATING APP CARD ==================== -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative z-10 overflow-hidden">
         
         <!-- Header -->
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight">2DA App</h1>
-                <p class="text-xs text-[#78350f] font-bold mt-1"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> <span id="welcome-name">Passenger</span></p>
-            </div>
-            <div class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()">
-                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
-            </div>
+        <div class="text-center mb-6">
+            <h2 id="passenger-welcome-name" class="text-2xl font-extrabold text-[#0f172a] tracking-tight mb-1">Passenger Portal</h2>
+            <p class="text-xs text-green-800 font-bold"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> Online</p>
         </div>
+        
+        <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
 
-        <!-- 🟢 5-SLOT DYNAMIC SERVICE SELECTION -->
-        <div id="service-selection-box">
-            <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
-            <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                <!-- Buttons are automatically injected here via JS from the Branch Configurator -->
-            </div>
+        <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-4">My Rides & Requests</h3>
+        
+        <!-- Active and past rides injected here -->
+        <div id="my-rides-container" class="space-y-4">
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-4">Loading your history...</p>
         </div>
-
-        <!-- Routing Form -->
-        <form id="booking-form" class="space-y-4">
-            <div class="relative shadow-sm">
-                <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-location-dot"></i></div>
-                <input type="text" id="pickup" required placeholder="Pick-up Location (Point A)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-            <div class="relative shadow-sm">
-                <div class="absolute left-4 top-4 text-rose-700"><i class="fa-solid fa-location-crosshairs"></i></div>
-                <input type="text" id="dropoff" required placeholder="Drop-off Location (Point B)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-
-            <div id="pabili-budget-container" class="hidden relative shadow-sm">
-                <div class="absolute left-4 top-4 text-green-800 font-bold">₱</div>
-                <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-
-            <!-- Fare Estimate Display -->
-            <div id="fare-estimate" class="hidden bg-[#F5E6D3] border border-[#d4aa7c] p-4 rounded-xl flex justify-between items-center mt-4 shadow-sm">
-                <div class="text-xs text-[#78350f] font-bold uppercase tracking-wider">Est. Total Fare</div>
-                <div class="text-lg font-extrabold text-[#0f172a]" id="fare-amount">₱0.00</div>
-            </div>
-
-            <button type="submit" id="submit-btn" class="w-full mt-2 py-4 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition-all duration-300">
-                Calculate Fare <i class="fa-solid fa-calculator ml-2"></i>
-            </button>
-
-            <button type="button" id="confirm-btn" class="hidden w-full mt-2 py-4 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-lg transition-all duration-300">
-                Confirm & Find Driver <i class="fa-solid fa-motorcycle ml-2"></i>
-            </button>
-        </form>
-
-        <!-- SEARCHING STATE -->
-        <div id="searching-state" class="hidden flex flex-col items-center justify-center py-10 text-center">
-            <div class="relative w-20 h-20 mb-6">
-                <div class="absolute inset-0 bg-[#78350f] rounded-full animate-ping opacity-75"></div>
-                <div class="relative w-full h-full bg-[#F5E6D3] border-4 border-[#78350f] rounded-full flex items-center justify-center shadow-lg">
-                    <i class="fa-solid fa-motorcycle text-2xl text-[#78350f]"></i>
-                </div>
-            </div>
-            <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
-            <p class="text-sm text-[#78350f] font-medium mb-3">Notifying 2DA drivers nearby.</p>
-            <p id="searching-ref" class="text-[10px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/40 px-2.5 py-1 rounded inline-block">ID: Loading...</p>
-            
-            <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline">Cancel Search</button>
-        </div>
-
-        <!-- MY ACTIVE RIDES (RADAR) -->
-        <div class="mt-8 border-t border-[#d4aa7c] pt-6">
-            <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-4">My Rides & History</h3>
-            <div id="my-rides-container" class="space-y-4">
-                <p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>
-            </div>
-        </div>
+        
     </div>
 
-    <!-- ==================== BPI & OTP PAYMENT MODAL ==================== -->
-    <div id="payment-modal" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-6 sm:p-8 max-w-[420px] w-full text-center shadow-2xl relative overflow-hidden">
-            <!-- QR VIEW -->
-            <div id="qr-view" class="transition-all duration-300 block">
-                <div class="inline-flex items-center justify-center w-12 h-12 bg-[#78350f] text-white rounded-2xl mb-4 shadow-lg">
-                    <i class="fa-solid fa-qrcode text-xl"></i>
-                </div>
-                <h2 class="text-2xl font-extrabold text-[#0f172a] mb-2">Pay via BPI</h2>
-                <p class="text-sm text-[#78350f] mb-6 font-medium leading-relaxed">Scan the QR code to pay, then request your confirmation code.</p>
-                
-                <div class="bg-white p-3 rounded-2xl inline-block mb-6 shadow-md border border-slate-200">
-                    <img src="bpi-qr.png" alt="BPI QR Code" class="w-48 h-48 object-cover rounded-xl">
-                </div>
-                
-                <div class="bg-[#F5E6D3] rounded-2xl p-4 mb-6 border border-[#d4aa7c] shadow-inner">
-                    <p class="text-[10px] text-[#78350f] uppercase tracking-widest mb-1 font-bold">Total Fare</p>
-                    <p class="text-3xl font-extrabold text-[#175d33]" id="payment-fare">₱0.00</p>
-                </div>
-
-                <button onclick="requestOTP()" class="w-full py-4 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg mb-3 transition text-sm">
-                    I Have Paid — Get OTP <i class="fa-solid fa-mobile-screen-button ml-2"></i>
-                </button>
-                <button onclick="closePaymentModal()" class="w-full py-3 bg-[#d4aa7c] hover:bg-[#c99c6b] text-[#78350f] font-bold rounded-xl transition text-sm">
-                    Cancel
-                </button>
-            </div>
-
-            <!-- OTP VIEW -->
-            <div id="otp-view" class="transition-all duration-300 hidden">
-                <div class="inline-flex items-center justify-center w-12 h-12 bg-[#175d33] text-white rounded-2xl mb-4 shadow-lg">
-                    <i class="fa-solid fa-shield-check text-xl"></i>
-                </div>
-                <h2 class="text-2xl font-extrabold text-[#0f172a] mb-2">Enter OTP</h2>
-                <p class="text-sm text-[#78350f] mb-6 font-medium leading-relaxed">Please enter the 4-digit code generated for this transaction.</p>
-                
-                <input type="text" id="otp-input" maxlength="4" placeholder="••••" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl px-4 py-4 text-center text-3xl tracking-[1em] text-[#0f172a] focus:outline-none focus:border-[#78350f] mb-6 font-mono font-bold shadow-inner">
-                
-                <button onclick="verifyOTPAndPay()" class="w-full py-4 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-lg mb-3 transition text-sm">
-                    Confirm Payment <i class="fa-solid fa-check ml-2"></i>
-                </button>
-                <button onclick="resetToQRView()" class="w-full py-3 bg-[#d4aa7c] hover:bg-[#c99c6b] text-[#78350f] font-bold rounded-xl transition text-sm">
-                    Back to QR Code
-                </button>
+    <!-- 🟢 SEARCHING STATE OVERLAY -->
+    <div id="searching-state" class="hidden w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative z-10 mt-6 flex flex-col items-center justify-center py-10 text-center">
+        <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 bg-[#78350f] rounded-full animate-ping opacity-75"></div>
+            <div class="relative w-full h-full bg-[#F5E6D3] border-4 border-[#78350f] rounded-full flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-motorcycle text-2xl text-[#78350f]"></i>
             </div>
         </div>
+        <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
+        <p class="text-sm text-[#78350f] font-medium mb-4">Notifying 2DA drivers nearby.</p>
+        
+        <!-- 🟢 BOLD TICKET-STYLE REF NUMBER BADGE -->
+        <p id="searching-ref" class="font-mono text-lg font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-4 py-1.5 rounded shadow-sm inline-block">
+            Loading...
+        </p>
+        
+        <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline">Cancel Search</button>
     </div>
 
-    <!-- ==================== IN-APP CHAT MODAL ==================== -->
+     <!-- ==================== IN-APP CHAT MODAL ==================== -->
     <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
+            <!-- Chat Header -->
             <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
                 <h3 class="font-bold flex items-center gap-2 text-lg">
                     <i class="fa-regular fa-comment-dots"></i> 2DA Secure Chat
@@ -189,9 +108,13 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+
+            <!-- Chat Messages Area -->
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col bg-[#F5E6D3]">
                 <div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>
             </div>
+
+            <!-- Type Message Area -->
             <div class="bg-white p-3 border-t border-[#d4aa7c] flex gap-2 items-center">
                 <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-[#175d33] transition" placeholder="Type a message...">
                 <button onclick="sendMessage()" class="bg-[#175d33] text-white w-11 h-11 rounded-full flex justify-center items-center shadow-md hover:bg-[#114626] transition shrink-0 hover:scale-105">
@@ -201,403 +124,173 @@
         </div>
     </div>
 
-    <!-- ==================== JAVASCRIPT ==================== -->
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
+        // --- Quick Menu Toggle ---
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
-
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
             const button = menu.previousElementSibling;
-            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
                 menu.style.display = 'none';
             }
         });
 
+        // 1. Get the current passenger's name
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) {
-                let val = decodeURIComponent(match[2]);
-                return val.replace(/^"|"$/g, '').trim(); 
-            }
-            return "Guest"; 
+            if (match) return decodeURIComponent(match[2]);
+            return "Guest"; // Fallback to ensure it works for testing
         }
 
-        // 🟢 FULLY DYNAMIC 5-SLOT GRID GENERATOR
-        let allServicePrices = {};
-        let currentService = '';
         const currentPassenger = getCookie("passenger_name");
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            document.getElementById("welcome-name").innerText = `${currentPassenger}`;
-            const container = document.getElementById("service-buttons-container");
-            container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-[#78350f] py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading Branch Services...</div>';
-            
-            try {
-                let branchToLoad = 'MASTER'; // Default Fallback
-                if (currentPassenger && currentPassenger !== "Guest") {
-                    const profileRes = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}`);
-                    if (profileRes.ok) {
-                        const profile = await profileRes.json();
-                        if (profile.toda_name) branchToLoad = profile.toda_name;
-                    }
-                }
-
-                // Fetch the exact 5 slots configured for this Branch
-                const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(branchToLoad)}`);
-                if (configRes.ok) {
-                    const config = await configRes.json();
-                    container.innerHTML = ''; 
-
-                    // Awesome icons mapped directly to slots 1 through 5
-                    const icons = ['fa-person-walking-luggage', 'fa-basket-shopping', 'fa-box-open', 'fa-star', 'fa-bolt'];
-                    let isFirst = true;
-
-                    for (let i = 1; i <= 5; i++) {
-                        let sName = config[`s${i}_name`];
-                        let sPrice = config[`s${i}_price`];
-
-                        if (sName && sName.trim() !== "") {
-                            allServicePrices[sName] = sPrice;
-                            
-                            if (isFirst) {
-                                currentService = sName;
-                                isFirst = false;
-                            }
-
-                            let activeClass = currentService === sName ? 'active text-white' : 'text-[#78350f]';
-                            let safeId = `btn-${sName.replace(/[^a-zA-Z0-9]/g, '')}`;
-
-                            container.innerHTML += `
-                                <button type="button" onclick="selectService('${sName}')" id="${safeId}" class="service-btn ${activeClass} flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
-                                    <i class="fa-solid ${icons[i-1]} text-xl mb-2"></i>
-                                    <span class="text-[10px] font-bold uppercase text-center leading-tight">${sName}</span>
-                                </button>
-                            `;
-                        }
-                    }
-                    
-                    if (Object.keys(allServicePrices).length === 0) {
-                         container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">No services currently configured for this branch.</div>';
-                    }
-                    
-                    toggleBudgetContainer(currentService);
-                }
-            } catch (e) {
-                container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">Error loading services.</div>';
-            }
-        });
-
-        function toggleBudgetContainer(service) {
-            const pabiliContainer = document.getElementById('pabili-budget-container');
-            // If the custom name has "pabili" or "buy" inside it, auto-show the budget box!
-            if (service && (service.toLowerCase().includes('pabili') || service.toLowerCase().includes('buy'))) {
-                pabiliContainer.classList.remove('hidden');
-            } else {
-                pabiliContainer.classList.add('hidden');
-                document.getElementById('pabili-budget').value = '';
-            }
-        }
-
-        function selectService(service) {
-            currentService = service;
-            document.querySelectorAll('.service-btn').forEach(btn => {
-                btn.classList.remove('active', 'text-white');
-                btn.classList.add('text-[#78350f]');
-            });
-            
-            let safeId = `btn-${service.replace(/[^a-zA-Z0-9]/g, '')}`;
-            const activeBtn = document.getElementById(safeId);
-            if (activeBtn) {
-                activeBtn.classList.add('active', 'text-white');
-                activeBtn.classList.remove('text-[#78350f]');
-            }
-            
-            toggleBudgetContainer(service);
-            
-            document.getElementById('fare-estimate').classList.add('hidden');
-            document.getElementById('submit-btn').classList.remove('hidden');
-            document.getElementById('confirm-btn').classList.add('hidden');
-        }
-
-        document.getElementById('booking-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
-            
-            setTimeout(() => {
-                let baseFare = allServicePrices[currentService] || 0; 
-                let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
-                let total = baseFare + pabiliBudget;
-
-                document.getElementById('fare-amount').innerText = `₱${total.toFixed(2)}`;
-                document.getElementById('fare-estimate').classList.remove('hidden');
-                document.getElementById('submit-btn').classList.add('hidden');
-                document.getElementById('confirm-btn').classList.remove('hidden');
-                document.getElementById('submit-btn').innerHTML = 'Calculate Fare <i class="fa-solid fa-calculator ml-2"></i>';
-            }, 800);
-        });
-
-        document.getElementById('confirm-btn').addEventListener('click', async function(event) {
-            event.preventDefault();
-            const pickupLocation = document.getElementById('pickup').value;
-            const dropoffLocation = document.getElementById('dropoff').value;
-
-            if (!pickupLocation || !dropoffLocation) {
-                alert("Please enter pick-up and drop-off locations.");
-                return;
-            }
-
-            document.getElementById('booking-form').classList.add('hidden');
-            document.getElementById('service-selection-box').classList.add('hidden');
-            document.getElementById('searching-state').classList.remove('hidden');
-
-            const requestData = {
-                passenger_name: currentPassenger, 
-                pickup_location: pickupLocation,
-                dropoff_location: dropoffLocation,
-                service_type: currentService, 
-                fare: document.getElementById('fare-amount').innerText 
-            };
-
-            try {
-                const response = await fetch("/request-ride/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(requestData)
-                });
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    document.getElementById('searching-ref').innerText = `ID: ${responseData.local_ref}`;
-                    
-                    document.getElementById('pickup').value = '';
-                    document.getElementById('dropoff').value = '';
-                    document.getElementById('fare-estimate').classList.add('hidden');
-                    document.getElementById('submit-btn').classList.remove('hidden');
-                    document.getElementById('confirm-btn').classList.add('hidden');
-                    fetchMyRides();
-                } else {
-                    alert("Error requesting ride from server.");
-                    window.location.reload();
-                }
-            } catch (error) {
-                alert("Network error connecting to server.");
-                window.location.reload();
+        // Automatically set the passenger's name on load
+        document.addEventListener("DOMContentLoaded", () => {
+            const welcomeHeader = document.getElementById('passenger-welcome-name');
+            if (welcomeHeader && currentPassenger !== "Guest") {
+                welcomeHeader.innerText = `Welcome, ${currentPassenger}`;
             }
         });
 
         function cancelSearch() {
             document.getElementById('searching-state').classList.add('hidden');
-            document.getElementById('booking-form').classList.remove('hidden');
-            document.getElementById('service-selection-box').classList.remove('hidden');
         }
 
-        function logout() {
-            document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            window.location.href = "/login.html";
-        }
-
+        // 2. Fetch and Display My Rides
         async function fetchMyRides() {
             try {
+                // ADDED CACHE-BUSTER: Prevents the browser from freezing on old data
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
                 const allRides = await response.json();
+                
+                // The container where rides are displayed
                 const container = document.getElementById('my-rides-container');
-                if (!container) return;
+                if (!container) return; // Failsafe
+                
+                // Filter logic: Show ONLY rides belonging to THIS passenger that are NOT paid yet
+                const myRides = allRides.filter(ride => 
+                    ride.passenger_name === currentPassenger && 
+                    ride.status !== 'paid'
+                );
 
-                const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger);
-                const activeRide = myRides.find(r => ['pending', 'accepted', 'completed'].includes(r.status));
+                const activeRide = myRides.find(r => ['pending'].includes(r.status));
 
-                if (activeRide) {
-                    document.getElementById('booking-form').classList.add('hidden');
-                    document.getElementById('service-selection-box').classList.add('hidden');
-                    
-                    if (activeRide.status === 'pending') {
-                        document.getElementById('searching-state').classList.remove('hidden');
-                        document.getElementById('searching-ref').innerText = `ID: ${activeRide.local_ref || 'N/A'}`;
-                    } else {
-                        document.getElementById('searching-state').classList.add('hidden');
-                    }
+                if (activeRide && activeRide.status === 'pending') {
+                    document.getElementById('searching-state').classList.remove('hidden');
+                    document.getElementById('searching-ref').innerText = `${activeRide.local_ref || 'N/A'}`;
                 } else {
-                    document.getElementById('booking-form').classList.remove('hidden');
-                    document.getElementById('service-selection-box').classList.remove('hidden');
                     document.getElementById('searching-state').classList.add('hidden');
                 }
 
                 if (myRides.length === 0) {
-                    container.innerHTML = '<p class="text-center text-[#78350f]/70 text-sm font-medium italic">No active requests right now.</p>';
+                    container.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-4">You have no active or past requests right now.</p>';
                     return;
                 }
 
                 container.innerHTML = ''; 
-                const recentRides = myRides.slice(-10).reverse();
 
-                recentRides.forEach(ride => {
+                myRides.reverse().forEach(ride => {
                     const rideBox = document.createElement('div');
-                    rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm";
+                    rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-5 shadow-md";
                     
                     let statusHtml = "";
-                    
+
+                    // STATE 1: Pending
                     if (ride.status === 'pending' || !ride.status) {
-                        statusHtml = `<p class="text-[#78350f] text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1 animate-pulse"></i> Looking for a driver...</p>`;
+                        statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
                     } 
+                    // STATE 2: Accepted (Driver is on the way)
                     else if (ride.status === 'accepted') {
                         statusHtml = `
-                            <div class="bg-green-900/10 border border-green-800/30 rounded-xl p-3 mt-4">
-                                <p class="text-green-800 text-sm font-bold m-0">
-                                    <i class="fa-solid fa-circle-check mr-1"></i> Driver ${ride.driver_name} is on the way!
+                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">
+                                    ✅ Driver ${ride.driver_name} has accepted your ride and is on the way!
                                 </p>
-                                <div class="flex gap-2 mt-3">
-                                    <a href="tel:#" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                
+                                <div class="flex gap-3 mt-2">
+                                    <a href="tel:${ride.driver_mobile || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                         <i class="fa-solid fa-phone"></i> Call
                                     </a>
+                                    
                                     <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                         <i class="fa-regular fa-comment-dots"></i> Chat
                                     </button>
                                 </div>
                             </div>
                         `;
-                    } 
+                    }
+                    // STATE 3: Completed (Driver arrived, time to pay)
                     else if (ride.status === 'completed') {
                         statusHtml = `
-                            <div class="bg-[#78350f]/10 border border-[#78350f]/30 rounded-xl p-3 mt-4">
-                                <p class="text-[#78350f] text-sm font-bold mb-3">
-                                    <i class="fa-solid fa-location-dot mr-1"></i> Arrived! Please settle your fare.
+                            <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-blue-800 text-sm font-bold m-0">
+                                    📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.
                                 </p>
-                                <button onclick="openPaymentModal(${ride.id}, '${ride.fare}')" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white py-3 rounded-lg text-sm font-bold transition shadow-md">
-                                    <i class="fa-solid fa-qrcode mr-1"></i> Pay with BPI QR
-                                </button>
                             </div>
                         `;
                     }
-                    else if (ride.status === 'paid') {
-                        if (!ride.rating) {
-                            statusHtml = `
-                                <div class="bg-white border border-[#d4aa7c] rounded-xl p-3 mt-4 text-center">
-                                    <p class="text-[#78350f] text-xs font-bold uppercase tracking-widest mb-2">Rate Driver ${ride.driver_name}</p>
-                                    <div class="flex justify-center gap-2 text-2xl" id="rating-stars-${ride.id}">
-                                        <button onclick="submitRating(${ride.id}, 1)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 2)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 3)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 4)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                        <button onclick="submitRating(${ride.id}, 5)" class="star-btn"><i class="fa-solid fa-star"></i></button>
-                                    </div>
-                                </div>
-                            `;
-                        } else {
-                            statusHtml = `
-                                <div class="bg-green-900/10 border border-green-800/30 rounded-xl p-2 mt-4 text-center">
-                                    <p class="text-green-800 text-xs font-bold"><i class="fa-solid fa-check-double mr-1"></i> Ride Completed & Rated ${ride.rating} Stars.</p>
-                                </div>
-                            `;
-                        }
-                    }
 
+                    // 🟢 UPDATED: Bold Ticket-Style ID included in the passenger card
                     rideBox.innerHTML = `
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <strong class="text-[#78350f] text-[11px] tracking-widest uppercase font-extrabold block mb-1">${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
-                            </div>
-                            <span class="text-[#0f172a] font-extrabold text-sm mt-1">${ride.fare}</span>
+                        <div class="flex justify-between items-center mb-4">
+                            <strong class="text-[#78350f] text-sm tracking-wider uppercase font-extrabold">${ride.service_type || 'Passenger'}</strong>
+                            <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">${ride.local_ref || 'N/A'}</span>
                         </div>
-                        <p class="text-slate-700 text-xs mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
-                        <p class="text-slate-700 text-xs font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
+                        <p class="text-slate-700 text-sm mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
+                        <p class="text-slate-700 text-sm font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
+                        
+                        <hr class="border-0 border-t border-dashed border-[#d4aa7c] my-3">
+                        
                         ${statusHtml}
                     `;
+                    
                     container.appendChild(rideBox);
                 });
-            } catch (error) { console.error("Error fetching rides:", error); }
-        }
-
-        async function submitRating(rideId, ratingValue) {
-            try {
-                const response = await fetch(`/api/rate-ride/${rideId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ rating: ratingValue })
-                });
-                if (response.ok) {
-                    alert("Thank you! Your rating has been submitted.");
-                    fetchMyRides();
-                }
-            } catch (e) {
-                alert("Network error submitting rating.");
+            } catch (error) {
+                console.error("Error fetching rides:", error);
             }
         }
 
-        // OTP & PAYMENT LOGIC
-        let currentRideIdToPay = null;
-        let currentOTP = null; 
+        // Start the radar! Load immediately, then check every 3 seconds
+        fetchMyRides();
+        setInterval(fetchMyRides, 3000);
 
-        function openPaymentModal(rideId, fareAmount) {
-            currentRideIdToPay = rideId;
-            document.getElementById('payment-fare').innerText = fareAmount || "₱0.00";
-            resetToQRView();
-            document.getElementById('payment-modal').classList.remove('hidden');
-        }
-
-        function closePaymentModal() {
-            document.getElementById('payment-modal').classList.add('hidden');
-            currentRideIdToPay = null;
-            currentOTP = null;
-        }
-
-        function resetToQRView() {
-            document.getElementById('qr-view').classList.remove('hidden');
-            document.getElementById('otp-view').classList.add('hidden');
-            document.getElementById('otp-input').value = ""; 
-        }
-
-        function requestOTP() {
-            currentOTP = Math.floor(1000 + Math.random() * 9000).toString();
-            alert(`[TEST MODE] Your Payment OTP is: ${currentOTP}`);
-            document.getElementById('qr-view').classList.add('hidden');
-            document.getElementById('otp-view').classList.remove('hidden');
-        }
-
-        async function verifyOTPAndPay() {
-            if (!currentRideIdToPay) return;
-            const userInput = document.getElementById('otp-input').value.trim();
-            if (userInput !== currentOTP) {
-                alert("⚠️ Incorrect OTP. Please try again.");
-                return; 
-            }
-            try {
-                const response = await fetch(`/pay-ride/${currentRideIdToPay}`, { method: 'POST' });
-                if (response.ok) {
-                    alert("✅ Payment confirmed successfully! Thank you.");
-                    closePaymentModal();
-                    fetchMyRides(); 
-                } else { alert("⚠️ Error confirming payment."); }
-            } catch (error) { alert("⚠️ Network error."); }
-        }
-
+        // ==========================================
         // WEBSOCKET CHAT LOGIC FOR PASSENGER
+        // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
-
+        
         async function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
             
+            // Show a loading state
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
+            // 1. FETCH CHAT HISTORY FROM DATABASE (WITH CACHE-BUSTER)
             try {
                 const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const history = await response.json();
+                    
+                    // Clear the loading text and set the header
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
                     
+                    // Loop through past messages and display them
                     history.forEach(msg => {
                         displayMessage(msg.sender, msg.text);
                     });
                 }
             } catch (error) {
-                console.error("Could not load chat history:", error);
+                console.error("Could not load chat history.");
             }
-
+            
+            // 2. START THE LIVE WEBSOCKET CONNECTION
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
@@ -609,26 +302,35 @@
 
         function closeChat() {
             document.getElementById('chat-modal').classList.add('hidden');
-            if(chatSocket) { chatSocket.close(); }
+            if(chatSocket) {
+                chatSocket.close();
+            }
         }
 
         function handleEnter(event) {
-            if(event.key === 'Enter') sendMessage();
+            if(event.key === 'Enter') {
+                sendMessage();
+            }
         }
 
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const messageText = input.value.trim();
+            
             if (messageText !== '' && chatSocket) {
-                const payload = { sender: currentChatUser, text: messageText };
+                const payload = {
+                    sender: currentChatUser,
+                    text: messageText
+                };
                 chatSocket.send(JSON.stringify(payload));
-                input.value = ''; 
+                input.value = ''; // Clear the input box
             }
         }
 
         function displayMessage(sender, text) {
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender === currentChatUser;
+            
             const alignClass = isMe ? 'self-end' : 'self-start';
             const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
             
@@ -640,13 +342,10 @@
                     </div>
                 </div>
             `;
+            
             messageContainer.innerHTML += messageHTML;
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
-
-        // Start polling for rides
-        fetchMyRides();
-        setInterval(fetchMyRides, 3000);
     </script>
 </body>
 </html>
