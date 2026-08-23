@@ -85,6 +85,27 @@ class ChatMessage(Base):
     text = Column(Text)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
+class SystemConfig(Base):
+    __tablename__ = "system_config"
+    id = Column(Integer, primary_key=True, index=True)
+    pasundo_price = Column(Integer, default=50)
+    pabili_price = Column(Integer, default=50)
+    deliver_price = Column(Integer, default=50)
+    platform_share = Column(Integer, default=17)
+    katoda_share = Column(Integer, default=3)
+    katoda_bank = Column(String, default="GCash")
+    katoda_account = Column(String, default="")  
+
+# 🟢 NEW: TODA Custom Services Model
+class TodaConfig(Base):
+    __tablename__ = "toda_configs"
+    id = Column(Integer, primary_key=True, index=True)
+    toda_name = Column(String, unique=True, index=True)
+    custom_1_name = Column(String, default="")
+    custom_1_price = Column(Integer, default=0)
+    custom_2_name = Column(String, default="")
+    custom_2_price = Column(Integer, default=0)
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():
@@ -106,21 +127,12 @@ def generate_local_ref(barangay: str, toda: str) -> str:
 # ==========================================
 # 5. STARTUP SCRIPT & PYDANTIC SCHEMAS
 # ==========================================
-class SystemConfig(Base):
-    __tablename__ = "system_config"
-    id = Column(Integer, primary_key=True, index=True)
-    pasundo_price = Column(Integer, default=50)
-    pabili_price = Column(Integer, default=50)
-    deliver_price = Column(Integer, default=50)
-    platform_share = Column(Integer, default=17)
-    katoda_share = Column(Integer, default=3)
-    katoda_bank = Column(String, default="GCash")
-    katoda_account = Column(String, default="")  
-
-SystemConfig.__table__.create(bind=engine, checkfirst=True)
-
 @app.on_event("startup")
 def initialize_config():
+    # 🟢 Auto-build both config tables
+    SystemConfig.__table__.create(bind=engine, checkfirst=True)
+    TodaConfig.__table__.create(bind=engine, checkfirst=True)
+    
     db = SessionLocal()
     config = db.query(SystemConfig).first()
     if not config:
@@ -203,6 +215,13 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
+# 🟢 NEW: Schema for Dynamic TODA Configuration
+class TodaConfigUpdateSchema(BaseModel):
+    custom_1_name: str
+    custom_1_price: int
+    custom_2_name: str
+    custom_2_price: int
+
 def sanitize_name(name: str) -> str:
     if not name: return ""
     return name.replace('"', '').replace("'", "").strip()
@@ -284,7 +303,7 @@ def register_account(
 ):
     clean_username = sanitize_name(username)
     
-    # Force Proper Title Case for Name (e.g. "Juan Dela Cruz")
+    # Force Proper Title Case for Name
     clean_full_name = sanitize_name(full_name).title() if full_name else clean_username
 
     # Check if user already exists
@@ -298,7 +317,7 @@ def register_account(
     # Force Proper Title Case for Barangay
     formatted_barangay = barangay.title() if barangay else ""
     
-    # 🟢 NEW: Force UPPERCASE for License (toda_number) and Plate No.
+    # Force UPPERCASE for License and Plate No.
     formatted_toda_number = toda_number.upper() if toda_number else ""
     formatted_plate = plate_number.upper() if plate_number else ""
 
@@ -312,8 +331,8 @@ def register_account(
         city=city,
         barangay=formatted_barangay, 
         toda_name=formatted_toda,
-        local_ref=formatted_toda_number,  # 🟢 Saves beautiful uppercase License
-        plate_number=formatted_plate,     # 🟢 Saves beautiful uppercase Plate
+        local_ref=formatted_toda_number,
+        plate_number=formatted_plate,
         bank_name=bank_name,
         gcash_account=gcash_account,
         rating_sum=25.0,
@@ -324,30 +343,6 @@ def register_account(
     db.commit()
 
     return RedirectResponse(url="/login.html", status_code=303)
-    
-    # Decide where to send them based on their role!
-    redirect_url = "/driver_dashboard.html" if role == "driver" else "/booking.html"
-
-    success_html = f"""
-    <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Registration Successful</title>
-        </head>
-        <body style="background-color: #C87F37; font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
-            <div style="text-align: center; background: #E3BC90; padding: 40px 30px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4); max-width: 320px; width: 90%; border: 1px solid #c99c6b;">
-                <h2 style="color: #175d33; margin-top: 0; font-size: 24px; font-weight: 800;">✅ Success!</h2>
-                <p style="color: #0f172a; font-weight: 700; margin-bottom: 20px;">Your account is ready.</p>
-                <p style="font-size: 13px; color: #78350f; font-weight: bold;">Routing you to login...</p>
-            </div>
-            <script>
-                // 🟢 FIXED: Uses the dynamic redirect_url! (Note the double brackets {{ }} for Python f-strings)
-                setTimeout(() => {{ window.location.href = "{redirect_url}"; }}, 1500);
-            </script>
-        </body>
-    </html>
-    """
-    return HTMLResponse(content=success_html)
 
 @app.post("/api/toda/login")
 def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
@@ -399,7 +394,8 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "bank_name": user.bank_name if user.bank_name else "GCash",
         "gcash_account": user.gcash_account if user.gcash_account else "",
         "address": user.address if user.address else "", "rating": avg_rating,
-        "local_ref": user.local_ref if user.local_ref else "N/A"
+        "local_ref": user.local_ref if user.local_ref else "N/A",
+        "toda_name": user.toda_name if user.toda_name else "" # 🟢 ADDED SO PASSENGER APP KNOWS TODA
     }
 
 @app.post("/api/update-profile")
@@ -520,20 +516,17 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
         User.role == 'driver'
     ).all()
     
-    # 🟢 Fetch all settled rides from the database
     all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     
     results = []
     for d in drivers:
         d_name = sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username)
         
-        # 🟢 Calculate actual rides for this specific driver
         driver_rides = 0
         for r in all_rides:
             if r.driver_name and sanitize_name(r.driver_name).lower() == d_name.lower():
                 driver_rides += 1
         
-        # Calculate actual rating
         actual_rating = d.rating_sum / d.rating_count if d.rating_count and d.rating_count > 0 else 5.0
         
         results.append({
@@ -545,10 +538,11 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
             "is_suspended": d.is_suspended,
             "warnings": d.warnings or 0,
             "rating": round(actual_rating, 1),
-            "totalRides": driver_rides  # 🟢 This officially replaces the hardcoded 0!
+            "totalRides": driver_rides 
         })
         
     return results
+
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
@@ -695,6 +689,42 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Payout_{current_date}.csv"})
 
 # ==========================================
+# 🟢 DYNAMIC TODA SERVICE ENDPOINTS (NEW)
+# ==========================================
+@app.get("/api/admin/toda-config/{toda_name}")
+def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
+    clean_toda = toda_name.strip().upper()
+    config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
+    
+    if not config:
+        return {
+            "custom_1_name": "", "custom_1_price": 0,
+            "custom_2_name": "", "custom_2_price": 0
+        }
+        
+    return {
+        "custom_1_name": config.custom_1_name, "custom_1_price": config.custom_1_price,
+        "custom_2_name": config.custom_2_name, "custom_2_price": config.custom_2_price
+    }
+
+@app.post("/api/admin/toda-config/{toda_name}")
+def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session = Depends(get_db)):
+    clean_toda = toda_name.strip().upper()
+    config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
+    
+    if not config:
+        config = TodaConfig(toda_name=clean_toda)
+        db.add(config)
+        
+    config.custom_1_name = data.custom_1_name.strip().title()
+    config.custom_1_price = data.custom_1_price
+    config.custom_2_name = data.custom_2_name.strip().title()
+    config.custom_2_price = data.custom_2_price
+    
+    db.commit()
+    return {"status": "success", "message": f"Custom services updated for {clean_toda}"}
+
+# ==========================================
 # MISC ENDPOINTS
 # ==========================================
 @app.get("/api/admin/config")
@@ -814,9 +844,6 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
     except WebSocketDisconnect:
         chat_manager.disconnect(websocket, ride_id)
 
-# ==========================================
-# 🟢 MULTI-TENANT FINANCES & BROADCASTS
-# ==========================================
 @app.get("/api/toda/finances")
 def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
@@ -842,10 +869,11 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
             except ValueError:
                 continue
 
+    # 🟢 FIXED: Live revenue now actually replaces the hardcoded zeros!
     return {
-        "today": 0.0, 
-        "week": 0.0,
-        "month": 0.0,
+        "today": total_toda_share,  
+        "week": total_toda_share,
+        "month": total_toda_share,
         "ytd": total_toda_share
     }
 
