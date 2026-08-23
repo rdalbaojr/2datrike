@@ -49,7 +49,7 @@
             <a href="Toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ TODA Dash
             </a>  
-           
+            
         </div>
     </div>
 
@@ -67,22 +67,24 @@
             </div>
         </div>
 
-        <!-- Service Selection -->
+        <!-- 🟢 DYNAMIC TODA SERVICE SELECTION -->
         <div id="service-selection-box">
             <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
-            <div class="grid grid-cols-3 gap-3 mb-6">
-                <button onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+            <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                <!-- Standard Buttons -->
+                <button type="button" onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#white] shadow-sm">
                     <i class="fa-solid fa-person-walking-luggage text-xl mb-2"></i>
                     <span class="text-[10px] font-bold uppercase">Pasundo</span>
                 </button>
-                <button onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                <button type="button" onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
                     <i class="fa-solid fa-basket-shopping text-xl mb-2"></i>
                     <span class="text-[10px] font-bold uppercase">Pabili</span>
                 </button>
-                <button onclick="selectService('Papickup/Deliver')" id="btn-Deliver" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                <button type="button" onclick="selectService('Papickup/Deliver')" id="btn-Deliver" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
                     <i class="fa-solid fa-box-open text-xl mb-2"></i>
                     <span class="text-[10px] font-bold uppercase text-center leading-tight">Papickup<br>Deliver</span>
                 </button>
+                <!-- Dynamic Custom Buttons will automatically append here! -->
             </div>
         </div>
 
@@ -117,7 +119,7 @@
             </button>
         </form>
 
-        <!-- SEARCHING STATE (🟢 UPDATED WITH REF BADGE) -->
+        <!-- SEARCHING STATE -->
         <div id="searching-state" class="hidden flex flex-col items-center justify-center py-10 text-center">
             <div class="relative w-20 h-20 mb-6">
                 <div class="absolute inset-0 bg-[#78350f] rounded-full animate-ping opacity-75"></div>
@@ -236,21 +238,67 @@
             return "Guest"; 
         }
 
-        let platformPrices = { pasundo: 50, pabili: 50, deliver: 50 };
+        // 🟢 DYNAMIC PRICING ENGINE
+        let allServicePrices = { 'Pasundo': 50, 'Pabili': 50, 'Papickup/Deliver': 50 };
         let currentService = 'Pasundo';
         const currentPassenger = getCookie("passenger_name");
 
         document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById("welcome-name").innerText = `${currentPassenger}`;
+            
+            // 1. Fetch Global Prices
             try {
                 const res = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
                 if (res.ok) {
                     const config = await res.json();
-                    platformPrices.pasundo = config.pasundo_price;
-                    platformPrices.pabili = config.pabili_price;
-                    platformPrices.deliver = config.deliver_price;
+                    allServicePrices['Pasundo'] = config.pasundo_price;
+                    allServicePrices['Pabili'] = config.pabili_price;
+                    allServicePrices['Papickup/Deliver'] = config.deliver_price;
                 }
             } catch(e) { console.log("Using default prices."); }
+
+            // 2. Fetch TODA-Specific Custom Services
+            if(currentPassenger && currentPassenger !== "Guest") {
+                try {
+                    const profileRes = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}`);
+                    if (profileRes.ok) {
+                        const profile = await profileRes.json();
+                        const todaName = profile.toda_name;
+                        
+                        if (todaName) {
+                            const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(todaName)}`);
+                            if (configRes.ok) {
+                                const tConfig = await configRes.json();
+                                const container = document.getElementById("service-buttons-container");
+                                
+                                // Inject Custom Service 1
+                                if (tConfig.custom_1_name) {
+                                    allServicePrices[tConfig.custom_1_name] = tConfig.custom_1_price;
+                                    const safeId = `btn-${tConfig.custom_1_name.replace(/\s+/g, '')}`;
+                                    container.innerHTML += `
+                                        <button type="button" onclick="selectService('${tConfig.custom_1_name}')" id="${safeId}" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                                            <i class="fa-solid fa-star text-xl mb-2 text-amber-700"></i>
+                                            <span class="text-[10px] font-bold uppercase text-center leading-tight">${tConfig.custom_1_name}</span>
+                                        </button>
+                                    `;
+                                }
+                                
+                                // Inject Custom Service 2
+                                if (tConfig.custom_2_name) {
+                                    allServicePrices[tConfig.custom_2_name] = tConfig.custom_2_price;
+                                    const safeId = `btn-${tConfig.custom_2_name.replace(/\s+/g, '')}`;
+                                    container.innerHTML += `
+                                        <button type="button" onclick="selectService('${tConfig.custom_2_name}')" id="${safeId}" class="service-btn flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all text-[#78350f] shadow-sm">
+                                            <i class="fa-solid fa-bolt text-xl mb-2 text-amber-700"></i>
+                                            <span class="text-[10px] font-bold uppercase text-center leading-tight">${tConfig.custom_2_name}</span>
+                                        </button>
+                                    `;
+                                }
+                            }
+                        }
+                    }
+                } catch(e) { console.error("Error loading custom services", e); }
+            }
         });
 
         function selectService(service) {
@@ -259,12 +307,15 @@
                 btn.classList.remove('active', 'text-white');
                 btn.classList.add('text-[#78350f]');
             });
-            let btnId = service === 'Papickup/Deliver' ? 'btn-Deliver' : `btn-${service}`;
+            
+            // Handle active styling safely
+            let btnId = service === 'Papickup/Deliver' ? 'btn-Deliver' : `btn-${service.replace(/\s+/g, '')}`;
             const activeBtn = document.getElementById(btnId);
             if(activeBtn) {
                 activeBtn.classList.add('active', 'text-white');
                 activeBtn.classList.remove('text-[#78350f]');
             }
+            
             const pabiliContainer = document.getElementById('pabili-budget-container');
             if(service === 'Pabili') {
                 pabiliContainer.classList.remove('hidden');
@@ -272,6 +323,7 @@
                 pabiliContainer.classList.add('hidden');
                 document.getElementById('pabili-budget').value = '';
             }
+            
             document.getElementById('fare-estimate').classList.add('hidden');
             document.getElementById('submit-btn').classList.remove('hidden');
             document.getElementById('confirm-btn').classList.add('hidden');
@@ -282,9 +334,8 @@
             document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
             
             setTimeout(() => {
-                let baseFare = platformPrices.pasundo; 
-                if (currentService === 'Pabili') baseFare = platformPrices.pabili; 
-                if (currentService === 'Papickup/Deliver') baseFare = platformPrices.deliver; 
+                // 🟢 Calculate fare based on Dynamic Price Engine
+                let baseFare = allServicePrices[currentService] || 50; 
                 let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
                 let total = baseFare + pabiliBudget;
 
@@ -306,7 +357,6 @@
                 return;
             }
 
-            // Immediately hide forms to prevent double booking
             document.getElementById('booking-form').classList.add('hidden');
             document.getElementById('service-selection-box').classList.add('hidden');
             document.getElementById('searching-state').classList.remove('hidden');
@@ -327,7 +377,6 @@
                 });
 
                 if (response.ok) {
-                    // 🟢 CAPTURE THE JSON AND SHOW THE LOCAL REF INSTANTLY
                     const responseData = await response.json();
                     document.getElementById('searching-ref').innerText = `ID: ${responseData.local_ref}`;
                     
@@ -366,24 +415,19 @@
                 if (!container) return;
 
                 const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger);
-
-                // Is there a ride currently IN PROGRESS? (pending, accepted, completed)
                 const activeRide = myRides.find(r => ['pending', 'accepted', 'completed'].includes(r.status));
 
                 if (activeRide) {
-                    // Hide booking form because they are in an active ride
                     document.getElementById('booking-form').classList.add('hidden');
                     document.getElementById('service-selection-box').classList.add('hidden');
                     
                     if (activeRide.status === 'pending') {
                         document.getElementById('searching-state').classList.remove('hidden');
-                        // 🟢 ENSURE REF NUMBER SHOWS IF PAGE IS REFRESHED
                         document.getElementById('searching-ref').innerText = `ID: ${activeRide.local_ref || 'N/A'}`;
                     } else {
                         document.getElementById('searching-state').classList.add('hidden');
                     }
                 } else {
-                    // Fully free to book! (Even if they have unrated rides sitting in history)
                     document.getElementById('booking-form').classList.remove('hidden');
                     document.getElementById('service-selection-box').classList.remove('hidden');
                     document.getElementById('searching-state').classList.add('hidden');
@@ -395,8 +439,6 @@
                 }
 
                 container.innerHTML = ''; 
-
-                // Show only the last 10 rides to keep the history clean
                 const recentRides = myRides.slice(-10).reverse();
 
                 recentRides.forEach(ride => {
@@ -460,7 +502,6 @@
                         }
                     }
 
-                    // 🟢 ADDED LOCAL REF BADGE TO RIDE HISTORY CARDS
                     rideBox.innerHTML = `
                         <div class="flex justify-between items-start mb-3">
                             <div>
@@ -478,9 +519,6 @@
             } catch (error) { console.error("Error fetching rides:", error); }
         }
 
-        // ==========================================
-        // RATING SUBMISSION
-        // ==========================================
         async function submitRating(rideId, ratingValue) {
             try {
                 const response = await fetch(`/api/rate-ride/${rideId}`, {
