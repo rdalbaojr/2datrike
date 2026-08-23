@@ -374,16 +374,18 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
                         
-                        // 🟢 UPDATED: Included both Pick-up and Drop-off locations clearly
+                        // 🟢 TICKET-STYLE BADGE FOR PENDING RIDES
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
                                 <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
                             </div>
                             <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
-                                <div class="flex justify-between items-start mb-3">
+                                <div class="flex justify-between items-center mb-3">
                                     <p class="text-[#0f172a] text-sm font-bold"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
-                                    <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
                                 </div>
                                 <div class="space-y-2">
                                     <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
@@ -433,11 +435,14 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
+                        // 🟢 TICKET-STYLE BADGE FOR ACTIVE RIDES
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold block mb-1"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
-                                    <span class="text-[9px] font-mono font-extrabold text-[#78350f] bg-[#d4aa7c]/30 px-1.5 py-0.5 rounded">ID: ${ride.local_ref || 'N/A'}</span>
+                                    <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold block mb-1.5"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
                                 </div>
                                 <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
                             </div>
