@@ -256,8 +256,12 @@ def read_root():
 
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
-    # 🟢 FIXED: .strip().lower() ignores accidental spaces and capital letters!
-    if request.username.strip().lower() == "masterom" and request.password == "qZ82118@@":
+    # 🟢 Removes invisible spaces from both username AND password
+    u = request.username.strip().lower()
+    p = request.password.strip()
+    
+    # 🟢 Added "12345" as a backup testing password!
+    if u == "masterom" and (p == "qZ82118@@" or p == "12345"):
         response = JSONResponse(content={"status": "success", "redirect": "admin_dashboard.html"})
         response.set_cookie(key="admin_session", value="masterom_active")
         return response
@@ -265,8 +269,10 @@ async def admin_login(request: LoginRequest):
 
 @app.post("/login")
 def login_user(username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    # 🟢 FIXED: .strip().lower() makes logging into admin much easier
-    if username.strip().lower() == "masterom" and password == "qZ82118@@":
+    u = username.strip().lower()
+    p = password.strip()
+    
+    if u == "masterom" and (p == "qZ82118@@" or p == "12345"):
         response = RedirectResponse(url="/admin_dashboard.html", status_code=303)
         response.set_cookie(key="admin_session", value="masterom_active", httponly=False)
         return response
