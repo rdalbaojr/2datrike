@@ -262,11 +262,15 @@ class UserCreateJSON(BaseModel):
     username: str
     password: str
     role: str
+    city: Optional[str] = "Pasig City"
+    barangay: Optional[str] = ""
     toda_name: Optional[str] = ""
-    security_q: str
-    security_a: str
     toda_number: Optional[str] = ""
     plate_number: Optional[str] = ""
+    security_q: str
+    security_a: str
+    bank_name: Optional[str] = "GCash"
+    gcash_account: Optional[str] = ""
 
 def sanitize_name(name: str) -> str:
     if not name: return ""
