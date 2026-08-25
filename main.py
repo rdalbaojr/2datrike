@@ -49,7 +49,7 @@ class User(Base):
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
     
-    # 🟢 NEW: Security Questions for Password Resets
+    # 🟢 Security Questions for Password Resets
     security_q = Column(String, nullable=True)
     security_a = Column(String, nullable=True)
     
@@ -102,23 +102,20 @@ class TodaConfig(Base):
     __tablename__ = "toda_configs"
     id = Column(Integer, primary_key=True, index=True)
     toda_name = Column(String, unique=True, index=True)
-    
-    class TodaConfigUpdateSchema(BaseModel):
-    s1_name: str
-    s1_price: int
-    # ... and so on
-    s2_name: str
-    s2_price: int
-    s3_name: str
-    s3_price: int
-    s4_name: str
-    s4_price: int
-    s5_name: str
-    s5_price: int
-    platform_share: float
-    katoda_share: float
-    katoda_bank: Optional[str] = None
-    katoda_account: Optional[str] = None
+    s1_name = Column(String, default="Pasundo")
+    s1_price = Column(Integer, default=50)
+    s2_name = Column(String, default="Pabili")
+    s2_price = Column(Integer, default=50)
+    s3_name = Column(String, default="Papickup")
+    s3_price = Column(Integer, default=50)
+    s4_name = Column(String, default="")
+    s4_price = Column(Integer, default=0)
+    s5_name = Column(String, default="")
+    s5_price = Column(Integer, default=0)
+    platform_share = Column(Float, default=17.0)
+    katoda_share = Column(Float, default=3.0)
+    katoda_bank = Column(String, default="GCash")
+    katoda_account = Column(String, default="")
 
 Base.metadata.create_all(bind=engine)
 
@@ -163,7 +160,6 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN toda_name VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
-        # 🟢 Safely adds the security questions if they don't exist yet
         db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
         db.commit()
@@ -215,7 +211,6 @@ class PasswordResetSchema(BaseModel):
     whatsapp_number: str
     new_password: str
 
-# 🟢 NEW: Schema for Security Question Password Reset
 class PasswordResetSchemaSecurity(BaseModel):
     username: str
     security_q: str
@@ -238,8 +233,8 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
+# 🟢 FIXED: Perfectly clean, standalone schema.
 class TodaConfigUpdateSchema(BaseModel):
-    class TodaConfigUpdateSchema(BaseModel):
     s1_name: str
     s1_price: int
     s2_name: str
@@ -252,11 +247,9 @@ class TodaConfigUpdateSchema(BaseModel):
     s5_price: int
     platform_share: float
     katoda_share: float
-    # 🟢 MADE OPTIONAL:
     katoda_bank: Optional[str] = None
     katoda_account: Optional[str] = None
 
-# 🟢 NEW: JSON Registration Schema mapping to login.html
 class UserCreateJSON(BaseModel):
     full_name: Optional[str] = None
     username: str
@@ -325,7 +318,6 @@ def logout_user(username: str, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Logged out"}
 
-# 🟢 NEW: Handles the new JSON registration payload from login.html
 @app.post("/register")
 def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
     clean_username = sanitize_name(user.username)
@@ -359,7 +351,6 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success"}
 
-# 🟢 NEW: Verifies the Security Question and resets the password
 @app.post("/api/reset-password-security")
 def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
@@ -379,7 +370,6 @@ def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Dep
     
     return {"message": "Password updated successfully"}
 
-# Old Form-based registration (Kept for backwards compatibility)
 @app.post("/register-account/")
 def register_account(
     role: str = Form(...),
@@ -844,8 +834,6 @@ def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session
     config.platform_share = data.platform_share
     config.katoda_share = data.katoda_share
     
-    # 🟢 NEW: Only update bank details if they are actually sent. 
-    # Otherwise, leave the TODA's original sign-up data untouched!
     if data.katoda_bank is not None:
         config.katoda_bank = data.katoda_bank
     if data.katoda_account is not None:
