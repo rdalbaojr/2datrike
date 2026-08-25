@@ -112,16 +112,6 @@
                                     <label class="text-xs font-bold text-[#78350f]">TODA %</label>
                                     <input type="number" id="cfg-toda" step="0.1" placeholder="3" class="w-20 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1 px-2 text-sm font-extrabold text-right outline-none focus:border-[#78350f]">
                                 </div>
-                                <div class="pt-2 border-t border-[#d4aa7c]/50">
-                                    <label class="text-[9px] font-extrabold uppercase text-[#78350f] block mb-1">TODA Payout Account</label>
-                                    <div class="flex gap-2">
-                                        <select id="cfg-bank" class="w-1/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-2 text-xs font-bold outline-none cursor-pointer focus:border-[#78350f]">
-                                            <option value="GCash">GCash</option>
-                                            <option value="Maya">Maya</option>
-                                        </select>
-                                        <input type="text" id="cfg-acct" placeholder="Account #" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1.5 px-3 text-xs font-bold outline-none focus:border-[#78350f]">
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -222,25 +212,12 @@
             document.getElementById('masterPass').value = "";
         }
 
-       window.onload = async function() {
+        window.onload = async function() {
             if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
             }
 
             try {
-                // (Keep your locations fetch block here exactly as it is)
-                // ...
-            } catch (e) {
-                console.error("Could not load dynamic locations", e);
-            }
-
-            // 🟢 Deleted the old /api/admin/config fetch block completely!
-
-            loadPayoutSummary();
-        };
-
-            try {
-                // 🟢 ADDED CACHE-BUSTER HERE
                 const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
                 if (locRes.ok) {
                     const data = await locRes.json();
@@ -278,23 +255,6 @@
                 console.error("Could not load dynamic locations", e);
             }
 
-            try {
-                // 🟢 ADDED CACHE-BUSTER HERE TOO
-                const response = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
-                if (response.ok) {
-                    const config = await response.json();
-                    document.getElementById('cfg-pasundo').value = config.pasundo_price;
-                    document.getElementById('cfg-pabili').value = config.pabili_price;
-                    document.getElementById('cfg-deliver').value = config.deliver_price;
-                    document.getElementById('platformShareInput').value = config.platform_share;
-                    document.getElementById('katodaShareInput').value = config.katoda_share || 3;
-                    document.getElementById('katodaBankInput').value = config.katoda_bank || "GCash";
-                    document.getElementById('katodaAccountInput').value = config.katoda_account || "";
-                }
-            } catch (error) {
-                console.error("Error loading config from server:", error);
-            }
-
             loadPayoutSummary();
         };
 
@@ -308,7 +268,6 @@
                 }
                 document.getElementById('cfg-plat').value = '';
                 document.getElementById('cfg-toda').value = '';
-                document.getElementById('cfg-acct').value = '';
                 return;
             }
 
@@ -322,8 +281,6 @@
                     }
                     document.getElementById('cfg-plat').value = config.platform_share || 17;
                     document.getElementById('cfg-toda').value = config.katoda_share || 3;
-                    document.getElementById('cfg-bank').value = config.katoda_bank || 'GCash';
-                    document.getElementById('cfg-acct').value = config.katoda_account || '';
                 }
             } catch (error) {
                 console.error("Failed to load specific TODA config");
@@ -341,20 +298,20 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
 
             const payload = {
-            const payload = {
-            s1_name: document.getElementById('s1-name').value,
-            s1_price: parseInt(document.getElementById('s1-price').value) || 0,
-            s2_name: document.getElementById('s2-name').value,
-            s2_price: parseInt(document.getElementById('s2-price').value) || 0,
-            s3_name: document.getElementById('s3-name').value,
-            s3_price: parseInt(document.getElementById('s3-price').value) || 0,
-            s4_name: document.getElementById('s4-name').value,
-            s4_price: parseInt(document.getElementById('s4-price').value) || 0,
-            s5_name: document.getElementById('s5-name').value,
-            s5_price: parseInt(document.getElementById('s5-price').value) || 0,
-            platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17,
-            katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3
-        };
+                s1_name: document.getElementById('s1-name').value,
+                s1_price: parseInt(document.getElementById('s1-price').value) || 0,
+                s2_name: document.getElementById('s2-name').value,
+                s2_price: parseInt(document.getElementById('s2-price').value) || 0,
+                s3_name: document.getElementById('s3-name').value,
+                s3_price: parseInt(document.getElementById('s3-price').value) || 0,
+                s4_name: document.getElementById('s4-name').value,
+                s4_price: parseInt(document.getElementById('s4-price').value) || 0,
+                s5_name: document.getElementById('s5-name').value,
+                s5_price: parseInt(document.getElementById('s5-price').value) || 0,
+                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17,
+                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3
+            };
+
             try {
                 const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`, {
                     method: 'POST',
