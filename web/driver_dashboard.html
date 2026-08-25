@@ -96,19 +96,23 @@
                             <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Loading shift data...</td>
                         </tr>
                     </tbody>
+                    <!-- 🟢 UPDATED FOOTER WITH NO PERCENTAGES & ADDED TODA ROW -->
                     <tfoot class="bg-[#e8cda8] border-t border-[#d4aa7c] font-bold">
                         <tr>
                             <td colspan="2" class="px-4 py-2 text-right text-[#78350f] text-[10px] uppercase tracking-wider">Gross Total:</td>
                             <td id="amt-gross" class="px-4 py-2 text-right text-[#0f172a]">₱0.00</td>
                         </tr>
-                        <!-- 🟢 NEW: NIGHT DIFF BREAKDOWN ROW -->
                         <tr class="text-indigo-800 bg-indigo-900/5">
                             <td colspan="2" class="px-4 py-1 text-right text-[10px] tracking-wider">↳ Night Diff Earned:</td>
                             <td id="amt-night-diff" class="px-4 py-1 text-right text-xs font-extrabold text-indigo-900">₱0.00</td>
                         </tr>
                         <tr class="text-rose-700">
-                            <td colspan="2" id="label-platform" class="px-4 py-1 text-right text-[10px] tracking-wider">Platform (17%):</td>
-                            <td id="amt-platform" class="px-4 py-1 text-right text-xs">- ₱0.00</td>
+                            <td colspan="2" id="label-platform" class="px-4 py-1 text-right text-[10px] tracking-wider">Platform Share:</td>
+                            <td id="amt-platform" class="px-4 py-1 text-right text-xs font-bold">- ₱0.00</td>
+                        </tr>
+                        <tr class="text-rose-700">
+                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider">TODA Share:</td>
+                            <td id="amt-katoda" class="px-4 py-1 text-right text-xs font-bold">- ₱0.00</td>
                         </tr>
                         <tr class="bg-green-900 text-white border-t border-green-800">
                             <td colspan="2" class="px-4 py-3 text-right text-green-100 text-xs uppercase tracking-wider">Net Earnings:</td>
@@ -575,14 +579,13 @@
             }
         }
 
-        // 🟢 DYNAMIC 5-SLOT EARNINGS TABLE
+        // 🟢 FIXED DYNAMIC EARNINGS TABLE
         async function updateEarningsTable(allRides, driverName) {
             if (!Array.isArray(allRides)) return;
 
-            let platformPct = 17;
-            let katodaPct = 3;
+            let platformPct = 17.0;
+            let katodaPct = 3.0;
 
-            // 1. Check Driver's Branch to get the exact percentages
             try {
                 const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
                 if (profileRes.ok) {
@@ -591,45 +594,47 @@
                         const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
                         if (configRes.ok) {
                             const config = await configRes.json();
-                            platformPct = config.platform_share !== undefined ? config.platform_share : 17;
-                            katodaPct = config.katoda_share !== undefined ? config.katoda_share : 3;
+                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
+                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
                         }
                     }
                 }
             } catch (error) {
-                console.log("Could not load specific config, using defaults.");
+                console.warn("Using default share rates.");
             }
 
+            const labelPlat = document.getElementById('label-platform');
+            const labelToda = document.getElementById('label-katoda');
+            if (labelPlat) labelPlat.innerText = "Platform Share:";
+            if (labelToda) labelToda.innerText = "TODA Share:";
+
             const completedRides = allRides.filter(ride => 
-                (ride.status === 'paid' || ride.status === 'completed') && ride.driver_name === driverName
+                (ride.status === 'paid' || ride.status === 'completed') && 
+                ride.driver_name && 
+                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
             );
 
-            // 2. Loop through all completed rides and dynamically sum their exact fares
             let serviceStats = {};
-            let totalGross = 0;
-            let totalNightDiff = 0;
+            let totalGross = 0.0;
+            let totalNightDiff = 0.0;
 
             completedRides.forEach(ride => {
                 let sType = ride.service_type || 'Pasundo';
-                
-                // Detect Night Rate and calculate the exact bonus amount
                 let isNight = sType.includes('(Night Rate)');
-                sType = sType.replace(' (Night Rate)', ''); // Remove from name so it groups cleanly
+                sType = sType.replace(' (Night Rate)', '').trim();
 
-                let fareVal = 0;
+                let fareVal = 0.0;
                 if (ride.fare) {
-                    fareVal = parseFloat(ride.fare.replace(/[^0-9.]/g, '')) || 0;
+                    fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
                 }
 
-                // If it was a night ride, extract the 10% that was added
                 if (isNight) {
                     let originalFare = fareVal / 1.10;
-                    let diff = fareVal - originalFare;
-                    totalNightDiff += diff;
+                    totalNightDiff += (fareVal - originalFare);
                 }
 
                 if (!serviceStats[sType]) {
-                    serviceStats[sType] = { qty: 0, amount: 0 };
+                    serviceStats[sType] = { qty: 0, amount: 0.0 };
                 }
                 
                 serviceStats[sType].qty += 1;
@@ -637,40 +642,43 @@
                 totalGross += fareVal;
             });
 
-            // 3. Slice exactly from the Gross Fare
-            const platformCut = totalGross * (platformPct / 100);
-            const katodaCut = totalGross * (katodaPct / 100);
+            const platformCut = totalGross * (platformPct / 100.0);
+            const katodaCut = totalGross * (katodaPct / 100.0);
             const netEarnings = totalGross - platformCut - katodaCut;
 
-            // 4. Dynamically generate the rows
             const tbody = document.getElementById('shift-report-body');
-            tbody.innerHTML = '';
-
-            if (Object.keys(serviceStats).length === 0) {
-                tbody.innerHTML = `
-                    <tr class="hover:bg-[#e8cda8]/50 transition">
-                        <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
-                    </tr>
-                `;
-            } else {
-                for (const [sType, data] of Object.entries(serviceStats)) {
-                    tbody.innerHTML += `
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (Object.keys(serviceStats).length === 0) {
+                    tbody.innerHTML = `
                         <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
-                            <td class="px-2 py-2.5 text-center">${data.qty}</td>
-                            <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
                         </tr>
                     `;
+                } else {
+                    for (const [sType, data] of Object.entries(serviceStats)) {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8cda8]/50 transition">
+                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
                 }
             }
 
-            // 5. Update HTML text safely
-            document.getElementById('amt-gross').innerText = "₱" + totalGross.toFixed(2);
-            document.getElementById('amt-night-diff').innerText = "₱" + totalNightDiff.toFixed(2);
-            document.getElementById('amt-platform').innerText = "- ₱" + platformCut.toFixed(2);
-            // 🟢 The TODA element now exists in the HTML, so this will successfully insert!
-            document.getElementById('amt-katoda').innerText = "- ₱" + katodaCut.toFixed(2);
-            document.getElementById('amt-net').innerText = "₱" + netEarnings.toFixed(2);
+            const elGross = document.getElementById('amt-gross');
+            const elNight = document.getElementById('amt-night-diff');
+            const elPlat = document.getElementById('amt-platform');
+            const elToda = document.getElementById('amt-katoda');
+            const elNet = document.getElementById('amt-net');
+
+            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
+            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
+            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
+            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
+            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
         }
 
         // ==========================================
