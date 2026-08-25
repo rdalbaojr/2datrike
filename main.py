@@ -1019,7 +1019,59 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
         return {"message": toda_broadcasts.get(clean_toda, ""), "toda_name": clean_toda}
         
     return {"message": "", "toda_name": ""}
+@app.get("/api/driver/shift/{driver_name}")
+def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
+    clean_name = sanitize_name(driver_name)
+    driver = db.query(User).filter(
+        (User.full_name == clean_name) | (User.username == clean_name),
+        User.role == 'driver'
+    ).first()
 
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+
+    # 1. Get Rev Share from TODA config (Defaults to 17% and 3%)
+    platform_pct = 0.17
+    toda_pct = 0.03
+
+    if driver.toda_name:
+        toda_config = db.query(TodaConfig).filter(TodaConfig.toda_name == driver.toda_name.upper()).first()
+        if toda_config:
+            platform_pct = toda_config.platform_share / 100
+            toda_pct = toda_config.katoda_share / 100
+
+    # 2. Get Completed/Paid Rides for this driver
+    rides = db.query(RideRequest).filter(
+        RideRequest.driver_name.ilike(f"%{clean_name}%"),
+        RideRequest.status.in_(["completed", "paid"])
+    ).all()
+
+    total_gross = 0.0
+    ride_counts = {}
+
+    for r in rides:
+        try:
+            clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
+            total_gross += clean_fare
+            service = r.service_type or "Ride"
+            ride_counts[service] = ride_counts.get(service, 0) + 1
+        except ValueError:
+            continue
+
+    # 3. Calculate exact peso splits
+    platform_cut = total_gross * platform_pct
+    toda_cut = total_gross * toda_pct
+    net_earnings = total_gross - platform_cut - toda_cut
+
+    breakdown = [{"service": k, "qty": v} for k, v in ride_counts.items()]
+
+    return {
+        "gross": total_gross,
+        "platform": platform_cut,
+        "toda": toda_cut,
+        "net": net_earnings,
+        "breakdown": breakdown
+    }
 # ==========================================
 # 7. MOUNT WEB FOLDER & START SERVER
 # ==========================================
