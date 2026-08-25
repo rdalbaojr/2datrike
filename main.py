@@ -144,15 +144,9 @@ def generate_local_ref(barangay: str, toda: str) -> str:
 def initialize_config():
     SystemConfig.__table__.create(bind=engine, checkfirst=True)
     TodaConfig.__table__.create(bind=engine, checkfirst=True)
-  # 🟢 NEW: Add timestamp column safely to existing database
-    try:
-        db.execute(text("ALTER TABLE ride_requests ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
-        db.commit()
-    except Exception:
-        db.rollback()
-        
-    db.close() # Keep your existing db.close() here  
-    db = SessionLocal()
+    
+    db = SessionLocal() # 🟢 OPEN CONNECTION FIRST
+    
     config = db.query(SystemConfig).first()
     if not config:
         new_config = SystemConfig()
@@ -183,6 +177,22 @@ def initialize_config():
         db.commit()
     except Exception:
         db.rollback()
+
+    # 🟢 ADD BROADCAST COLUMN
+    try:
+        db.execute(text("ALTER TABLE toda_configs ADD COLUMN broadcast_message VARCHAR DEFAULT ''"))
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    # 🟢 ADD TIMESTAMP COLUMN (Safe placement at the end)
+    try:
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        db.commit()
+    except Exception:
+        db.rollback()
+        
+    db.close() # 🟢 CLOSE CONNECTION LAST
         
     # 🟢 NEW: Add broadcast column safely to existing database
     try:
