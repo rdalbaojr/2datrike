@@ -36,9 +36,6 @@
             <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
                 <i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ
             </a>
-            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
-                <i class="fa-solid fa-lock mr-1"></i> Admin Dash
-            </a>
         </div>
     </div>
 
@@ -620,7 +617,11 @@
 
             completedRides.forEach(ride => {
                 let sType = ride.service_type || 'Pasundo';
+                
+                // 🟢 Detects the auto-tag sent by the passenger app
                 let isNight = sType.includes('(Night Rate)');
+                
+                // Strips the tag so it groups nicely on the report
                 sType = sType.replace(' (Night Rate)', '').trim();
 
                 let fareVal = 0.0;
@@ -628,6 +629,7 @@
                     fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
                 }
 
+                // Extracts the exact extra 10% earned
                 if (isNight) {
                     let originalFare = fareVal / 1.10;
                     totalNightDiff += (fareVal - originalFare);
