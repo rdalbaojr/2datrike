@@ -116,6 +116,7 @@ class TodaConfig(Base):
     katoda_share = Column(Float, default=3.0)
     katoda_bank = Column(String, default="GCash")
     katoda_account = Column(String, default="")
+    broadcast_message = Column(String, default="") # 🟢 NEW
 
 Base.metadata.create_all(bind=engine)
 
@@ -171,6 +172,13 @@ def initialize_config():
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN plate_number VARCHAR DEFAULT ''"))
+        db.commit()
+    except Exception:
+        db.rollback()
+        
+    # 🟢 NEW: Add broadcast column safely to existing database
+    try:
+        db.execute(text("ALTER TABLE toda_configs ADD COLUMN broadcast_message VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
@@ -233,7 +241,6 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
-# 🟢 FIXED: Perfectly clean, standalone schema.
 class TodaConfigUpdateSchema(BaseModel):
     s1_name: str
     s1_price: int
@@ -258,7 +265,6 @@ class UserCreateJSON(BaseModel):
     toda_name: Optional[str] = ""
     security_q: str
     security_a: str
-    # 🟢 NEW fields
     toda_number: Optional[str] = ""
     plate_number: Optional[str] = ""
 
@@ -346,8 +352,8 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         local_ref=local_ref,
         security_q=user.security_q,
         security_a=user.security_a,
-        toda_number=user.toda_number,    # 🟢 NEW
-        plate_number=user.plate_number.upper() if user.plate_number else "", # 🟢 NEW
+        toda_number=user.toda_number,    
+        plate_number=user.plate_number.upper() if user.plate_number else "", 
         rating_sum=25.0,
         rating_count=5
     )
@@ -993,16 +999,22 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
         "ytd": total_toda_share
     }
 
-toda_broadcasts = {}
-
 class TodaBroadcastSchema(BaseModel): 
     toda_name: str
     message: str
 
 @app.post("/api/toda/broadcast")
-def send_toda_broadcast(data: TodaBroadcastSchema):
+def send_toda_broadcast(data: TodaBroadcastSchema, db: Session = Depends(get_db)):
     clean_toda = data.toda_name.strip().upper()
-    toda_broadcasts[clean_toda] = data.message
+    
+    config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
+    if not config:
+        config = TodaConfig(toda_name=clean_toda)
+        db.add(config)
+        
+    config.broadcast_message = data.message
+    db.commit()
+    
     return {"status": "success", "message": f"Broadcast sent to {clean_toda}"}
 
 @app.get("/api/driver/broadcast")
@@ -1016,8 +1028,11 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
     
     if driver and driver.toda_name:
         clean_toda = driver.toda_name.strip().upper()
-        return {"message": toda_broadcasts.get(clean_toda, ""), "toda_name": clean_toda}
         
+        config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
+        if config and config.broadcast_message:
+            return {"message": config.broadcast_message, "toda_name": clean_toda}
+            
     return {"message": "", "toda_name": ""}
 @app.get("/api/driver/shift/{driver_name}")
 def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
