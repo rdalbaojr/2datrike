@@ -48,9 +48,7 @@
             <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
                 🏍️ TODA Dash
             </a>
-            <a href="admin_dashboard.html" style="display: block; padding: 12px 15px; color: #ffcccc; text-decoration: none; font-size: 14px; font-weight: bold;">
-                <i class="fa-solid fa-lock mr-1"></i> Admin Dash
-            </a>
+            
         </div>
     </div>
 
@@ -205,6 +203,15 @@
             }
         });
 
+        // 🟢 NEW: Missing Modal Functions Added!
+        function openForgotModal() {
+            document.getElementById('forgot-modal').classList.remove('hidden');
+        }
+
+        function closeForgotModal() {
+            document.getElementById('forgot-modal').classList.add('hidden');
+        }
+
         function switchTab(tab) {
             const loginForm = document.getElementById('form-login');
             const regForm = document.getElementById('form-register');
@@ -230,37 +237,37 @@
 
         function toggleTodaField() {
             const role = document.getElementById('reg-role').value;
-            const todaField = document.getElementById('toda-field-container');
-            const payoutField = document.getElementById('toda-payout-container'); 
-            const driverFields = document.getElementById('driver-fields-container'); // 🟢 NEW
+            const driverFieldsContainer = document.getElementById('driver-fields-container');
+            const payoutField = document.getElementById('payout-container'); 
+            const payoutLabel = document.getElementById('payout-label');
 
-            // Show TODA name for drivers and TODA admins
-            if (role === 'driver' || role === 'toda_admin') {
-                todaField.classList.remove('hidden');
-                document.getElementById('reg-toda').required = true;
-            } else {
-                todaField.classList.add('hidden');
-                document.getElementById('reg-toda').required = false;
-            }
-
-            // Show payout only for TODA Admin
-            if (role === 'toda_admin') {
-                payoutField.classList.remove('hidden');
-                document.getElementById('reg-account').required = true;
-            } else {
-                payoutField.classList.add('hidden');
-                document.getElementById('reg-account').required = false;
-            }
-
-            // 🟢 NEW: Show Body Number & Plate Number ONLY for Drivers
+            // Show Vehicle Fields (Body & Plate) ONLY if Driver
             if (role === 'driver') {
-                driverFields.classList.remove('hidden');
+                driverFieldsContainer.classList.remove('hidden');
+                driverFieldsContainer.classList.add('flex');
                 document.getElementById('reg-toda-number').required = true;
                 document.getElementById('reg-plate-number').required = true;
             } else {
-                driverFields.classList.add('hidden');
+                driverFieldsContainer.classList.add('hidden');
+                driverFieldsContainer.classList.remove('flex');
                 document.getElementById('reg-toda-number').required = false;
                 document.getElementById('reg-plate-number').required = false;
+            }
+
+            // Show Payout for BOTH Driver and TODA Admin
+            if (role === 'driver' || role === 'toda_admin') {
+                payoutField.classList.remove('hidden');
+                document.getElementById('reg-account').required = true;
+                
+                // Change the label based on who is signing up
+                if (role === 'driver') {
+                    payoutLabel.innerText = "Driver Payout Account";
+                } else {
+                    payoutLabel.innerText = "TODA Organization Payout Account (3% Share)";
+                }
+            } else {
+                payoutField.classList.add('hidden');
+                document.getElementById('reg-account').required = false;
             }
         }
 
@@ -318,23 +325,34 @@
             const alertBox = document.getElementById('reg-alert');
             const btn = document.getElementById('btn-register');
             
+            // 🟢 NEW: Password Match Verification
+            const pass = document.getElementById('reg-pass').value;
+            const confirmPass = document.getElementById('reg-confirm-pass').value;
+            if (pass !== confirmPass) {
+                alertBox.textContent = "⚠️ Passwords do not match!";
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
             alertBox.classList.add('hidden');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
 
+            // 🟢 NEW: City and Barangay correctly added to payload
             const payload = {
                 full_name: document.getElementById('reg-name').value,
                 username: document.getElementById('reg-user').value,
-                password: document.getElementById('reg-pass').value,
+                password: pass,
                 role: document.getElementById('reg-role').value,
-                toda_name: document.getElementById('reg-toda').value || "",
+                city: document.getElementById('reg-city').value,
+                barangay: document.getElementById('reg-barangay').value,
+                toda_name: document.getElementById('reg-toda') ? document.getElementById('reg-toda').value : "",
+                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value : "",
+                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value : "",
                 security_q: document.getElementById('reg-sec-q').value,
                 security_a: document.getElementById('reg-sec-a').value.trim().toLowerCase(),
                 bank_name: document.getElementById('reg-bank') ? document.getElementById('reg-bank').value : "GCash",
-                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value : "",
-                // 🟢 NEW: Send driver vehicle details
-                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value : "",
-                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value : ""
+                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value : ""
             };
 
             try {
@@ -401,6 +419,6 @@
                 btn.innerHTML = originalText;
             }
         }
-    </script>
+    </script>>
 </body>
 </html>
