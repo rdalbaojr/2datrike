@@ -600,9 +600,6 @@
                 console.log("Could not load specific config, using defaults.");
             }
 
-            document.getElementById('label-platform').innerText = `Platform (${platformPct}%):`;
-            document.getElementById('label-katoda').innerText = `TODA (${katodaPct}%):`;
-
             const completedRides = allRides.filter(ride => 
                 (ride.status === 'paid' || ride.status === 'completed') && ride.driver_name === driverName
             );
@@ -610,12 +607,12 @@
             // 2. Loop through all completed rides and dynamically sum their exact fares
             let serviceStats = {};
             let totalGross = 0;
-            let totalNightDiff = 0; // 🟢 NEW TRACKER
+            let totalNightDiff = 0;
 
             completedRides.forEach(ride => {
                 let sType = ride.service_type || 'Pasundo';
                 
-                // 🟢 Detect Night Rate and calculate the exact bonus amount
+                // Detect Night Rate and calculate the exact bonus amount
                 let isNight = sType.includes('(Night Rate)');
                 sType = sType.replace(' (Night Rate)', ''); // Remove from name so it groups cleanly
 
@@ -624,7 +621,7 @@
                     fareVal = parseFloat(ride.fare.replace(/[^0-9.]/g, '')) || 0;
                 }
 
-                // 🟢 If it was a night ride, extract the 10% that was added
+                // If it was a night ride, extract the 10% that was added
                 if (isNight) {
                     let originalFare = fareVal / 1.10;
                     let diff = fareVal - originalFare;
@@ -667,9 +664,11 @@
                 }
             }
 
+            // 5. Update HTML text safely
             document.getElementById('amt-gross').innerText = "₱" + totalGross.toFixed(2);
-            document.getElementById('amt-night-diff').innerText = "₱" + totalNightDiff.toFixed(2); // 🟢 DISPLAY IT
+            document.getElementById('amt-night-diff').innerText = "₱" + totalNightDiff.toFixed(2);
             document.getElementById('amt-platform').innerText = "- ₱" + platformCut.toFixed(2);
+            // 🟢 The TODA element now exists in the HTML, so this will successfully insert!
             document.getElementById('amt-katoda').innerText = "- ₱" + katodaCut.toFixed(2);
             document.getElementById('amt-net').innerText = "₱" + netEarnings.toFixed(2);
         }
