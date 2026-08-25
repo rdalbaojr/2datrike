@@ -30,7 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # ==========================================
-# 3. DATABASE MODELS (Multi-Branch & Local Prefix Tracking)
+# 3. DATABASE MODELS
 # ==========================================
 class User(Base):
     __tablename__ = "users"
@@ -48,6 +48,10 @@ class User(Base):
     status = Column(String, default="offline")
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
+    
+    # 🟢 NEW: Security Questions for Password Resets
+    security_q = Column(String, nullable=True)
+    security_a = Column(String, nullable=True)
     
     warnings = Column(Integer, default=0)
     is_suspended = Column(Integer, default=0) 
@@ -94,13 +98,11 @@ class SystemConfig(Base):
     katoda_bank = Column(String, default="GCash")
     katoda_account = Column(String, default="")  
 
-# 🟢 UPGRADED: 5-Slot Per-Branch Configuration Model
 class TodaConfig(Base):
     __tablename__ = "toda_configs"
     id = Column(Integer, primary_key=True, index=True)
     toda_name = Column(String, unique=True, index=True)
     
-    # 5 Fully Blank Custom Services
     s1_name = Column(String, default="Pasundo")
     s1_price = Column(Integer, default=50)
     s2_name = Column(String, default="Pabili")
@@ -112,7 +114,6 @@ class TodaConfig(Base):
     s5_name = Column(String, default="")
     s5_price = Column(Integer, default=0)
     
-    # Branch-Specific Revenue Rules
     platform_share = Column(Float, default=17.0)
     katoda_share = Column(Float, default=3.0)
     katoda_bank = Column(String, default="GCash")
@@ -161,6 +162,9 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN toda_name VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
+        # 🟢 Safely adds the security questions if they don't exist yet
+        db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
@@ -210,6 +214,13 @@ class PasswordResetSchema(BaseModel):
     whatsapp_number: str
     new_password: str
 
+# 🟢 NEW: Schema for Security Question Password Reset
+class PasswordResetSchemaSecurity(BaseModel):
+    username: str
+    security_q: str
+    security_a: str
+    new_password: str
+
 class RateRideSchema(BaseModel):
     rating: int
 
@@ -226,7 +237,6 @@ class ConfigUpdateSchema(BaseModel):
     katoda_bank: str = "GCash"
     katoda_account: str = ""  
 
-# 🟢 UPGRADED: 5-Slot Schema
 class TodaConfigUpdateSchema(BaseModel):
     s1_name: str
     s1_price: int
@@ -243,6 +253,16 @@ class TodaConfigUpdateSchema(BaseModel):
     katoda_bank: str
     katoda_account: str
 
+# 🟢 NEW: JSON Registration Schema mapping to login.html
+class UserCreateJSON(BaseModel):
+    full_name: Optional[str] = None
+    username: str
+    password: str
+    role: str
+    toda_name: Optional[str] = ""
+    security_q: str
+    security_a: str
+
 def sanitize_name(name: str) -> str:
     if not name: return ""
     return name.replace('"', '').replace("'", "").strip()
@@ -256,11 +276,9 @@ def read_root():
 
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
-    # 🟢 Removes invisible spaces from both username AND password
     u = request.username.strip().lower()
     p = request.password.strip()
     
-    # 🟢 Added "12345" as a backup testing password!
     if u == "masterom" and (p == "qZ82118@@" or p == "12345"):
         response = JSONResponse(content={"status": "success", "redirect": "admin_dashboard.html"})
         response.set_cookie(key="admin_session", value="masterom_active")
@@ -304,15 +322,61 @@ def logout_user(username: str, db: Session = Depends(get_db)):
         db.commit()
     return {"message": "Logged out"}
 
-@app.post("/api/reset-password")
-def reset_password(data: PasswordResetSchema, db: Session = Depends(get_db)):
+# 🟢 NEW: Handles the new JSON registration payload from login.html
+@app.post("/register")
+def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
+    clean_username = sanitize_name(user.username)
+    clean_full_name = sanitize_name(user.full_name).title() if user.full_name else clean_username
+
+    existing = db.query(User).filter(User.username == clean_username).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    formatted_toda = user.toda_name.upper() if user.toda_name else ""
+    
+    local_ref = ""
+    if user.role == "driver":
+        toda_code = "".join([w[0] for w in formatted_toda.split() if w]).upper()[:3] if formatted_toda else "XX"
+        local_ref = f"D-{toda_code}-{random.randint(10000, 99999)}"
+
+    new_user = User(
+        username=clean_username,
+        full_name=clean_full_name,   
+        password=user.password,
+        role=user.role,
+        toda_name=formatted_toda,
+        local_ref=local_ref,
+        security_q=user.security_q,
+        security_a=user.security_a,
+        rating_sum=25.0,
+        rating_count=5
+    )
+    
+    db.add(new_user)
+    db.commit()
+    return {"status": "success"}
+
+# 🟢 NEW: Verifies the Security Question and resets the password
+@app.post("/api/reset-password-security")
+def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
-    user = db.query(User).filter(User.username == clean_user, User.whatsapp_number == data.whatsapp_number).first()
-    if not user: raise HTTPException(status_code=400, detail="Account details do not match.")
+    user = db.query(User).filter(User.username == clean_user).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Account not found.")
+    
+    saved_answer = user.security_a.strip().lower() if user.security_a else ""
+    provided_answer = data.security_a.strip().lower()
+    
+    if user.security_q != data.security_q or saved_answer != provided_answer:
+        raise HTTPException(status_code=400, detail="Security question or answer is incorrect.")
+    
     user.password = data.new_password
     db.commit()
-    return {"status": "success", "message": "Password updated successfully"}
+    
+    return {"message": "Password updated successfully"}
 
+# Old Form-based registration (Kept for backwards compatibility)
 @app.post("/register-account/")
 def register_account(
     role: str = Form(...),
@@ -322,7 +386,7 @@ def register_account(
     password: str = Form(...),
     address: str = Form(""),
     city: str = Form("Pasig City"),
-    barangay: str = Form(""),          
+    barangay: str = Form(""),         
     toda_name: str = Form(""),         
     toda_number: str = Form(None),
     plate_number: str = Form(None),
@@ -362,7 +426,6 @@ def register_account(
     
     db.add(new_user)
     db.commit()
-
     return RedirectResponse(url="/login.html", status_code=303)
 
 @app.post("/api/toda/login")
@@ -525,9 +588,6 @@ def discipline_driver(data: DisciplineSchema, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "success", "warnings": driver.warnings, "suspended": driver.is_suspended}
 
-# ==========================================
-# 🟢 ADMIN MULTI-BRANCH ENDPOINTS
-# ==========================================
 @app.get("/api/toda/drivers")
 def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
     search_term = f"%{toda_name.strip()}%"
@@ -566,13 +626,11 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
-    # Default fallbacks
     platform_pct = 17.0 / 100
     katoda_pct = 3.0 / 100
     display_bank = "GCash"
     display_account = "Not Configured"
     
-    # 🟢 FIXED: Now dynamically grabs the actual Bank & Account Number from the Database!
     if branch != "All":
         branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == branch.strip().upper()).first()
         if branch_config:
@@ -734,9 +792,6 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
     filename_branch = branch.replace(' ', '_') if branch != "All" else "Master"
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Payout_{current_date}.csv"})
 
-# ==========================================
-# 🟢 5-SLOT BRANCH CONFIGURATION ENDPOINTS
-# ==========================================
 @app.get("/api/admin/toda-config/{toda_name}")
 def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
     clean_toda = toda_name.strip().upper()
@@ -791,9 +846,6 @@ def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session
     db.commit()
     return {"status": "success"}
 
-# ==========================================
-# MISC ENDPOINTS
-# ==========================================
 @app.get("/api/admin/config")
 def get_system_config(db: Session = Depends(get_db)): return db.query(SystemConfig).first()
 
