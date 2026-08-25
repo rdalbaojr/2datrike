@@ -238,6 +238,7 @@ class ConfigUpdateSchema(BaseModel):
     katoda_account: str = ""  
 
 class TodaConfigUpdateSchema(BaseModel):
+    class TodaConfigUpdateSchema(BaseModel):
     s1_name: str
     s1_price: int
     s2_name: str
@@ -250,8 +251,9 @@ class TodaConfigUpdateSchema(BaseModel):
     s5_price: int
     platform_share: float
     katoda_share: float
-    katoda_bank: str
-    katoda_account: str
+    # 🟢 MADE OPTIONAL:
+    katoda_bank: Optional[str] = None
+    katoda_account: Optional[str] = None
 
 # 🟢 NEW: JSON Registration Schema mapping to login.html
 class UserCreateJSON(BaseModel):
