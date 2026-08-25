@@ -89,7 +89,7 @@
                 <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <!-- 🟢 UPDATED FARE DISPLAY WITH NIGHT BADGE -->
+            <!-- FARE DISPLAY WITH NIGHT BADGE -->
             <div id="fare-estimate" class="hidden bg-[#F5E6D3] border border-[#d4aa7c] p-4 rounded-xl flex justify-between items-center mt-4 shadow-sm relative overflow-hidden">
                 <div>
                     <div class="text-xs text-[#78350f] font-bold uppercase tracking-wider">Est. Total Fare</div>
@@ -181,6 +181,7 @@
         </div>
     </div>
 
+    <!-- IN-APP CHAT MODAL -->
     <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
             <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -202,6 +203,29 @@
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- 🟢 NEW: 5-STAR RATING MODAL -->
+    <div id="rating-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[110] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-6 max-w-[360px] w-full text-center shadow-2xl relative">
+            <h2 class="text-2xl font-extrabold text-[#0f172a] mb-1">Rate your Ride</h2>
+            <p class="text-sm text-[#78350f] mb-6 font-medium">How was your trip with <strong id="rating-driver-name">Driver</strong>?</p>
+            
+            <div class="flex justify-center gap-2 mb-6" id="star-container">
+                <i class="fa-solid fa-star text-4xl text-slate-400 cursor-pointer hover:text-yellow-500 transition" onclick="setRating(1)"></i>
+                <i class="fa-solid fa-star text-4xl text-slate-400 cursor-pointer hover:text-yellow-500 transition" onclick="setRating(2)"></i>
+                <i class="fa-solid fa-star text-4xl text-slate-400 cursor-pointer hover:text-yellow-500 transition" onclick="setRating(3)"></i>
+                <i class="fa-solid fa-star text-4xl text-slate-400 cursor-pointer hover:text-yellow-500 transition" onclick="setRating(4)"></i>
+                <i class="fa-solid fa-star text-4xl text-slate-400 cursor-pointer hover:text-yellow-500 transition" onclick="setRating(5)"></i>
+            </div>
+
+            <button onclick="submitRating()" id="btn-submit-rating" class="w-full py-4 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition text-sm mb-3">
+                Submit Review
+            </button>
+            <button onclick="skipRating()" class="text-xs font-bold text-[#78350f] hover:text-[#5a270b] transition underline">
+                Skip & Return
+            </button>
         </div>
     </div>
 
@@ -262,7 +286,7 @@
 
         let allServicePrices = {};
         let currentService = '';
-        let isNightRateApplied = false; // 🟢 ADD THIS LINE
+        let isNightRateApplied = false; 
         const currentPassenger = getCookie("passenger_name");
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -353,7 +377,6 @@
             document.getElementById('confirm-btn').classList.add('hidden');
         }
 
-        // 🟢 UPDATED: The Time-Based Night Differential Calculator
         document.getElementById('booking-form').addEventListener('submit', function(event) {
             event.preventDefault();
             document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
@@ -362,17 +385,15 @@
                 let baseFare = allServicePrices[currentService] || 0; 
                 const nightBadge = document.getElementById('night-diff-badge');
                 
-                // Fetch user's current hour (0-23)
                 const currentHour = new Date().getHours();
                 
-                // If it is between 10 PM (22:00) and 6 AM (05:59)...
                 if (currentHour >= 22 || currentHour < 6) {
-                    baseFare = baseFare + (baseFare * 0.10); // Add exact 10%
+                    baseFare = baseFare + (baseFare * 0.10); 
                     nightBadge.classList.remove('hidden'); 
-                    isNightRateApplied = true; // 🟢 TURN FLAG ON
+                    isNightRateApplied = true; 
                 } else {
                     nightBadge.classList.add('hidden');
-                    isNightRateApplied = false; // 🟢 KEEP FLAG OFF
+                    isNightRateApplied = false; 
                 }
 
                 let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
@@ -404,7 +425,6 @@
                 passenger_name: currentPassenger, 
                 pickup_location: pickupLocation,
                 dropoff_location: dropoffLocation,
-                // 🟢 UPDATED: Append "(Night Rate)" if the flag is on
                 service_type: isNightRateApplied ? currentService + " (Night Rate)" : currentService, 
                 fare: document.getElementById('fare-amount').innerText 
             };
@@ -448,6 +468,11 @@
 
         let previousRideStatus = '';
 
+        // 🟢 NEW: Variables to store the rating data
+        let currentRatingRideId = null;
+        let selectedRating = 5; 
+
+        // 🟢 UPDATED: Radar loop includes checking for the 'paid' status
         async function fetchMyRides() {
             try {
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
@@ -456,8 +481,11 @@
                 const container = document.getElementById('my-rides-container');
                 if (!container) return; 
                 
-                const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger && ride.status !== 'paid');
-                const activeRide = myRides.find(r => ['pending', 'accepted', 'completed'].includes(r.status));
+                // Keep the ride on the screen if it is NOT paid, OR if it IS paid but hasn't been rated yet
+                const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger && (ride.status !== 'paid' || (ride.status === 'paid' && !ride.rating)));
+                
+                // Track active statuses including 'paid'
+                const activeRide = myRides.find(r => ['pending', 'accepted', 'completed', 'paid'].includes(r.status));
 
                 const currentStatus = activeRide ? activeRide.status : '';
                 if (currentStatus !== previousRideStatus) {
@@ -513,6 +541,16 @@
                                 <p class="text-blue-800 text-sm font-bold m-0">📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.</p>
                             </div>
                         `;
+                    } else if (ride.status === 'paid' && !ride.rating) {
+                        // 🟢 NEW: Prompts the passenger to rate the driver after payment
+                        statusHtml = `
+                            <div class="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3 mt-4 text-center">
+                                <p class="text-yellow-800 text-sm font-bold m-0 mb-3">🎉 Payment Confirmed!</p>
+                                <button onclick="openRatingModal(${ride.id}, '${ride.driver_name}')" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center">
+                                    <i class="fa-solid fa-star mr-2"></i> Rate your Driver
+                                </button>
+                            </div>
+                        `;
                     }
 
                     rideBox.innerHTML = `
@@ -533,6 +571,63 @@
         fetchMyRides();
         setInterval(fetchMyRides, 3000);
 
+        // 🟢 NEW: Rating Modal Logic
+        function openRatingModal(rideId, driverName) {
+            currentRatingRideId = rideId;
+            document.getElementById('rating-driver-name').innerText = driverName;
+            document.getElementById('rating-modal').classList.remove('hidden');
+            setRating(5); 
+        }
+
+        function setRating(stars) {
+            selectedRating = stars;
+            const starElements = document.getElementById('star-container').children;
+            for (let i = 0; i < 5; i++) {
+                if (i < stars) {
+                    starElements[i].classList.remove('text-slate-400');
+                    starElements[i].classList.add('text-yellow-500');
+                } else {
+                    starElements[i].classList.add('text-slate-400');
+                    starElements[i].classList.remove('text-yellow-500');
+                }
+            }
+        }
+
+        async function submitRating() {
+            if (!currentRatingRideId) return;
+            const btn = document.getElementById('btn-submit-rating');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+
+            try {
+                const response = await fetch(`/api/rate-ride/${currentRatingRideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: selectedRating })
+                });
+
+                if (response.ok) {
+                    document.getElementById('rating-modal').classList.add('hidden');
+                    fetchMyRides(); // Refresh UI instantly
+                } else {
+                    alert("Failed to submit rating. Please try again.");
+                }
+            } catch (error) {
+                alert("Network error.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function skipRating() {
+            // Automatically gives a 5-star to help the driver if skipped
+            setRating(5);
+            submitRating();
+        }
+
+        // ==========================================
+        // WEBSOCKET CHAT LOGIC
+        // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
         
