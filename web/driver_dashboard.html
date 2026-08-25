@@ -98,13 +98,14 @@
                             <td colspan="2" class="px-4 py-2 text-right text-[#78350f] text-[10px] uppercase tracking-wider">Gross Total:</td>
                             <td id="amt-gross" class="px-4 py-2 text-right text-[#0f172a]">₱0.00</td>
                         </tr>
+                        <!-- 🟢 NEW: NIGHT DIFF BREAKDOWN ROW -->
+                        <tr class="text-indigo-800 bg-indigo-900/5">
+                            <td colspan="2" class="px-4 py-1 text-right text-[10px] tracking-wider">↳ Night Diff Earned:</td>
+                            <td id="amt-night-diff" class="px-4 py-1 text-right text-xs font-extrabold text-indigo-900">₱0.00</td>
+                        </tr>
                         <tr class="text-rose-700">
                             <td colspan="2" id="label-platform" class="px-4 py-1 text-right text-[10px] tracking-wider">Platform (17%):</td>
                             <td id="amt-platform" class="px-4 py-1 text-right text-xs">- ₱0.00</td>
-                        </tr>
-                        <tr class="text-rose-700">
-                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider">TODA (3%):</td>
-                            <td id="amt-katoda" class="px-4 py-1 text-right text-xs">- ₱0.00</td>
                         </tr>
                         <tr class="bg-green-900 text-white border-t border-green-800">
                             <td colspan="2" class="px-4 py-3 text-right text-green-100 text-xs uppercase tracking-wider">Net Earnings:</td>
@@ -606,14 +607,25 @@
             // 2. Loop through all completed rides and dynamically sum their exact fares
             let serviceStats = {};
             let totalGross = 0;
+            let totalNightDiff = 0; // 🟢 NEW TRACKER
 
             completedRides.forEach(ride => {
-                const sType = ride.service_type || 'Pasundo';
+                let sType = ride.service_type || 'Pasundo';
                 
-                // Safely convert string "₱50.00" to math number 50.00
+                // 🟢 Detect Night Rate and calculate the exact bonus amount
+                let isNight = sType.includes('(Night Rate)');
+                sType = sType.replace(' (Night Rate)', ''); // Remove from name so it groups cleanly
+
                 let fareVal = 0;
                 if (ride.fare) {
                     fareVal = parseFloat(ride.fare.replace(/[^0-9.]/g, '')) || 0;
+                }
+
+                // 🟢 If it was a night ride, extract the 10% that was added
+                if (isNight) {
+                    let originalFare = fareVal / 1.10;
+                    let diff = fareVal - originalFare;
+                    totalNightDiff += diff;
                 }
 
                 if (!serviceStats[sType]) {
@@ -653,6 +665,7 @@
             }
 
             document.getElementById('amt-gross').innerText = "₱" + totalGross.toFixed(2);
+            document.getElementById('amt-night-diff').innerText = "₱" + totalNightDiff.toFixed(2); // 🟢 DISPLAY IT
             document.getElementById('amt-platform').innerText = "- ₱" + platformCut.toFixed(2);
             document.getElementById('amt-katoda').innerText = "- ₱" + katodaCut.toFixed(2);
             document.getElementById('amt-net').innerText = "₱" + netEarnings.toFixed(2);
