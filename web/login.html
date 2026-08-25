@@ -45,10 +45,9 @@
             <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
                 🏍️ Driver Dash
             </a>
-            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
                 🏍️ TODA Dash
             </a>
-            
         </div>
     </div>
 
@@ -97,32 +96,59 @@
         </form>
 
         <!-- ==================== REGISTRATION FORM ==================== -->
-        <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
-            <div>
-                <input type="text" id="reg-name" required placeholder="Full Name" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
+        <form id="form-register" class="hidden flex flex-col gap-3" onsubmit="handleRegister(event)">
             
+            <!-- Name & Username -->
+            <input type="text" id="reg-name" required placeholder="Full Name (e.g. Randy G. Ramos)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
+            <input type="text" id="reg-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
+            
+            <!-- Passwords (Side-by-Side) -->
             <div class="grid grid-cols-2 gap-3">
-                <input type="text" id="reg-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
                 <input type="password" id="reg-pass" required placeholder="Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-            
-            <div>
-                <select id="reg-role" onchange="toggleTodaField()" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
-                    <option value="" disabled selected>Select Account Type</option>
-                    <option value="passenger">Passenger</option>
-                    <option value="driver">Driver</option>
-                    <option value="toda_admin">TODA Admin (President)</option>
-                </select>
+                <input type="password" id="reg-confirm-pass" required placeholder="Confirm Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <!-- TODA NAME (Hidden unless Driver or TODA Admin) -->
-            <div id="toda-field-container" class="hidden">
-                <input type="text" id="reg-toda" placeholder="TODA Name (e.g. KATODA)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
+            <!-- Role Selector -->
+            <select id="reg-role" onchange="toggleTodaField()" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
+                <option value="passenger">Passenger</option>
+                <option value="driver">Driver</option>
+                <option value="toda_admin">TODA Admin</option>
+            </select>
+
+            <!-- LOCATION & TODA (Visible & Required for Everyone) -->
+            <div class="mt-1 border-t border-[#c99c6b] pt-3">
+                <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Local Community</label>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <input type="text" id="reg-city" required placeholder="City" value="Pasig City" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
+                    <input type="text" id="reg-barangay" required placeholder="Barangay" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
+                </div>
+                <input type="text" id="reg-toda" required placeholder="Preferred TODA (e.g. KATODA)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
             </div>
 
-            <!-- 🟢 NEW SECURITY QUESTIONS -->
-            <div class="border-t border-[#c99c6b] pt-4 mt-2">
+            <!-- DRIVER VEHICLE FIELDS (Hidden unless Driver) -->
+            <div id="driver-fields-container" class="hidden flex-col gap-3 mt-1 border-t border-[#c99c6b] pt-3">
+                <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Vehicle Details</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="reg-toda-number" placeholder="Body Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
+                    <input type="text" id="reg-plate-number" placeholder="Plate Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
+                </div>
+            </div>
+
+            <!-- PAYOUT ACCOUNT (Driver & TODA Admin) -->
+            <div id="payout-container" class="hidden space-y-3 mt-1 border-t border-[#c99c6b] pt-3">
+                <label id="payout-label" class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Payout Account Details</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="reg-bank" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
+                        <option value="GCash">GCash</option>
+                        <option value="Maya">Maya</option>
+                        <option value="BPI">BPI</option>
+                    </select>
+                    <input type="text" id="reg-account" placeholder="Account Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
+                </div>
+            </div>
+
+            <!-- Security Questions -->
+            <div class="mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Account Recovery Setup</label>
                 <select id="reg-sec-q" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f] mb-3">
                     <option value="" disabled selected>Select a Security Question</option>
@@ -133,11 +159,12 @@
                 </select>
                 <input type="text" id="reg-sec-a" required placeholder="Your Secret Answer" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
-
+            
             <div id="reg-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
-            <button type="submit" id="btn-register" class="w-full mt-2 py-4 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-lg transition-all">
-                Create Account <i class="fa-solid fa-user-plus ml-1"></i>
+            <!-- Submit -->
+            <button type="submit" id="btn-register" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-user-plus"></i> Create Account
             </button>
         </form>
     </div>
@@ -188,7 +215,7 @@
         </div>
     </div>
 
-    <!-- LOGIC SCRIPT -->
+    <!-- ==================== LOGIC SCRIPT ==================== -->
     <script>
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
@@ -203,7 +230,6 @@
             }
         });
 
-        // 🟢 NEW: Missing Modal Functions Added!
         function openForgotModal() {
             document.getElementById('forgot-modal').classList.remove('hidden');
         }
@@ -232,6 +258,8 @@
                 tabReg.classList.remove('text-[#78350f]');
                 tabLogin.classList.remove('active', 'text-white');
                 tabLogin.classList.add('text-[#78350f]');
+                // Force check role display when opening register tab
+                toggleTodaField();
             }
         }
 
@@ -240,6 +268,8 @@
             const driverFieldsContainer = document.getElementById('driver-fields-container');
             const payoutField = document.getElementById('payout-container'); 
             const payoutLabel = document.getElementById('payout-label');
+
+            if (!driverFieldsContainer || !payoutField) return; // Prevent silent crash if HTML is missing
 
             // Show Vehicle Fields (Body & Plate) ONLY if Driver
             if (role === 'driver') {
@@ -259,7 +289,6 @@
                 payoutField.classList.remove('hidden');
                 document.getElementById('reg-account').required = true;
                 
-                // Change the label based on who is signing up
                 if (role === 'driver') {
                     payoutLabel.innerText = "Driver Payout Account";
                 } else {
@@ -270,6 +299,9 @@
                 document.getElementById('reg-account').required = false;
             }
         }
+
+        // Run once on load to ensure the form displays correctly from the start
+        document.addEventListener("DOMContentLoaded", toggleTodaField);
 
         // ==========================================
         // API FETCH CALLS
@@ -288,14 +320,12 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
 
             try {
-                // Check if it's the Master Admin Login
                 if (user === "masterom" && pass === "12345") {
                     document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
                     window.location.href = "admin_dashboard.html"; 
                     return;
                 }
 
-                // Standard Database Login
                 const formData = new FormData();
                 formData.append('username', user);
                 formData.append('password', pass);
@@ -325,7 +355,6 @@
             const alertBox = document.getElementById('reg-alert');
             const btn = document.getElementById('btn-register');
             
-            // 🟢 NEW: Password Match Verification
             const pass = document.getElementById('reg-pass').value;
             const confirmPass = document.getElementById('reg-confirm-pass').value;
             if (pass !== confirmPass) {
@@ -338,7 +367,6 @@
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
 
-            // 🟢 NEW: City and Barangay correctly added to payload
             const payload = {
                 full_name: document.getElementById('reg-name').value,
                 username: document.getElementById('reg-user').value,
@@ -419,6 +447,6 @@
                 btn.innerHTML = originalText;
             }
         }
-    </script>>
+    </script>
 </body>
 </html>
