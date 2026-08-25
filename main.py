@@ -78,6 +78,7 @@ class RideRequest(Base):
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
+    created_at = Column(DateTime, default=datetime.now) # 🟢 NEW: Time tracking 
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -143,7 +144,14 @@ def generate_local_ref(barangay: str, toda: str) -> str:
 def initialize_config():
     SystemConfig.__table__.create(bind=engine, checkfirst=True)
     TodaConfig.__table__.create(bind=engine, checkfirst=True)
-    
+  # 🟢 NEW: Add timestamp column safely to existing database
+    try:
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
+        db.commit()
+    except Exception:
+        db.rollback()
+        
+    db.close() # Keep your existing db.close() here  
     db = SessionLocal()
     config = db.query(SystemConfig).first()
     if not config:
@@ -991,31 +999,73 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
 @app.get("/api/toda/finances")
 def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
     branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == toda_name.strip().upper()).first()
-    toda_pct = (branch_config.katoda_share if branch_config else 3) / 100
+    toda_pct = (branch_config.katoda_share if branch_config else 3.0) / 100.0
 
     search_term = f"%{toda_name.strip()}%"
-    
     drivers = db.query(User).filter(User.toda_name.ilike(search_term), User.role == 'driver').all()
     driver_names = [sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username) for d in drivers]
 
     rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    
+    now = datetime.now()
+    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
 
-    total_toda_share = 0.0
     for r in rides:
         clean_driver = sanitize_name(r.driver_name) if r.driver_name else ""
         if clean_driver in driver_names:
             try:
                 clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
-                total_toda_share += clean_fare * toda_pct
+                toda_cut = clean_fare * toda_pct
+                
+                # Filter by Date
+                r_date = r.created_at if r.created_at else now
+                
+                if r_date.date() == now.date(): finances["today"] += toda_cut
+                if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += toda_cut
+                if r_date.month == now.month and r_date.year == now.year: finances["month"] += toda_cut
+                if r_date.year == now.year: finances["ytd"] += toda_cut
             except ValueError:
                 continue
 
-    return {
-        "today": total_toda_share,  
-        "week": total_toda_share,
-        "month": total_toda_share,
-        "ytd": total_toda_share
-    }
+    return finances
+
+
+@app.get("/api/admin/finances")
+def get_admin_finances(db: Session = Depends(get_db)):
+    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    
+    sys_config = db.query(SystemConfig).first()
+    default_platform_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
+    toda_configs = {tc.toda_name: (tc.platform_share / 100.0) for tc in db.query(TodaConfig).all()}
+
+    now = datetime.now()
+    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
+
+    for r in rides:
+        try:
+            clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
+            
+            # Match the platform share percentage to the specific branch
+            p_pct = default_platform_pct
+            if r.branch:
+                for t_name, t_share in toda_configs.items():
+                    if t_name in r.branch:
+                        p_pct = t_share
+                        break
+                        
+            platform_cut = clean_fare * p_pct
+            
+            # Filter by Date
+            r_date = r.created_at if r.created_at else now
+            
+            if r_date.date() == now.date(): finances["today"] += platform_cut
+            if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += platform_cut
+            if r_date.month == now.month and r_date.year == now.year: finances["month"] += platform_cut
+            if r_date.year == now.year: finances["ytd"] += platform_cut
+        except ValueError:
+            continue
+
+    return finances
 
 class TodaBroadcastSchema(BaseModel): 
     toda_name: str
