@@ -103,21 +103,21 @@ class TodaConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     toda_name = Column(String, unique=True, index=True)
     
-    s1_name = Column(String, default="Pasundo")
-    s1_price = Column(Integer, default=50)
-    s2_name = Column(String, default="Pabili")
-    s2_price = Column(Integer, default=50)
-    s3_name = Column(String, default="Papickup")
-    s3_price = Column(Integer, default=50)
-    s4_name = Column(String, default="")
-    s4_price = Column(Integer, default=0)
-    s5_name = Column(String, default="")
-    s5_price = Column(Integer, default=0)
-    
-    platform_share = Column(Float, default=17.0)
-    katoda_share = Column(Float, default=3.0)
-    katoda_bank = Column(String, default="GCash")
-    katoda_account = Column(String, default="")
+    class TodaConfigUpdateSchema(BaseModel):
+    s1_name: str
+    s1_price: int
+    s2_name: str
+    s2_price: int
+    s3_name: str
+    s3_price: int
+    s4_name: str
+    s4_price: int
+    s5_name: str
+    s5_price: int
+    platform_share: float
+    katoda_share: float
+    katoda_bank: Optional[str] = None
+    katoda_account: Optional[str] = None
 
 Base.metadata.create_all(bind=engine)
 
