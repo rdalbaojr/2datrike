@@ -259,6 +259,7 @@
 
         let allServicePrices = {};
         let currentService = '';
+        let isNightRateApplied = false; // 🟢 ADD THIS LINE
         const currentPassenger = getCookie("passenger_name");
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -364,9 +365,11 @@
                 // If it is between 10 PM (22:00) and 6 AM (05:59)...
                 if (currentHour >= 22 || currentHour < 6) {
                     baseFare = baseFare + (baseFare * 0.10); // Add exact 10%
-                    nightBadge.classList.remove('hidden'); // Show the moon badge
+                    nightBadge.classList.remove('hidden'); 
+                    isNightRateApplied = true; // 🟢 TURN FLAG ON
                 } else {
                     nightBadge.classList.add('hidden');
+                    isNightRateApplied = false; // 🟢 KEEP FLAG OFF
                 }
 
                 let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
@@ -398,7 +401,8 @@
                 passenger_name: currentPassenger, 
                 pickup_location: pickupLocation,
                 dropoff_location: dropoffLocation,
-                service_type: currentService, 
+                // 🟢 UPDATED: Append "(Night Rate)" if the flag is on
+                service_type: isNightRateApplied ? currentService + " (Night Rate)" : currentService, 
                 fare: document.getElementById('fare-amount').innerText 
             };
 
