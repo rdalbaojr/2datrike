@@ -115,7 +115,6 @@
             <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
             <p class="text-sm text-[#78350f] font-medium mb-5">Notifying 2DA drivers nearby.</p>
             
-            <!-- 🟢 BOLD TICKET-STYLE REF NUMBER BADGE -->
             <p id="searching-ref" class="font-mono text-lg font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-4 py-1.5 rounded shadow-sm inline-block">
                 Loading...
             </p>
@@ -207,8 +206,60 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
+    <!-- SECURITY, LOGIC, WEBSOCKET & VIBRATION SCRIPT -->
     <script>
+        // ==========================================
+        // ALERTS & VIBRATION ENGINE
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Unlocks the audio engine on the first user interaction
+        document.body.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+
+        function playAlert(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'radar') {
+                // Double Beep & Double Vibrate
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+            } 
+            else if (type === 'success') {
+                // Happy Chime & Long Vibrate (Accepted / Arrived)
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.8);
+                if (navigator.vibrate) navigator.vibrate([200]);
+            } 
+            else if (type === 'chat') {
+                // Short Pop & Micro Vibrate (New Message)
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+                if (navigator.vibrate) navigator.vibrate([50]);
+            }
+        }
+
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
@@ -231,7 +282,6 @@
             return "Guest"; 
         }
 
-        // 🟢 FULLY DYNAMIC 5-SLOT GRID GENERATOR
         let allServicePrices = {};
         let currentService = '';
         const currentPassenger = getCookie("passenger_name");
@@ -246,7 +296,7 @@
             container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-[#78350f] py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading Branch Services...</div>';
             
             try {
-                let branchToLoad = 'MASTER'; // Default Fallback
+                let branchToLoad = 'MASTER'; 
                 if (currentPassenger && currentPassenger !== "Guest") {
                     const profileRes = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}`);
                     if (profileRes.ok) {
@@ -255,13 +305,11 @@
                     }
                 }
 
-                // Fetch the exact 5 slots configured for this Branch
                 const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(branchToLoad)}`);
                 if (configRes.ok) {
                     const config = await configRes.json();
                     container.innerHTML = ''; 
 
-                    // Array of professional icons to assign to the 5 slots
                     const icons = ['fa-person-walking-luggage', 'fa-basket-shopping', 'fa-box-open', 'fa-star', 'fa-bolt'];
                     let isFirst = true;
                     let hasServices = false;
@@ -274,7 +322,6 @@
                             hasServices = true;
                             allServicePrices[sName] = sPrice;
                             
-                            // Make the very first valid button the default selected one
                             if (isFirst) {
                                 currentService = sName;
                                 isFirst = false;
@@ -305,7 +352,6 @@
 
         function toggleBudgetContainer(service) {
             const pabiliContainer = document.getElementById('pabili-budget-container');
-            // If the custom name has "pabili" or "buy" inside it, auto-show the budget box!
             if (service && (service.toLowerCase().includes('pabili') || service.toLowerCase().includes('buy'))) {
                 pabiliContainer.classList.remove('hidden');
             } else {
@@ -412,10 +458,12 @@
             window.location.href = "/login.html";
         }
 
+        // Variable to remember the previous state so we can trigger a notification on change
+        let previousRideStatus = '';
+
         // 2. Fetch and Display My Rides
         async function fetchMyRides() {
             try {
-                // ADDED CACHE-BUSTER: Prevents the browser from freezing on old data
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
                 const allRides = await response.json();
                 
@@ -428,6 +476,15 @@
                 );
 
                 const activeRide = myRides.find(r => ['pending', 'accepted', 'completed'].includes(r.status));
+
+                // 🟢 TRIGGER SUCCESS CHIME IF STATUS ADVANCES
+                const currentStatus = activeRide ? activeRide.status : '';
+                if (currentStatus !== previousRideStatus) {
+                    if (currentStatus === 'accepted' || currentStatus === 'completed') {
+                        playAlert('success');
+                    }
+                    previousRideStatus = currentStatus; // Save for the next check
+                }
 
                 if (activeRide) {
                     document.getElementById('booking-form').classList.add('hidden');
@@ -490,7 +547,6 @@
                         `;
                     }
 
-                    // 🟢 UPDATED: Bold Ticket-Style ID included in the passenger card
                     rideBox.innerHTML = `
                         <div class="flex justify-between items-center mb-4">
                             <strong class="text-[#78350f] text-sm tracking-wider uppercase font-extrabold">${ride.service_type || 'Passenger'}</strong>
@@ -511,7 +567,6 @@
             }
         }
 
-        // Start the radar! Load immediately, then check every 3 seconds
         fetchMyRides();
         setInterval(fetchMyRides, 3000);
 
@@ -525,19 +580,15 @@
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
             
-            // Show a loading state
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
-            // 1. FETCH CHAT HISTORY FROM DATABASE (WITH CACHE-BUSTER)
             try {
                 const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const history = await response.json();
                     
-                    // Clear the loading text and set the header
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
                     
-                    // Loop through past messages and display them
                     history.forEach(msg => {
                         displayMessage(msg.sender, msg.text);
                     });
@@ -546,7 +597,6 @@
                 console.error("Could not load chat history.");
             }
             
-            // 2. START THE LIVE WEBSOCKET CONNECTION
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
             
@@ -579,13 +629,16 @@
                     text: messageText
                 };
                 chatSocket.send(JSON.stringify(payload));
-                input.value = ''; // Clear the input box
+                input.value = ''; 
             }
         }
 
         function displayMessage(sender, text) {
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender === currentChatUser;
+            
+            // 🟢 Play chat pop sound if the message is from someone else
+            if (!isMe) playAlert('chat');
             
             const alignClass = isMe ? 'self-end' : 'self-start';
             const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
