@@ -352,17 +352,31 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         full_name=clean_full_name,   
         password=user.password,
         role=user.role,
+        city=user.city.strip().title() if user.city else "Pasig City",
+        barangay=user.barangay.strip().title() if user.barangay else "",
         toda_name=formatted_toda,
         local_ref=local_ref,
         security_q=user.security_q,
         security_a=user.security_a,
         toda_number=user.toda_number,    
         plate_number=user.plate_number.upper() if user.plate_number else "", 
+        bank_name=user.bank_name,           # 🟢 Maps GCash/Maya Provider
+        gcash_account=user.gcash_account,   # 🟢 Maps Account Number
         rating_sum=25.0,
         rating_count=5
     )
     
     db.add(new_user)
+
+    # 🟢 Auto-Setup TODA Branch Payouts on Registration
+    if user.role == "toda_admin" and formatted_toda:
+        config = db.query(TodaConfig).filter(TodaConfig.toda_name == formatted_toda).first()
+        if not config:
+            config = TodaConfig(toda_name=formatted_toda)
+            db.add(config)
+        config.katoda_bank = user.bank_name
+        config.katoda_account = user.gcash_account
+
     db.commit()
     return {"status": "success"}
 
