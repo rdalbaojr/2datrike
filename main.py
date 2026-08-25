@@ -281,7 +281,7 @@ def sanitize_name(name: str) -> str:
 # ==========================================
 @app.get("/")
 def read_root():
-    return RedirectResponse(url="/booking.html")
+    return RedirectResponse(url="/login.html")
 
 @app.post("/api/login")
 async def admin_login(request: LoginRequest):
