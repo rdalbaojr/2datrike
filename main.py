@@ -106,6 +106,7 @@ class TodaConfig(Base):
     class TodaConfigUpdateSchema(BaseModel):
     s1_name: str
     s1_price: int
+    # ... and so on
     s2_name: str
     s2_price: int
     s3_name: str
