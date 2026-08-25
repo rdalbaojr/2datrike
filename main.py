@@ -842,8 +842,13 @@ def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session
     
     config.platform_share = data.platform_share
     config.katoda_share = data.katoda_share
-    config.katoda_bank = data.katoda_bank
-    config.katoda_account = data.katoda_account
+    
+    # 🟢 NEW: Only update bank details if they are actually sent. 
+    # Otherwise, leave the TODA's original sign-up data untouched!
+    if data.katoda_bank is not None:
+        config.katoda_bank = data.katoda_bank
+    if data.katoda_account is not None:
+        config.katoda_account = data.katoda_account
     
     db.commit()
     return {"status": "success"}
