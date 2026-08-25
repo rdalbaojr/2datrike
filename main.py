@@ -346,6 +346,8 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         local_ref=local_ref,
         security_q=user.security_q,
         security_a=user.security_a,
+        toda_number=user.toda_number,    # 🟢 NEW
+        plate_number=user.plate_number.upper() if user.plate_number else "", # 🟢 NEW
         rating_sum=25.0,
         rating_count=5
     )
