@@ -377,6 +377,7 @@
             document.getElementById('confirm-btn').classList.add('hidden');
         }
 
+        // 🟢 AUTOMATIC TIME-BASED NIGHT DIFFERENTIAL
         document.getElementById('booking-form').addEventListener('submit', function(event) {
             event.preventDefault();
             document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
@@ -385,10 +386,13 @@
                 let baseFare = allServicePrices[currentService] || 0; 
                 const nightBadge = document.getElementById('night-diff-badge');
                 
+                // Get the user's current local hour (0-23)
                 const currentHour = new Date().getHours();
                 
+                // If it is 10 PM (22) or later, OR before 6 AM... auto-apply the 10%
                 if (currentHour >= 22 || currentHour < 6) {
                     baseFare = baseFare + (baseFare * 0.10); 
+                    nightBadge.innerHTML = '<i class="fa-solid fa-moon"></i> +10% Night Rate';
                     nightBadge.classList.remove('hidden'); 
                     isNightRateApplied = true; 
                 } else {
@@ -425,6 +429,7 @@
                 passenger_name: currentPassenger, 
                 pickup_location: pickupLocation,
                 dropoff_location: dropoffLocation,
+                // 🟢 Automatically tags the database if the clock triggered the night rate
                 service_type: isNightRateApplied ? currentService + " (Night Rate)" : currentService, 
                 fare: document.getElementById('fare-amount').innerText 
             };
