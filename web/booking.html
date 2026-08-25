@@ -54,7 +54,6 @@
     <!-- ==================== MAIN FLOATING APP CARD ==================== -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative z-10 overflow-hidden">
         
-        <!-- Header -->
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight">2DA App</h1>
@@ -65,12 +64,10 @@
             </div>
         </div>
 
-        <!-- 🟢 5-SLOT DYNAMIC SERVICE SELECTION -->
+        <!-- 5-SLOT DYNAMIC SERVICE SELECTION -->
         <div id="service-selection-box">
             <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
-            <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-                <!-- Buttons are automatically injected here via JS from the Branch Configurator -->
-            </div>
+            <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"></div>
         </div>
 
         <!-- Routing Form -->
@@ -89,9 +86,15 @@
                 <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <!-- Fare Estimate Display -->
-            <div id="fare-estimate" class="hidden bg-[#F5E6D3] border border-[#d4aa7c] p-4 rounded-xl flex justify-between items-center mt-4 shadow-sm">
-                <div class="text-xs text-[#78350f] font-bold uppercase tracking-wider">Est. Total Fare</div>
+            <!-- 🟢 UPDATED FARE DISPLAY WITH NIGHT BADGE -->
+            <div id="fare-estimate" class="hidden bg-[#F5E6D3] border border-[#d4aa7c] p-4 rounded-xl flex justify-between items-center mt-4 shadow-sm relative overflow-hidden">
+                <div>
+                    <div class="text-xs text-[#78350f] font-bold uppercase tracking-wider">Est. Total Fare</div>
+                    <!-- This badge only appears during 10PM - 6AM -->
+                    <div id="night-diff-badge" class="hidden mt-1 bg-blue-900/10 border border-blue-900/20 text-blue-800 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
+                        <i class="fa-solid fa-moon"></i> +10% Night Rate
+                    </div>
+                </div>
                 <div class="text-lg font-extrabold text-[#0f172a]" id="fare-amount">₱0.00</div>
             </div>
 
@@ -115,9 +118,7 @@
             <h2 class="text-xl font-extrabold text-[#0f172a] mb-2">Broadcasting...</h2>
             <p class="text-sm text-[#78350f] font-medium mb-5">Notifying 2DA drivers nearby.</p>
             
-            <p id="searching-ref" class="font-mono text-lg font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-4 py-1.5 rounded shadow-sm inline-block">
-                Loading...
-            </p>
+            <p id="searching-ref" class="font-mono text-lg font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-4 py-1.5 rounded shadow-sm inline-block">Loading...</p>
             
             <button onclick="cancelSearch()" class="mt-8 text-xs font-bold text-rose-700 hover:text-rose-900 transition underline block mx-auto">Cancel Search</button>
         </div>
@@ -126,17 +127,14 @@
 
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-4">My Rides & Requests</h3>
         
-        <!-- Active and past rides injected here -->
         <div id="my-rides-container" class="space-y-4">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-4">Loading your history...</p>
         </div>
-        
     </div>
 
-    <!-- ==================== BPI & OTP PAYMENT MODAL ==================== -->
+    <!-- PAYMENT & CHAT MODALS REMAIN EXACTLY THE SAME BELOW -->
     <div id="payment-modal" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-6 sm:p-8 max-w-[420px] w-full text-center shadow-2xl relative overflow-hidden">
-            <!-- QR VIEW -->
             <div id="qr-view" class="transition-all duration-300 block">
                 <div class="inline-flex items-center justify-center w-12 h-12 bg-[#78350f] text-white rounded-2xl mb-4 shadow-lg">
                     <i class="fa-solid fa-qrcode text-xl"></i>
@@ -161,7 +159,6 @@
                 </button>
             </div>
 
-            <!-- OTP VIEW -->
             <div id="otp-view" class="transition-all duration-300 hidden">
                 <div class="inline-flex items-center justify-center w-12 h-12 bg-[#175d33] text-white rounded-2xl mb-4 shadow-lg">
                     <i class="fa-solid fa-shield-check text-xl"></i>
@@ -181,7 +178,6 @@
         </div>
     </div>
 
-    <!-- ==================== IN-APP CHAT MODAL ==================== -->
     <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
             <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -206,17 +202,10 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC, WEBSOCKET & VIBRATION SCRIPT -->
+    <!-- LOGIC SCRIPTS -->
     <script>
-        // ==========================================
-        // ALERTS & VIBRATION ENGINE
-        // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // Unlocks the audio engine on the first user interaction
-        document.body.addEventListener('click', () => {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-        }, { once: true });
+        document.body.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
 
         function playAlert(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -225,19 +214,7 @@
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
 
-            if (type === 'radar') {
-                // Double Beep & Double Vibrate
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
-                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.5);
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
-            } 
-            else if (type === 'success') {
-                // Happy Chime & Long Vibrate (Accepted / Arrived)
+            if (type === 'success') {
                 oscillator.type = 'triangle';
                 oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
                 oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
@@ -247,9 +224,7 @@
                 oscillator.start(audioCtx.currentTime);
                 oscillator.stop(audioCtx.currentTime + 0.8);
                 if (navigator.vibrate) navigator.vibrate([200]);
-            } 
-            else if (type === 'chat') {
-                // Short Pop & Micro Vibrate (New Message)
+            } else if (type === 'chat') {
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
@@ -288,9 +263,7 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             const welcomeHeader = document.getElementById('welcome-name');
-            if (welcomeHeader && currentPassenger !== "Guest") {
-                welcomeHeader.innerText = `${currentPassenger}`;
-            }
+            if (welcomeHeader && currentPassenger !== "Guest") welcomeHeader.innerText = `${currentPassenger}`;
 
             const container = document.getElementById("service-buttons-container");
             container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-[#78350f] py-4"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading Branch Services...</div>';
@@ -338,11 +311,7 @@
                             `;
                         }
                     }
-                    
-                    if (!hasServices) {
-                         container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">No services currently configured for this branch.</div>';
-                    }
-                    
+                    if (!hasServices) container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">No services currently configured.</div>';
                     toggleBudgetContainer(currentService);
                 }
             } catch (e) {
@@ -375,18 +344,31 @@
             }
             
             toggleBudgetContainer(service);
-            
             document.getElementById('fare-estimate').classList.add('hidden');
             document.getElementById('submit-btn').classList.remove('hidden');
             document.getElementById('confirm-btn').classList.add('hidden');
         }
 
+        // 🟢 UPDATED: The Time-Based Night Differential Calculator
         document.getElementById('booking-form').addEventListener('submit', function(event) {
             event.preventDefault();
             document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
             
             setTimeout(() => {
                 let baseFare = allServicePrices[currentService] || 0; 
+                const nightBadge = document.getElementById('night-diff-badge');
+                
+                // Fetch user's current hour (0-23)
+                const currentHour = new Date().getHours();
+                
+                // If it is between 10 PM (22:00) and 6 AM (05:59)...
+                if (currentHour >= 22 || currentHour < 6) {
+                    baseFare = baseFare + (baseFare * 0.10); // Add exact 10%
+                    nightBadge.classList.remove('hidden'); // Show the moon badge
+                } else {
+                    nightBadge.classList.add('hidden');
+                }
+
                 let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
                 let total = baseFare + pabiliBudget;
 
@@ -430,7 +412,6 @@
                 if (response.ok) {
                     const responseData = await response.json();
                     document.getElementById('searching-ref').innerText = `${responseData.local_ref}`;
-                    
                     document.getElementById('pickup').value = '';
                     document.getElementById('dropoff').value = '';
                     document.getElementById('fare-estimate').classList.add('hidden');
@@ -458,10 +439,8 @@
             window.location.href = "/login.html";
         }
 
-        // Variable to remember the previous state so we can trigger a notification on change
         let previousRideStatus = '';
 
-        // 2. Fetch and Display My Rides
         async function fetchMyRides() {
             try {
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
@@ -470,26 +449,18 @@
                 const container = document.getElementById('my-rides-container');
                 if (!container) return; 
                 
-                const myRides = allRides.filter(ride => 
-                    ride.passenger_name === currentPassenger && 
-                    ride.status !== 'paid'
-                );
-
+                const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger && ride.status !== 'paid');
                 const activeRide = myRides.find(r => ['pending', 'accepted', 'completed'].includes(r.status));
 
-                // 🟢 TRIGGER SUCCESS CHIME IF STATUS ADVANCES
                 const currentStatus = activeRide ? activeRide.status : '';
                 if (currentStatus !== previousRideStatus) {
-                    if (currentStatus === 'accepted' || currentStatus === 'completed') {
-                        playAlert('success');
-                    }
-                    previousRideStatus = currentStatus; // Save for the next check
+                    if (currentStatus === 'accepted' || currentStatus === 'completed') playAlert('success');
+                    previousRideStatus = currentStatus;
                 }
 
                 if (activeRide) {
                     document.getElementById('booking-form').classList.add('hidden');
                     document.getElementById('service-selection-box').classList.add('hidden');
-                    
                     if (activeRide.status === 'pending') {
                         document.getElementById('searching-state').classList.remove('hidden');
                         document.getElementById('searching-ref').innerText = `${activeRide.local_ref || 'N/A'}`;
@@ -508,41 +479,31 @@
                 }
 
                 container.innerHTML = ''; 
-
                 myRides.reverse().forEach(ride => {
                     const rideBox = document.createElement('div');
                     rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-5 shadow-md";
                     
                     let statusHtml = "";
-
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
-                    } 
-                    else if (ride.status === 'accepted') {
+                    } else if (ride.status === 'accepted') {
                         statusHtml = `
                             <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
-                                <p class="text-green-800 text-sm font-bold m-0 mb-3">
-                                    ✅ Driver ${ride.driver_name} has accepted your ride and is on the way!
-                                </p>
-                                
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} has accepted your ride and is on the way!</p>
                                 <div class="flex gap-3 mt-2">
                                     <a href="tel:${ride.driver_mobile || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                         <i class="fa-solid fa-phone"></i> Call
                                     </a>
-                                    
                                     <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                         <i class="fa-regular fa-comment-dots"></i> Chat
                                     </button>
                                 </div>
                             </div>
                         `;
-                    }
-                    else if (ride.status === 'completed') {
+                    } else if (ride.status === 'completed') {
                         statusHtml = `
                             <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
-                                <p class="text-blue-800 text-sm font-bold m-0">
-                                    📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.
-                                </p>
+                                <p class="text-blue-800 text-sm font-bold m-0">📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.</p>
                             </div>
                         `;
                     }
@@ -554,52 +515,36 @@
                         </div>
                         <p class="text-slate-700 text-sm mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
                         <p class="text-slate-700 text-sm font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
-                        
                         <hr class="border-0 border-t border-dashed border-[#d4aa7c] my-3">
-                        
                         ${statusHtml}
                     `;
-                    
                     container.appendChild(rideBox);
                 });
-            } catch (error) {
-                console.error("Error fetching rides:", error);
-            }
+            } catch (error) { console.error("Error fetching rides:", error); }
         }
 
         fetchMyRides();
         setInterval(fetchMyRides, 3000);
 
-        // ==========================================
-        // WEBSOCKET CHAT LOGIC FOR PASSENGER
-        // ==========================================
         let chatSocket = null;
         let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
         
         async function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
-            
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
             try {
                 const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const history = await response.json();
-                    
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-                    
-                    history.forEach(msg => {
-                        displayMessage(msg.sender, msg.text);
-                    });
+                    history.forEach(msg => displayMessage(msg.sender, msg.text));
                 }
-            } catch (error) {
-                console.error("Could not load chat history.");
-            }
+            } catch (error) {}
             
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             chatSocket = new WebSocket(wsUrl);
-            
             chatSocket.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 displayMessage(data.sender, data.text);
@@ -608,26 +553,16 @@
 
         function closeChat() {
             document.getElementById('chat-modal').classList.add('hidden');
-            if(chatSocket) {
-                chatSocket.close();
-            }
+            if(chatSocket) chatSocket.close();
         }
 
-        function handleEnter(event) {
-            if(event.key === 'Enter') {
-                sendMessage();
-            }
-        }
+        function handleEnter(event) { if(event.key === 'Enter') sendMessage(); }
 
         function sendMessage() {
             const input = document.getElementById('chat-input');
             const messageText = input.value.trim();
-            
             if (messageText !== '' && chatSocket) {
-                const payload = {
-                    sender: currentChatUser,
-                    text: messageText
-                };
+                const payload = { sender: currentChatUser, text: messageText };
                 chatSocket.send(JSON.stringify(payload));
                 input.value = ''; 
             }
@@ -636,8 +571,6 @@
         function displayMessage(sender, text) {
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender === currentChatUser;
-            
-            // 🟢 Play chat pop sound if the message is from someone else
             if (!isMe) playAlert('chat');
             
             const alignClass = isMe ? 'self-end' : 'self-start';
@@ -646,12 +579,9 @@
             const messageHTML = `
                 <div class="flex flex-col ${alignClass} max-w-[80%]">
                     ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
-                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">
-                        ${text}
-                    </div>
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
                 </div>
             `;
-            
             messageContainer.innerHTML += messageHTML;
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
