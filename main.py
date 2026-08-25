@@ -258,6 +258,9 @@ class UserCreateJSON(BaseModel):
     toda_name: Optional[str] = ""
     security_q: str
     security_a: str
+    # 🟢 NEW fields
+    toda_number: Optional[str] = ""
+    plate_number: Optional[str] = ""
 
 def sanitize_name(name: str) -> str:
     if not name: return ""
