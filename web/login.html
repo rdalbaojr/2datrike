@@ -231,6 +231,10 @@
         function toggleTodaField() {
             const role = document.getElementById('reg-role').value;
             const todaField = document.getElementById('toda-field-container');
+            const payoutField = document.getElementById('toda-payout-container'); 
+            const driverFields = document.getElementById('driver-fields-container'); // 🟢 NEW
+
+            // Show TODA name for drivers and TODA admins
             if (role === 'driver' || role === 'toda_admin') {
                 todaField.classList.remove('hidden');
                 document.getElementById('reg-toda').required = true;
@@ -238,15 +242,26 @@
                 todaField.classList.add('hidden');
                 document.getElementById('reg-toda').required = false;
             }
-        }
 
-        function openForgotModal() {
-            document.getElementById('forgot-modal').classList.remove('hidden');
-            document.getElementById('forgot-alert').classList.add('hidden');
-        }
+            // Show payout only for TODA Admin
+            if (role === 'toda_admin') {
+                payoutField.classList.remove('hidden');
+                document.getElementById('reg-account').required = true;
+            } else {
+                payoutField.classList.add('hidden');
+                document.getElementById('reg-account').required = false;
+            }
 
-        function closeForgotModal() {
-            document.getElementById('forgot-modal').classList.add('hidden');
+            // 🟢 NEW: Show Body Number & Plate Number ONLY for Drivers
+            if (role === 'driver') {
+                driverFields.classList.remove('hidden');
+                document.getElementById('reg-toda-number').required = true;
+                document.getElementById('reg-plate-number').required = true;
+            } else {
+                driverFields.classList.add('hidden');
+                document.getElementById('reg-toda-number').required = false;
+                document.getElementById('reg-plate-number').required = false;
+            }
         }
 
         // ==========================================
@@ -314,7 +329,12 @@
                 role: document.getElementById('reg-role').value,
                 toda_name: document.getElementById('reg-toda').value || "",
                 security_q: document.getElementById('reg-sec-q').value,
-                security_a: document.getElementById('reg-sec-a').value.trim().toLowerCase()
+                security_a: document.getElementById('reg-sec-a').value.trim().toLowerCase(),
+                bank_name: document.getElementById('reg-bank') ? document.getElementById('reg-bank').value : "GCash",
+                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value : "",
+                // 🟢 NEW: Send driver vehicle details
+                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value : "",
+                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value : ""
             };
 
             try {
