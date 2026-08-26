@@ -371,6 +371,7 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         full_name=clean_full_name,   
         password=user.password,
         role=user.role,
+        whatsapp_number=user.whatsapp_number, # 🟢 ADD THIS LINE
         city=user.city.strip().title() if user.city else "Pasig City",
         barangay=user.barangay.strip().title() if user.barangay else "",
         toda_name=formatted_toda,
