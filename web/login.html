@@ -93,7 +93,8 @@
             <!-- 🟢 NEW: Toggel to Sign Up -->
             <div class="text-center mt-6">
     <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
-    <a href="#" onclick="toggleForm('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
+    <!-- 🟢 This onclick directly hides the login box and shows the register box -->
+    <a href="#" onclick="document.getElementById('login-box').classList.add('hidden'); document.getElementById('register-box').classList.remove('hidden');" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
         Please Signup here.
     </a>
 </div>
