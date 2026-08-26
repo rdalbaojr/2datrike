@@ -806,9 +806,16 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
         else: driver_payouts[clean_driver_name] = driver_cut
         total_katoda_payout += katoda_cut
 
+    # 🟢 ANTI-TAMPERING: Generate Unique Batch ID
+    now = datetime.now()
+    batch_id = now.strftime("BZ-%Y%m%d-%H%M%S")
+
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
+
+    total_payout_amount = 0.0
+    total_rows = 0
 
     for driver_name, amount in driver_payouts.items():
         if amount > 0:
@@ -822,15 +829,27 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
                 
             bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
             local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
-            writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout [{local_tag}] ({bank_provider})"])
+            
+            # 🟢 ANTI-TAMPERING: Inject Batch ID into every remark
+            writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout [{local_tag}] Batch:{batch_id}"])
+            
+            total_payout_amount += amount
+            total_rows += 1
 
     if total_katoda_payout > 0:
-        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"2DA Daily Katoda Share ({katoda_bank})"])
+        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"2DA Katoda Share Batch:{batch_id}"])
+        total_payout_amount += total_katoda_payout
+        total_rows += 1
+        
+    # 🟢 ANTI-TAMPERING: End of Batch Summary Row
+    writer.writerow([])
+    writer.writerow(["*** END OF BATCH ***", f"BATCH ID: {batch_id}", f"TOTAL AMOUNT: {total_payout_amount:.2f}", f"TOTAL RECORDS: {total_rows}"])
         
     output.seek(0)
-    current_date = datetime.now().strftime("%Y-%m-%d")
     filename_branch = branch.replace(' ', '_') if branch != "All" else "Master"
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Payout_{current_date}.csv"})
+    
+    # 🟢 ANTI-TAMPERING: Bind the Batch ID to the actual file name
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Batch_{batch_id}.csv"})
 
 @app.get("/api/admin/toda-config/{toda_name}")
 def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
