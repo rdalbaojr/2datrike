@@ -940,16 +940,22 @@ def get_pending_rides(db: Session = Depends(get_db)):
         if pass_user and pass_user.whatsapp_number: pass_phone = pass_user.whatsapp_number
             
         drv_phone = "0"
+        drv_toda_num = "N/A" # 🟢 NEW: Variable to hold the TODA number
+        
         if r.driver_name:
             drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name), User.role == 'driver').first()
             if not drv_user: drv_user = db.query(User).filter(User.username == sanitize_name(r.driver_name), User.role == 'driver').first()
-            if drv_user and drv_user.whatsapp_number: drv_phone = drv_user.whatsapp_number
+            if drv_user:
+                if drv_user.whatsapp_number: drv_phone = drv_user.whatsapp_number
+                if drv_user.toda_number: drv_toda_num = drv_user.toda_number # 🟢 NEW: Extracts the body number
 
         results.append({
             "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
             "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
             "status": r.status, "driver_name": sanitize_name(r.driver_name), "rating": r.rating,
-            "passenger_phone": pass_phone, "driver_phone": drv_phone, "branch": r.branch,
+            "passenger_phone": pass_phone, "driver_phone": drv_phone, 
+            "driver_toda_number": drv_toda_num, # 🟢 NEW: Sends it to the passenger app
+            "branch": r.branch,
             "local_ref": r.local_ref if r.local_ref else "N/A"
         })
     return results
