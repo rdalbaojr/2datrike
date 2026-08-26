@@ -289,6 +289,7 @@ class UserCreateJSON(BaseModel):
     security_a: str
     bank_name: Optional[str] = "GCash"
     gcash_account: Optional[str] = ""
+    whatsapp_number: Optional[str] = "" # 🟢 ADD THIS LINE
 
 def sanitize_name(name: str) -> str:
     if not name: return ""
