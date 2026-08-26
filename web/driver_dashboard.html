@@ -514,9 +514,9 @@
                             </div>
                             
                             <div class="flex gap-3 mb-3 mt-4">
-                                <a href="tel:0" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
-                                    <i class="fa-solid fa-phone"></i> Call
-                                </a>
+                                <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+    <i class="fa-solid fa-phone"></i> Call
+</a>
                                 
                                 <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                     <i class="fa-regular fa-comment-dots"></i> Chat
