@@ -78,7 +78,7 @@ class RideRequest(Base):
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
-    created_at = Column(DateTime, default=datetime.now) # 🟢 NEW: Time tracking 
+    created_at = Column(DateTime, default=datetime.now)
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -117,7 +117,7 @@ class TodaConfig(Base):
     katoda_share = Column(Float, default=3.0)
     katoda_bank = Column(String, default="GCash")
     katoda_account = Column(String, default="")
-    broadcast_message = Column(String, default="") # 🟢 NEW
+    broadcast_message = Column(String, default="")
 
 Base.metadata.create_all(bind=engine)
 
@@ -145,7 +145,7 @@ def initialize_config():
     SystemConfig.__table__.create(bind=engine, checkfirst=True)
     TodaConfig.__table__.create(bind=engine, checkfirst=True)
     
-    db = SessionLocal() # 🟢 OPEN CONNECTION FIRST
+    db = SessionLocal()
     
     config = db.query(SystemConfig).first()
     if not config:
@@ -178,25 +178,14 @@ def initialize_config():
     except Exception:
         db.rollback()
 
-    # 🟢 ADD BROADCAST COLUMN
     try:
         db.execute(text("ALTER TABLE toda_configs ADD COLUMN broadcast_message VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
 
-    # 🟢 ADD TIMESTAMP COLUMN (Safe placement at the end)
     try:
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP"))
-        db.commit()
-    except Exception:
-        db.rollback()
-        
-    db.close() # 🟢 CLOSE CONNECTION LAST
-        
-    # 🟢 NEW: Add broadcast column safely to existing database
-    try:
-        db.execute(text("ALTER TABLE toda_configs ADD COLUMN broadcast_message VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
         db.rollback()
@@ -289,7 +278,7 @@ class UserCreateJSON(BaseModel):
     security_a: str
     bank_name: Optional[str] = "GCash"
     gcash_account: Optional[str] = ""
-    whatsapp_number: Optional[str] = "" # 🟢 ADD THIS LINE
+    whatsapp_number: Optional[str] = ""
 
 def sanitize_name(name: str) -> str:
     if not name: return ""
@@ -371,7 +360,7 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         full_name=clean_full_name,   
         password=user.password,
         role=user.role,
-        whatsapp_number=user.whatsapp_number, # 🟢 ADD THIS LINE
+        whatsapp_number=user.whatsapp_number, 
         city=user.city.strip().title() if user.city else "Pasig City",
         barangay=user.barangay.strip().title() if user.barangay else "",
         toda_name=formatted_toda,
@@ -380,15 +369,14 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         security_a=user.security_a,
         toda_number=user.toda_number,    
         plate_number=user.plate_number.upper() if user.plate_number else "", 
-        bank_name=user.bank_name,           # 🟢 Maps GCash/Maya Provider
-        gcash_account=user.gcash_account,   # 🟢 Maps Account Number
+        bank_name=user.bank_name,           
+        gcash_account=user.gcash_account,   
         rating_sum=25.0,
         rating_count=5
     )
     
     db.add(new_user)
 
-    # 🟢 Auto-Setup TODA Branch Payouts on Registration
     if user.role == "toda_admin" and formatted_toda:
         config = db.query(TodaConfig).filter(TodaConfig.toda_name == formatted_toda).first()
         if not config:
@@ -808,16 +796,15 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
         else: driver_payouts[clean_driver_name] = driver_cut
         total_katoda_payout += katoda_cut
 
-    # 🟢 ANTI-TAMPERING: Generate Unique Batch ID
+    # 🟢 BATCH ID (Anti-Tampering via file name and remarks)
     now = datetime.now()
-    batch_id = now.strftime("BZ-%Y%m%d-%H%M%S")
+    batch_id = now.strftime("BZ%Y%m%d%H%M")
 
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Destination Account Number", "Beneficiary Name", "Amount", "Remarks"])
-
-    total_payout_amount = 0.0
-    total_rows = 0
+    
+    # 🟢 Standard BPI BizLink Columns
+    writer.writerow(["Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
     for driver_name, amount in driver_payouts.items():
         if amount > 0:
@@ -829,29 +816,23 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
             elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip(): account_number = driver_user.whatsapp_number
             else: account_number = "MISSING_ACCOUNT"
                 
-            bank_provider = driver_user.bank_name if driver_user and driver_user.bank_name else "GCash"
             local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
             
-            # 🟢 ANTI-TAMPERING: Inject Batch ID into every remark
-            writer.writerow([account_number, driver_name, f"{amount:.2f}", f"2DA Payout [{local_tag}] Batch:{batch_id}"])
-            
-            total_payout_amount += amount
-            total_rows += 1
+            # 🟢 Clean BPI-compliant rows. Batch ID securely logged in Remarks.
+            remarks_string = f"{local_tag} {batch_id}"[:30]
+            writer.writerow([account_number, driver_name, f"{amount:.2f}", remarks_string])
 
     if total_katoda_payout > 0:
-        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"2DA Katoda Share Batch:{batch_id}"])
-        total_payout_amount += total_katoda_payout
-        total_rows += 1
-        
-    # 🟢 ANTI-TAMPERING: End of Batch Summary Row
-    writer.writerow([])
-    writer.writerow(["*** END OF BATCH ***", f"BATCH ID: {batch_id}", f"TOTAL AMOUNT: {total_payout_amount:.2f}", f"TOTAL RECORDS: {total_rows}"])
+        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"Katoda {batch_id}"[:30]])
         
     output.seek(0)
     filename_branch = branch.replace(' ', '_') if branch != "All" else "Master"
     
-    # 🟢 ANTI-TAMPERING: Bind the Batch ID to the actual file name
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Batch_{batch_id}.csv"})
+    return StreamingResponse(
+        iter([output.getvalue()]), 
+        media_type="text/csv", 
+        headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Batch_{batch_id}.csv"}
+    )
 
 @app.get("/api/admin/toda-config/{toda_name}")
 def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
@@ -940,21 +921,21 @@ def get_pending_rides(db: Session = Depends(get_db)):
         if pass_user and pass_user.whatsapp_number: pass_phone = pass_user.whatsapp_number
             
         drv_phone = "0"
-        drv_toda_num = "N/A" # 🟢 NEW: Variable to hold the TODA number
+        drv_toda_num = "N/A"
         
         if r.driver_name:
             drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name), User.role == 'driver').first()
             if not drv_user: drv_user = db.query(User).filter(User.username == sanitize_name(r.driver_name), User.role == 'driver').first()
             if drv_user:
                 if drv_user.whatsapp_number: drv_phone = drv_user.whatsapp_number
-                if drv_user.toda_number: drv_toda_num = drv_user.toda_number # 🟢 NEW: Extracts the body number
+                if drv_user.toda_number: drv_toda_num = drv_user.toda_number 
 
         results.append({
             "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
             "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
             "status": r.status, "driver_name": sanitize_name(r.driver_name), "rating": r.rating,
             "passenger_phone": pass_phone, "driver_phone": drv_phone, 
-            "driver_toda_number": drv_toda_num, # 🟢 NEW: Sends it to the passenger app
+            "driver_toda_number": drv_toda_num, 
             "branch": r.branch,
             "local_ref": r.local_ref if r.local_ref else "N/A"
         })
@@ -1066,7 +1047,6 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
 
     return finances
 
-
 @app.get("/api/admin/finances")
 def get_admin_finances(db: Session = Depends(get_db)):
     rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
@@ -1139,6 +1119,7 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
             return {"message": config.broadcast_message, "toda_name": clean_toda}
             
     return {"message": "", "toda_name": ""}
+
 @app.get("/api/driver/shift/{driver_name}")
 def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(driver_name)
@@ -1192,6 +1173,7 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
         "net": net_earnings,
         "breakdown": breakdown
     }
+
 # ==========================================
 # 7. MOUNT WEB FOLDER & START SERVER
 # ==========================================
