@@ -93,7 +93,6 @@
                             <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Loading shift data...</td>
                         </tr>
                     </tbody>
-                    <!-- 🟢 UPDATED FOOTER WITH NO PERCENTAGES & ADDED TODA ROW -->
                     <tfoot class="bg-[#e8cda8] border-t border-[#d4aa7c] font-bold">
                         <tr>
                             <td colspan="2" class="px-4 py-2 text-right text-[#78350f] text-[10px] uppercase tracking-wider">Gross Total:</td>
@@ -234,7 +233,6 @@
             gainNode.connect(audioCtx.destination);
 
             if (type === 'radar') {
-                // Double Beep & Double Vibrate
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                 oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
@@ -245,7 +243,6 @@
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
             } 
             else if (type === 'success') {
-                // Happy Chime & Long Vibrate (Accepted / Arrived)
                 oscillator.type = 'triangle';
                 oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
                 oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
@@ -257,7 +254,6 @@
                 if (navigator.vibrate) navigator.vibrate([200]);
             } 
             else if (type === 'chat') {
-                // Short Pop & Micro Vibrate (New Message)
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
@@ -402,7 +398,12 @@
             }
         }
 
-        let previousPendingCount = 0; // Remembers how many rides were on radar
+        let previousPendingCount = 0; 
+        
+        // 🟢 BACKGROUND RADIO VARIABLES
+        let backgroundSockets = {}; 
+        let unreadCounts = {}; 
+        let activeChatRideId = null;
 
         // ==========================================
         // MASTER FUNCTION: Fetch Pending & Active Rides
@@ -423,11 +424,8 @@
                 // --- 1. PENDING RIDES (RADAR) ---
                 const pendingRides = allRides.filter(ride => ride.status === 'pending');
                 
-                // 🟢 TRIGGER RADAR BEEP IF A NEW RIDE APPEARS
-                if (pendingRides.length > previousPendingCount) {
-                    playAlert('radar');
-                }
-                previousPendingCount = pendingRides.length; // Save for the next check
+                if (pendingRides.length > previousPendingCount) playAlert('radar');
+                previousPendingCount = pendingRides.length; 
 
                 if (pendingRides.length === 0) {
                     pendingContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-radar mr-1"></i> No pending orders right now.</p>';
@@ -440,7 +438,6 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
                         
-                        // 🟢 TICKET-STYLE BADGE FOR PENDING RIDES
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
@@ -483,6 +480,10 @@
                 } else {
                     activeContainer.innerHTML = '';
                     activeRides.reverse().forEach(ride => {
+                        
+                        // 🟢 AUTO-CONNECT BACKGROUND RADIO
+                        setupBackgroundChat(ride.id);
+
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
                             actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
@@ -501,7 +502,7 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
-                        // 🟢 TICKET-STYLE BADGE FOR ACTIVE RIDES
+                        // 🟢 DYNAMIC CHAT BUTTON WITH NOTIFICATION BADGE
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-start mb-3">
                                 <div>
@@ -515,17 +516,21 @@
                             
                             <div class="flex gap-3 mb-3 mt-4">
                                 <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
-    <i class="fa-solid fa-phone"></i> Call
-</a>
+                                    <i class="fa-solid fa-phone"></i> Call
+                                </a>
                                 
-                                <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                <button onclick="openChat(${ride.id})" class="relative flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                     <i class="fa-regular fa-comment-dots"></i> Chat
+                                    <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
                                 </button>
                             </div>
 
                             ${actionButtonHtml}
                         `;
                         activeContainer.appendChild(rideBox);
+                        
+                        // Enforce the badge visibility after rendering
+                        updateChatBadge(ride.id);
                     });
                 }
             } catch (error) {
@@ -576,7 +581,6 @@
             }
         }
 
-        // 🟢 FIXED DYNAMIC EARNINGS TABLE
         async function updateEarningsTable(allRides, driverName) {
             if (!Array.isArray(allRides)) return;
 
@@ -596,9 +600,7 @@
                         }
                     }
                 }
-            } catch (error) {
-                console.warn("Using default share rates.");
-            }
+            } catch (error) { console.warn("Using default share rates."); }
 
             const labelPlat = document.getElementById('label-platform');
             const labelToda = document.getElementById('label-katoda');
@@ -617,27 +619,18 @@
 
             completedRides.forEach(ride => {
                 let sType = ride.service_type || 'Pasundo';
-                
-                // 🟢 Detects the auto-tag sent by the passenger app
                 let isNight = sType.includes('(Night Rate)');
-                
-                // Strips the tag so it groups nicely on the report
                 sType = sType.replace(' (Night Rate)', '').trim();
 
                 let fareVal = 0.0;
-                if (ride.fare) {
-                    fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
-                }
+                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
 
-                // Extracts the exact extra 10% earned
                 if (isNight) {
                     let originalFare = fareVal / 1.10;
                     totalNightDiff += (fareVal - originalFare);
                 }
 
-                if (!serviceStats[sType]) {
-                    serviceStats[sType] = { qty: 0, amount: 0.0 };
-                }
+                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
                 
                 serviceStats[sType].qty += 1;
                 serviceStats[sType].amount += fareVal;
@@ -684,14 +677,58 @@
         }
 
         // ==========================================
-        // WEBSOCKET CHAT LOGIC
+        // 🟢 UPGRADED BACKGROUND CHAT & NOTIFICATIONS
         // ==========================================
-        let chatSocket = null;
         
+        function setupBackgroundChat(rideId) {
+            if (backgroundSockets[rideId]) return; // Already connected to this ride
+
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const isMe = data.sender === currentDriverName;
+                const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
+
+                // If the chat modal is currently open AND viewing this specific ride...
+                if (activeChatRideId === rideId && isModalOpen) {
+                    displayMessage(data.sender, data.text, false);
+                } 
+                // If the chat modal is closed OR they are viewing a different ride...
+                else {
+                    if (!isMe) {
+                        unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
+                        playAlert('chat'); // Tiny pop sound for notification
+                        updateChatBadge(rideId); // Add the red bubble
+                    }
+                }
+            };
+
+            ws.onclose = () => { delete backgroundSockets[rideId]; };
+            backgroundSockets[rideId] = ws;
+        }
+
+        function updateChatBadge(rideId) {
+            const badge = document.getElementById(`chat-badge-${rideId}`);
+            if (badge) {
+                const count = unreadCounts[rideId] || 0;
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
         async function openChat(rideId) {
+            activeChatRideId = rideId;
+            unreadCounts[rideId] = 0; // Clear the badge count
+            updateChatBadge(rideId);  // Hide the badge
+
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
-            
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
             try {
@@ -699,24 +736,21 @@
                 if (response.ok) {
                     const history = await response.json();
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-                    history.forEach(msg => displayMessage(msg.sender, msg.text));
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text, true); // True = don't play sound for history
+                    });
                 }
             } catch (error) {
                 console.error("Could not load chat history.");
             }
             
-            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
-            chatSocket = new WebSocket(wsUrl);
-            
-            chatSocket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                displayMessage(data.sender, data.text);
-            };
+            // Ensure background listener is running just in case
+            setupBackgroundChat(rideId);
         }
 
         function closeChat() {
             document.getElementById('chat-modal').classList.add('hidden');
-            if(chatSocket) chatSocket.close();
+            activeChatRideId = null; // We closed the UI, but keep the background socket running!
         }
 
         function handleEnter(event) {
@@ -727,19 +761,19 @@
             const input = document.getElementById('chat-input');
             const messageText = input.value.trim();
             
-            if (messageText !== '' && chatSocket) {
+            if (messageText !== '' && activeChatRideId && backgroundSockets[activeChatRideId]) {
                 const payload = { sender: currentDriverName, text: messageText };
-                chatSocket.send(JSON.stringify(payload));
+                backgroundSockets[activeChatRideId].send(JSON.stringify(payload));
                 input.value = ''; 
             }
         }
 
-        function displayMessage(sender, text) {
+        function displayMessage(sender, text, isHistory = false) {
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender === currentDriverName;
             
-            // 🟢 Play chat pop sound if the message is from someone else
-            if (!isMe) playAlert('chat');
+            // Play chat pop sound ONLY if it's a new incoming message (not me, not old history)
+            if (!isMe && !isHistory) playAlert('chat');
             
             const alignClass = isMe ? 'self-end' : 'self-start';
             const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
