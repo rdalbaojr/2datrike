@@ -103,8 +103,9 @@
                 <h2 class="text-lg font-extrabold text-[#78350f] uppercase tracking-wider">Create Account</h2>
             </div>
 
-            <!-- Name & Username -->
+            <!-- Name, Mobile & Username -->
             <input type="text" id="reg-name" required placeholder="Full Name (e.g. Randy G. Ramos)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
+            <input type="text" id="reg-mobile" required placeholder="Mobile Number (e.g. 0917...)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             <input type="text" id="reg-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             
             <!-- Passwords (Side-by-Side) -->
@@ -371,6 +372,7 @@
                 username: document.getElementById('reg-user').value,
                 password: pass,
                 role: document.getElementById('reg-role').value,
+                whatsapp_number: document.getElementById('reg-mobile').value, // 🟢 ADD THIS LINE
                 city: document.getElementById('reg-city').value,
                 barangay: document.getElementById('reg-barangay').value,
                 toda_name: document.getElementById('reg-toda') ? document.getElementById('reg-toda').value : "",
