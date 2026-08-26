@@ -546,17 +546,21 @@
                                 <p class="text-blue-800 text-sm font-bold m-0">📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.</p>
                             </div>
                         `;
-                    } else if (ride.status === 'paid' && !ride.rating) {
-                        // 🟢 NEW: Prompts the passenger to rate the driver after payment
+                    } else if (ride.status === 'accepted') {
+                        // 🟢 UPDATED: Injects the TODA Number right next to the driver's name
                         statusHtml = `
-                            <div class="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3 mt-4 text-center">
-                                <p class="text-yellow-800 text-sm font-bold m-0 mb-3">🎉 Payment Confirmed!</p>
-                                <button onclick="openRatingModal(${ride.id}, '${ride.driver_name}')" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center">
-                                    <i class="fa-solid fa-star mr-2"></i> Rate your Driver
-                                </button>
+                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} (TODA #${ride.driver_toda_number || 'N/A'}) has accepted your ride and is on the way!</p>
+                                <div class="flex gap-3 mt-2">
+                                    <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                        <i class="fa-solid fa-phone"></i> Call
+                                    </a>
+                                    <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                        <i class="fa-regular fa-comment-dots"></i> Chat
+                                    </button>
+                                </div>
                             </div>
                         `;
-                    }
 
                     rideBox.innerHTML = `
                         <div class="flex justify-between items-center mb-4">
