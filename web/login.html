@@ -92,12 +92,12 @@
             
             <!-- 🟢 NEW: Toggel to Sign Up -->
             <div class="text-center mt-6">
-    <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
-    <!-- 🟢 This onclick directly hides the login box and shows the register box -->
-    <a href="#" onclick="document.getElementById('login-box').classList.add('hidden'); document.getElementById('register-box').classList.remove('hidden');" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
-        Please Signup here.
-    </a>
-</div>
+        <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
+        <!-- 🟢 Corrected onclick to use your built-in switchTab function -->
+        <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
+            Please Signup here.
+        </a>
+    </div>
         </form>
 
         <!-- ==================== REGISTRATION FORM ==================== -->
