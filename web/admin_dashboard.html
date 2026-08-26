@@ -36,27 +36,39 @@
             </form>
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#d4aa7c]/50 mb-6 relative gap-4">
-            <button onclick="lockDashboard()" class="absolute top-0 right-0 text-white bg-red-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-power-off"></i> Lock System
-            </button>
-            <!-- 🟢 NEW: RUNNING BALANCE BUTTON -->
-            <button onclick="openFinanceModal()" class="absolute top-0 right-[145px] text-white bg-green-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-green-700 hover:scale-105 transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-vault"></i> Balances
-            </button>
+        <!-- ==================== HEADER SECTION ==================== -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-5 border-b border-[#d4aa7c]/50 mb-6 gap-4">
+            
+            <!-- Left: Title & Status -->
             <div>
-                <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight pr-12">2DA Master Admin</h2>
+                <h2 class="text-3xl font-extrabold text-[#0f172a] leading-tight">2DA Master Admin</h2>
                 <p class="text-[11px] font-extrabold uppercase text-[#175d33] mt-1 tracking-widest"><i class="fa-solid fa-circle-dot animate-pulse mr-1"></i> System Online</p>
             </div>
 
-            <!-- Global Payout Branch Selector -->
-            <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
-                <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Payout View:</label>
-                <select id="branchSelector" onchange="loadPayoutSummary()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
-                    <option value="All">🌐 All Branches (Master)</option>
-                </select>
+            <!-- Right: Controls (Buttons & Dropdown) -->
+            <div class="flex flex-col items-start md:items-end gap-3 w-full md:w-auto mt-2 md:mt-0">
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="openFinanceModal()" class="flex-1 md:flex-none text-white bg-green-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-vault"></i> Balances
+                    </button>
+                    <button onclick="lockDashboard()" class="flex-1 md:flex-none text-white bg-red-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-red-700 transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-power-off"></i> Lock System
+                    </button>
+                </div>
+
+                <!-- Global Payout Branch Selector -->
+                <div class="flex items-center justify-between gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm w-full md:w-auto">
+                    <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap"><i class="fa-solid fa-location-dot mr-1"></i> Payout View:</label>
+                    <select id="branchSelector" onchange="loadPayoutSummary()" class="w-full md:w-auto bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                        <option value="All">🌐 All Branches (Master)</option>
+                    </select>
+                </div>
+
             </div>
         </div>
+        <!-- ======================================================== -->
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -165,7 +177,8 @@
 
         </div>
     </div>
-<!-- 🟢 NEW: MASTER RUNNING BALANCE MODAL -->
+    
+    <!-- 🟢 MASTER RUNNING BALANCE MODAL -->
     <div id="finance-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[110] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
             
@@ -203,6 +216,7 @@
             </button>
         </div>
     </div>
+    
     <!-- 🟢 BULLETPROOF STANDALONE LOGIN SCRIPT -->
     <script>
         function getCookie(name) {
@@ -427,7 +441,7 @@
                 console.error("Error loading payouts summary:", error);
             }
         } 
-        // 🟢 NEW: FINANCE MODAL LOGIC
+        // 🟢 FINANCE MODAL LOGIC
         async function openFinanceModal() {
             document.getElementById('finance-modal').classList.remove('hidden');
             
