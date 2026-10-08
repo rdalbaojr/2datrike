@@ -9,11 +9,6 @@
     <link rel="icon" type="image/png" href="2da.png">
     <link rel="apple-touch-icon" href="2da.png">
 
-    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
-    <meta property="og:title" content="2DA App - Driver Portal">
-    <meta property="og:description" content="View earnings, accept local rides, and manage your TODA profile.">
-    <meta property="og:image" content="2da.png">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,37 +20,25 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
 
-    <!-- ==================== QUICK NAV MENU ==================== -->
-    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
-        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
+    <!-- QUICK NAV MENU -->
+    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999;">
+        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
             <i class="fa-solid fa-bars mr-1"></i> Menu
         </button>
         <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
-            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
-                🔑 Login / Register
-            </a>
-            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
-                📱 Passenger Dash
-            </a>
-            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1); border-bottom: 1px solid #a35c27;">
-                🏍️ Driver Dash
-            </a>
-            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
-                🏍️ TODA Dash
-            </a>
-            <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
-                <i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ
-            </a>
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">🔑 Login / Register</a>
+            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">📱 Passenger Dash</a>
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1); border-bottom: 1px solid #a35c27;">🏍️ Driver Dash</a>
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">🏍️ TODA Dash</a>
+            <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;"><i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ</a>
         </div>
     </div>
 
-    <!-- ==================== MAIN FLOATING APP CARD ==================== -->
+    <!-- MAIN FLOATING APP CARD -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 pt-8 shadow-2xl relative overflow-hidden">
         
         <!-- 🟢 UNIFIED CENTERED LOGO HEADER -->
         <div class="text-center mb-8 relative">
-            
-            <!-- Top Right: Circular Logout Button -->
             <div class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
                 <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
             </div>
@@ -65,12 +48,11 @@
                 <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
 
-            <!-- Title -->
             <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-2">Driver Portal</h1>
             
-            <!-- Centered Status & Welcome Info -->
             <div class="flex flex-col items-center justify-center gap-1.5">
-                <p class="text-xs font-extrabold text-[#78350f]">Welcome, <span id="driver-welcome-name">Driver</span>!</p>
+                <!-- 🟢 Defaulted to Authenticating so we can trace cache errors -->
+                <p class="text-xs font-extrabold text-[#78350f]">Welcome, <span id="driver-welcome-name">Authenticating...</span></p>
                 <div class="flex items-center gap-2">
                     <span class="text-[10px] text-green-800 font-bold bg-green-600/10 border border-green-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-circle-dot text-[8px] mr-1 animate-pulse"></i>Online</span>
                     <span id="driver-rating-display" class="hidden text-[10px] font-bold text-yellow-800 bg-yellow-600/10 border border-yellow-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-star text-yellow-600"></i> <span id="driver-star-val">5.0</span></span>
@@ -113,7 +95,7 @@
                     </thead>
                     <tbody id="shift-report-body" class="divide-y divide-[#d4aa7c]/50 font-medium bg-[#F5E6D3]">
                         <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Loading shift data...</td>
+                            <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Syncing database...</td>
                         </tr>
                     </tbody>
                     <tfoot class="bg-[#e8cda8] border-t border-[#d4aa7c] font-bold">
@@ -130,4 +112,301 @@
                             <td id="amt-platform" class="px-4 py-1 text-right text-xs font-bold">- ₱0.00</td>
                         </tr>
                         <tr class="text-rose-700">
-                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider
+                            <td colspan="2" id="label-katoda" class="px-4 py-1 text-right text-[10px] tracking-wider">TODA Share:</td>
+                            <td id="amt-katoda" class="px-4 py-1 text-right text-xs font-bold">- ₱0.00</td>
+                        </tr>
+                        <tr class="bg-green-900 text-white border-t border-green-800">
+                            <td colspan="2" class="px-4 py-3 text-right text-green-100 text-xs uppercase tracking-wider">Net Earnings:</td>
+                            <td id="amt-net" class="px-4 py-3 text-right font-extrabold text-lg">₱0.00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3 mt-8">Active Rides</h3>
+        <div id="active-rides-container" class="space-y-4 mb-8">
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>
+        </div>
+
+        <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
+
+        <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Radar (Orders)</h3>
+        <div id="rides-container" class="space-y-4 mb-8">
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-satellite-dish fa-spin mr-1"></i> Scanning area...</p>
+        </div>
+
+        <div class="space-y-3">
+            <button onclick="openProfileModal()" class="w-full text-center bg-[#F5E6D3] hover:bg-[#e8cda8] border border-[#d4aa7c] text-[#78350f] py-3.5 rounded-xl text-sm font-bold transition shadow-sm">
+                <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile & Payouts
+            </button>
+            <a href="javascript:void(0)" onclick="logout()" class="block w-full text-center bg-red-900/10 hover:bg-red-900/20 border border-red-800/30 text-red-700 py-3.5 rounded-xl text-sm font-bold transition">
+                <i class="fa-solid fa-power-off mr-1"></i> Log Out
+            </a>
+        </div>
+    </div> 
+
+    <!-- ==================== PROFILE SETTINGS MODAL ==================== -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[420px] rounded-[24px] overflow-hidden shadow-2xl relative">
+            <div class="bg-[#78350f] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
+                <h3 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-solid fa-user-gear"></i> Update Profile
+                </h3>
+                <button onclick="closeProfileModal()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex justify-center items-center transition hover:scale-110">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <form id="profile-form" onsubmit="saveProfile(event)" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Mobile / WhatsApp No.</label>
+                    <input type="text" id="prof-whatsapp" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Bank Provider</label>
+                        <select id="prof-bank" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                            <option value="GCash">GCash</option>
+                            <option value="Maya">Maya</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Account Number</label>
+                        <input type="text" id="prof-account" required placeholder="0917..." class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Home Address / Barangay</label>
+                    <input type="text" id="prof-address" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+                <button type="submit" id="prof-submit-btn" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== IN-APP CHAT MODAL ==================== -->
+    <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
+            <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
+                <h3 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-regular fa-comment-dots"></i> 2DA Secure Chat
+                </h3>
+                <button onclick="closeChat()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex justify-center items-center transition hover:scale-110">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col bg-[#F5E6D3]">
+                <div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>
+            </div>
+            <div class="bg-white p-3 border-t border-[#d4aa7c] flex gap-2 items-center">
+                <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-[#175d33] transition" placeholder="Type a message...">
+                <button onclick="sendMessage()" class="bg-[#175d33] text-white w-11 h-11 rounded-full flex justify-center items-center shadow-md hover:bg-[#114626] transition shrink-0 hover:scale-105">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
+    <script>
+        // 🟢 BOMB-PROOF STORAGE FETCHING
+        function getSafeValue(key) {
+            let val = null;
+            try { 
+                let match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+                if (match) val = decodeURIComponent(match[2]).replace(/^"|"$/g, '').trim(); 
+            } catch(e) {}
+            if (val) return val;
+
+            try { val = localStorage.getItem(key); } catch(e) {}
+            if (val) return val.replace(/^"|"$/g, '').trim();
+
+            try { val = sessionStorage.getItem(key); } catch(e) {}
+            if (val) return val.replace(/^"|"$/g, '').trim();
+
+            try {
+                let params = new URLSearchParams(window.location.search);
+                val = params.get(key);
+            } catch(e) {}
+            
+            return val ? val.trim() : null;
+        }
+
+        // 🟢 AGGRESSIVE USER DETECTION
+        function getActiveUser() {
+            let user = getSafeValue("driver_name") || getSafeValue("username") || getSafeValue("passenger_name");
+            // If the system returns literal string "Driver" or "Unknown", flag it as Missing
+            if (!user || user === "Unknown" || user === "Driver") {
+                return "Not Logged In";
+            }
+            return user;
+        }
+        
+        let currentDriverName = getActiveUser();
+
+        // 🟢 CRASH-PROOF AUDIO ENGINE
+        let audioCtx = null;
+        function initAudio() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext && !audioCtx) audioCtx = new AudioContext();
+                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) {}
+        }
+
+        function playAlert(type) {
+            try {
+                if (!audioCtx) initAudio();
+                if (!audioCtx) return;
+
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                if (type === 'radar') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+                } 
+            } catch (e) {}
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                document.body.addEventListener('click', initAudio, { once: true });
+                
+                const nameDisplay = document.getElementById("driver-welcome-name");
+                if (nameDisplay) nameDisplay.innerText = currentDriverName;
+
+                if (currentDriverName !== "Not Logged In") {
+                    fetchProfileRating();
+                    checkDriverBroadcasts();
+                    loadDashboardRides();
+                    
+                    setInterval(() => {
+                        loadDashboardRides();
+                        checkDriverBroadcasts();
+                    }, 3000);
+                } else {
+                    // Force the UI to show an error if login failed
+                    document.getElementById('shift-report-body').innerHTML = `<tr><td colspan="3" class="px-4 py-3 text-center text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Access Denied: User not found in storage. Please log in again.</td></tr>`;
+                    document.getElementById('rides-container').innerHTML = `<p class="text-center text-red-600 text-sm font-bold py-2">Session expired.</p>`;
+                }
+            } catch (fatalError) {
+                alert("Dashboard Crash: " + fatalError.message);
+            }
+        });
+
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            if(menu) menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+        
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            if(!menu) return;
+            const button = menu.previousElementSibling;
+            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        function logout() {
+            try {
+                document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch(e) {}
+            window.location.href = "login.html";
+        }
+
+        async function fetchProfileRating() {
+            try {
+                const response = await fetch(`/api/profile/${currentDriverName}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if(data.rating) {
+                        document.getElementById('driver-star-val').innerText = data.rating.toFixed(1);
+                        document.getElementById('driver-rating-display').classList.remove('hidden');
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function openProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            try {
+                const response = await fetch(`/api/profile/${currentDriverName}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('prof-whatsapp').value = data.whatsapp_number || "";
+                    document.getElementById('prof-bank').value = data.bank_name || "GCash";
+                    document.getElementById('prof-address').value = data.address || "";
+                    let acctNum = data.gcash_account || "";
+                    if (acctNum.toLowerCase() === "gcash" || acctNum.toLowerCase() === "maya") acctNum = "";
+                    document.getElementById('prof-account').value = acctNum;
+                }
+            } catch (error) {}
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+            const btn = document.getElementById('prof-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...';
+            
+            const payload = {
+                display_name: currentDriverName,
+                whatsapp_number: document.getElementById('prof-whatsapp').value,
+                bank_name: document.getElementById('prof-bank').value,
+                gcash_account: document.getElementById('prof-account').value,
+                address: document.getElementById('prof-address').value
+            };
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("✅ Profile successfully updated!");
+                    closeProfileModal();
+                } else {
+                    alert("⚠️ Failed to update profile.");
+                }
+            } catch (error) {
+                alert("⚠️ Network error.");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes';
+            }
+        }
+
+        async function checkDriverBroadcasts() {
+            try {
+                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
+                if(!response.ok) return;
+                const data = await response.json();
+                
+                const container = document.getElementById('driver-broadcast-container');
+                const textElement = document.getElementById('driver-broadcast-text');
+                const titleElement = document.getElementById('driver-broadcast-title');
+
+                if (data && data.message && data.message.trim() !== "")
