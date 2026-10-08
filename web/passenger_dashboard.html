@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2DA - Passenger Portal</title>
+    
+    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
+    <link rel="icon" type="image/png" href="2da.png">
+    <link rel="apple-touch-icon" href="2da.png">
+
+    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
+    <meta property="og:title" content="2DA App - Passenger Portal">
+    <meta property="og:description" content="Book a tricycle, request errands, and support local TODA drivers instantly.">
+    <meta property="og:image" content="2da.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -56,16 +66,22 @@
     </div>
 
     <!-- ==================== MAIN FLOATING APP CARD ==================== -->
-    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative z-10 overflow-hidden">
+    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 pt-10 shadow-2xl relative z-10 overflow-hidden">
         
-        <div class="flex justify-between items-center mb-6">
-            <div>
-                <h1 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight">2DA App</h1>
-                <p class="text-xs text-[#78350f] font-bold mt-1"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse text-green-700"></i> <span id="welcome-name">Passenger</span></p>
+        <!-- 🟢 CENTERED LOGO HEADER WITH PADDING -->
+        <div class="flex flex-col items-center text-center mb-6 relative">
+            <!-- Logout Button on the top right -->
+            <div class="absolute right-0 top-0 w-9 h-9 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
+                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-xs"></i>
             </div>
-            <div class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()">
-                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
+
+            <!-- Centered Circular Logo with Padding -->
+            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
+                <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
+
+            <!-- Status -->
+            <p class="text-xs text-green-700 font-bold mt-0.5"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> <span id="welcome-name">Passenger</span></p>
         </div>
 
         <!-- 5-SLOT DYNAMIC SERVICE SELECTION -->
@@ -146,7 +162,7 @@
                 <p class="text-sm text-[#78350f] mb-6 font-medium leading-relaxed">Scan the QR code to pay, then request your confirmation code.</p>
                 
                 <div class="bg-white p-3 rounded-2xl inline-block mb-6 shadow-md border border-slate-200">
-                    <img src="bpi-qr.png" alt="BPI QR Code" class="w-48 h-48 object-cover rounded-xl">
+                    <img src="bpi.png" alt="BPI QR Code" class="w-48 h-48 object-cover rounded-xl">
                 </div>
                 
                 <div class="bg-[#F5E6D3] rounded-2xl p-4 mb-6 border border-[#d4aa7c] shadow-inner">
@@ -231,9 +247,6 @@
 
     <!-- LOGIC SCRIPTS -->
     <script>
-        // ==========================================
-        // AUDIO ENGINE (Try/Catch to prevent crashes)
-        // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         document.body.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
 
@@ -269,11 +282,11 @@
             }
         }
 
-        // --- Quick Menu Toggle ---
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
+
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
             const button = menu.previousElementSibling;
@@ -284,7 +297,10 @@
 
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) return decodeURIComponent(match[2]).replace(/^"|"$/g, '').trim();
+            if (match) {
+                let val = decodeURIComponent(match[2]);
+                return val.replace(/^"|"$/g, '').trim(); 
+            }
             return "Guest"; 
         }
 
@@ -530,9 +546,7 @@
                     let statusHtml = "";
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
-                    } 
-                    // 🟢 FIX: KEEP CHAT BUTTON VISIBLE DURING BOTH ACCEPTED AND COMPLETED
-                    else if (ride.status === 'accepted' || ride.status === 'completed') {
+                    } else if (ride.status === 'accepted' || ride.status === 'completed') {
                         
                         let arrivedBanner = "";
                         let bgClass = "bg-green-900/10 border-green-800/30";
@@ -550,7 +564,6 @@
                             `;
                         }
 
-                        // 🟢 DYNAMIC CHAT BUTTON WITH NOTIFICATION BADGE
                         statusHtml = `
                             <div class="${bgClass} border rounded-lg p-3 mt-4 shadow-sm">
                                 ${arrivedBanner}
@@ -589,7 +602,6 @@
                     `;
                     container.appendChild(rideBox);
                     
-                    // Enforce badge visibility after rendering HTML
                     updateChatBadge(ride.id);
                 });
             } catch (error) { console.error("Error fetching rides:", error); }
@@ -650,12 +662,8 @@
             submitRating();
         }
 
-        // ==========================================
-        // 🟢 UPGRADED BACKGROUND CHAT & NOTIFICATIONS
-        // ==========================================
-        
         function setupBackgroundChat(rideId) {
-            if (backgroundSockets[rideId]) return; // Already connected
+            if (backgroundSockets[rideId]) return;
 
             const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
             const ws = new WebSocket(wsUrl);
@@ -665,12 +673,9 @@
                 const isMe = data.sender.trim() === currentPassenger.trim();
                 const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
 
-                // If chat is open for this ride, display it normally
                 if (activeChatRideId === rideId && isModalOpen) {
                     displayMessage(data.sender, data.text, false);
-                } 
-                // If chat is closed, pop the sound and add the badge
-                else {
+                } else {
                     if (!isMe) {
                         unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
                         playAlert('chat');
@@ -698,8 +703,8 @@
 
         async function openChat(rideId) {
             activeChatRideId = rideId;
-            unreadCounts[rideId] = 0; // Clear the badge count
-            updateChatBadge(rideId);  // Hide the badge
+            unreadCounts[rideId] = 0;
+            updateChatBadge(rideId);
 
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
@@ -711,20 +716,19 @@
                     const history = await response.json();
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
                     history.forEach(msg => {
-                        displayMessage(msg.sender, msg.text, true); // True = don't play sound for history
+                        displayMessage(msg.sender, msg.text, true);
                     });
                 }
             } catch (error) {
                 console.error("Could not load chat history.");
             }
             
-            // Ensure background listener is running just in case
             setupBackgroundChat(rideId);
         }
 
         function closeChat() {
             document.getElementById('chat-modal').classList.add('hidden');
-            activeChatRideId = null; // We closed the UI, but keep the background socket running!
+            activeChatRideId = null;
         }
 
         function handleEnter(event) {
@@ -746,7 +750,6 @@
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender.trim() === currentPassenger.trim();
             
-            // Play chat pop sound ONLY if it's a new incoming message (not me, not old history)
             if (!isMe && !isHistory) playAlert('chat');
             
             const alignClass = isMe ? 'self-end' : 'self-start';
