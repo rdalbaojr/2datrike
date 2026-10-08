@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2DA — Registration Portal</title>
+    
+    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
+    <link rel="icon" type="image/png" href="2da.png">
+    <link rel="apple-touch-icon" href="2da.png">
+
+    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
+    <meta property="og:title" content="2DA App - Registration Portal">
+    <meta property="og:description" content="Register as a passenger or tricycle driver on the 2DA community platform.">
+    <meta property="og:image" content="2da.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -37,10 +47,10 @@
     <!-- Main Container -->
     <div class="w-full max-w-xl glass-card rounded-3xl p-6 sm:p-8 relative z-10">
         
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-14 h-14 bg-amber-900 rounded-2xl mb-3 shadow-lg shadow-amber-900/30 border border-amber-950/20">
-                <i class="fa-solid fa-motorcycle text-2xl text-white"></i>
+        <!-- 🟢 CENTERED LOGO HEADER -->
+        <div class="text-center mb-6">
+            <div class="w-24 h-24 bg-white rounded-full mx-auto flex items-center justify-center mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
+                <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
             <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">
                 2DA Registration
@@ -102,7 +112,7 @@
                 </div>
             </div>
 
-            <!-- 🟢 FIXED: BARANGAY & TODA / COMMUNITY GRID -->
+            <!-- BARANGAY & TODA / COMMUNITY GRID -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Home Barangay *</label>
@@ -125,7 +135,7 @@
         <form id="form-driver" action="/register-account/" method="POST" class="space-y-4 hidden" onsubmit="return validateAndSubmit(event, 'driver')">
             <input type="hidden" name="role" value="driver">
 
-            <!-- FULL NAME (ADDED) -->
+            <!-- FULL NAME -->
             <div>
                 <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Full Name (On License) *</label>
                 <input type="text" name="full_name" required placeholder="e.g., Pedro Penduko" 
@@ -136,7 +146,7 @@
             <div>
                 <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Address *</label>
                 <input type="text" name="address" required placeholder="e.g., #123 Street, Barangay Kapitolyo" 
-                       class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none font-medium">
+                       class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -193,7 +203,6 @@
                            class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
                 </div>
                 <div>
-                    <!-- FIXED: Changed name from "address" to "plate_number" to prevent data override -->
                     <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-2">Body / Plate No. *</label>
                     <input type="text" name="plate_number" id="driver-plate" required placeholder="042 / 123-ABC" 
                            class="input-field driver-focus w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-medium">
