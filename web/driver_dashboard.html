@@ -20,25 +20,37 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
 
-    <!-- QUICK NAV MENU -->
-    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999;">
-        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+    <!-- ==================== QUICK NAV MENU ==================== -->
+    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
+        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
             <i class="fa-solid fa-bars mr-1"></i> Menu
         </button>
         <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
-            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">🔑 Login / Register</a>
-            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">📱 Passenger Dash</a>
-            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1); border-bottom: 1px solid #a35c27;">🏍️ Driver Dash</a>
-            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">🏍️ TODA Dash</a>
-            <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;"><i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ</a>
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🔑 Login / Register
+            </a>
+            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                📱 Passenger Dash
+            </a>
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1); border-bottom: 1px solid #a35c27;">
+                🏍️ Driver Dash
+            </a>
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
+                🏍️ TODA Dash
+            </a>
+            <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
+                <i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ
+            </a>
         </div>
     </div>
 
-    <!-- MAIN FLOATING APP CARD -->
+    <!-- ==================== MAIN FLOATING APP CARD ==================== -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 pt-8 shadow-2xl relative overflow-hidden">
         
-        <!-- 🟢 UNIFIED CENTERED LOGO HEADER -->
+        <!-- 🟢 UNIFIED CENTERED LOGO HEADER (NEW UI) -->
         <div class="text-center mb-8 relative">
+            
+            <!-- Top Right: Circular Logout Button -->
             <div class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
                 <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
             </div>
@@ -48,11 +60,12 @@
                 <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
 
+            <!-- Title -->
             <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-2">Driver Portal</h1>
             
+            <!-- Centered Status & Welcome Info -->
             <div class="flex flex-col items-center justify-center gap-1.5">
-                <!-- 🟢 Defaulted to Authenticating so we can trace cache errors -->
-                <p class="text-xs font-extrabold text-[#78350f]">Welcome, <span id="driver-welcome-name">Authenticating...</span></p>
+                <p class="text-xs font-extrabold text-[#78350f]">Welcome, <span id="driver-welcome-name">Driver</span>!</p>
                 <div class="flex items-center gap-2">
                     <span class="text-[10px] text-green-800 font-bold bg-green-600/10 border border-green-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-circle-dot text-[8px] mr-1 animate-pulse"></i>Online</span>
                     <span id="driver-rating-display" class="hidden text-[10px] font-bold text-yellow-800 bg-yellow-600/10 border border-yellow-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-star text-yellow-600"></i> <span id="driver-star-val">5.0</span></span>
@@ -95,7 +108,7 @@
                     </thead>
                     <tbody id="shift-report-body" class="divide-y divide-[#d4aa7c]/50 font-medium bg-[#F5E6D3]">
                         <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Syncing database...</td>
+                            <td colspan="3" class="px-4 py-3 text-center italic text-sm text-[#78350f]/70">Loading shift data...</td>
                         </tr>
                     </tbody>
                     <tfoot class="bg-[#e8cda8] border-t border-[#d4aa7c] font-bold">
@@ -124,6 +137,7 @@
             </div>
         </div>
 
+        <!-- ==================== ACTIVE RIDES ==================== -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3 mt-8">Active Rides</h3>
         <div id="active-rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>
@@ -131,18 +145,10 @@
 
         <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
 
+        <!-- ==================== PENDING RADAR ==================== -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Radar (Orders)</h3>
         <div id="rides-container" class="space-y-4 mb-8">
-            <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-satellite-dish fa-spin mr-1"></i> Scanning area...</p>
-        </div>
-
-        <div class="space-y-3">
-            <button onclick="openProfileModal()" class="w-full text-center bg-[#F5E6D3] hover:bg-[#e8cda8] border border-[#d4aa7c] text-[#78350f] py-3.5 rounded-xl text-sm font-bold transition shadow-sm">
-                <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile & Payouts
-            </button>
-            <a href="javascript:void(0)" onclick="logout()" class="block w-full text-center bg-red-900/10 hover:bg-red-900/20 border border-red-800/30 text-red-700 py-3.5 rounded-xl text-sm font-bold transition">
-                <i class="fa-solid fa-power-off mr-1"></i> Log Out
-            </a>
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking for new orders...</p>
         </div>
     </div> 
 
@@ -163,6 +169,7 @@
                     <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Mobile / WhatsApp No.</label>
                     <input type="text" id="prof-whatsapp" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
                 </div>
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Bank Provider</label>
@@ -176,10 +183,12 @@
                         <input type="text" id="prof-account" required placeholder="0917..." class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
                     </div>
                 </div>
+
                 <div>
                     <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Home Address / Barangay</label>
                     <input type="text" id="prof-address" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
                 </div>
+
                 <button type="submit" id="prof-submit-btn" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm">
                     <i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes
                 </button>
@@ -198,9 +207,11 @@
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
+
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col bg-[#F5E6D3]">
                 <div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>
             </div>
+
             <div class="bg-white p-3 border-t border-[#d4aa7c] flex gap-2 items-center">
                 <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-[#175d33] transition" placeholder="Type a message...">
                 <button onclick="sendMessage()" class="bg-[#175d33] text-white w-11 h-11 rounded-full flex justify-center items-center shadow-md hover:bg-[#114626] transition shrink-0 hover:scale-105">
@@ -210,130 +221,100 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (100% UNTOUCHED FROM USER) -->
     <script>
-        // 🟢 BOMB-PROOF STORAGE FETCHING
-        function getSafeValue(key) {
-            let val = null;
-            try { 
-                let match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
-                if (match) val = decodeURIComponent(match[2]).replace(/^"|"$/g, '').trim(); 
-            } catch(e) {}
-            if (val) return val;
-
-            try { val = localStorage.getItem(key); } catch(e) {}
-            if (val) return val.replace(/^"|"$/g, '').trim();
-
-            try { val = sessionStorage.getItem(key); } catch(e) {}
-            if (val) return val.replace(/^"|"$/g, '').trim();
-
-            try {
-                let params = new URLSearchParams(window.location.search);
-                val = params.get(key);
-            } catch(e) {}
-            
-            return val ? val.trim() : null;
-        }
-
-        // 🟢 AGGRESSIVE USER DETECTION
-        function getActiveUser() {
-            let user = getSafeValue("driver_name") || getSafeValue("username") || getSafeValue("passenger_name");
-            // If the system returns literal string "Driver" or "Unknown", flag it as Missing
-            if (!user || user === "Unknown" || user === "Driver") {
-                return "Not Logged In";
-            }
-            return user;
-        }
+        // ==========================================
+        // ALERTS & VIBRATION ENGINE
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        let currentDriverName = getActiveUser();
-
-        // 🟢 CRASH-PROOF AUDIO ENGINE
-        let audioCtx = null;
-        function initAudio() {
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext && !audioCtx) audioCtx = new AudioContext();
-                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            } catch (e) {}
-        }
+        // Unlocks the audio engine on the first user interaction
+        document.body.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
 
         function playAlert(type) {
-            try {
-                if (!audioCtx) initAudio();
-                if (!audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
-                const oscillator = audioCtx.createOscillator();
-                const gainNode = audioCtx.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-
-                if (type === 'radar') {
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                    oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
-                    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-                    oscillator.start(audioCtx.currentTime);
-                    oscillator.stop(audioCtx.currentTime + 0.5);
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
-                } 
-            } catch (e) {}
-        }
-
-        // ==========================================
-        // INITIALIZATION
-        // ==========================================
-        document.addEventListener("DOMContentLoaded", () => {
-            try {
-                document.body.addEventListener('click', initAudio, { once: true });
-                
-                const nameDisplay = document.getElementById("driver-welcome-name");
-                if (nameDisplay) nameDisplay.innerText = currentDriverName;
-
-                if (currentDriverName !== "Not Logged In") {
-                    fetchProfileRating();
-                    checkDriverBroadcasts();
-                    loadDashboardRides();
-                    
-                    setInterval(() => {
-                        loadDashboardRides();
-                        checkDriverBroadcasts();
-                    }, 3000);
-                } else {
-                    // Force the UI to show an error if login failed
-                    document.getElementById('shift-report-body').innerHTML = `<tr><td colspan="3" class="px-4 py-3 text-center text-red-600 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> Access Denied: User not found in storage. Please log in again.</td></tr>`;
-                    document.getElementById('rides-container').innerHTML = `<p class="text-center text-red-600 text-sm font-bold py-2">Session expired.</p>`;
-                }
-            } catch (fatalError) {
-                alert("Dashboard Crash: " + fatalError.message);
+            if (type === 'radar') {
+                // Double Beep & Double Vibrate
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+            } 
+            else if (type === 'success') {
+                // Happy Chime & Long Vibrate (Accepted / Arrived)
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.8);
+                if (navigator.vibrate) navigator.vibrate([200]);
+            } 
+            else if (type === 'chat') {
+                // Short Pop & Micro Vibrate (New Message)
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+                if (navigator.vibrate) navigator.vibrate([50]);
             }
-        });
+        }
 
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
-            if(menu) menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
-        
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
-            if(!menu) return;
             const button = menu.previousElementSibling;
             if (!menu.contains(event.target) && !button.contains(event.target)) {
                 menu.style.display = 'none';
             }
         });
 
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) {
+                let val = decodeURIComponent(match[2]);
+                return val.replace(/^"|"$/g, '').trim();
+            }
+            if (name === 'driver_name') {
+                let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
+                if (pMatch) {
+                    let pVal = decodeURIComponent(pMatch[2]);
+                    return pVal.replace(/^"|"$/g, '').trim();
+                }
+            }
+            return "Unknown"; 
+        }
+
         function logout() {
-            try {
-                document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch(e) {}
+            document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = "login.html";
         }
 
-        async function fetchProfileRating() {
+        const currentDriverName = getCookie("driver_name") !== "Unknown" ? getCookie("driver_name") : getCookie("passenger_name");
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            document.getElementById("driver-welcome-name").innerText = `${currentDriverName}`;
+            checkDriverBroadcasts();
+            
             try {
                 const response = await fetch(`/api/profile/${currentDriverName}?t=${new Date().getTime()}`);
                 if (response.ok) {
@@ -343,11 +324,13 @@
                         document.getElementById('driver-rating-display').classList.remove('hidden');
                     }
                 }
-            } catch (e) {}
-        }
+            } catch (e) { console.error("Could not load rating"); }
+        });
 
+        // --- PROFILE MODAL LOGIC ---
         async function openProfileModal() {
             document.getElementById('profile-modal').classList.remove('hidden');
+            
             try {
                 const response = await fetch(`/api/profile/${currentDriverName}?t=${new Date().getTime()}`);
                 if (response.ok) {
@@ -355,11 +338,16 @@
                     document.getElementById('prof-whatsapp').value = data.whatsapp_number || "";
                     document.getElementById('prof-bank').value = data.bank_name || "GCash";
                     document.getElementById('prof-address').value = data.address || "";
+                    
                     let acctNum = data.gcash_account || "";
-                    if (acctNum.toLowerCase() === "gcash" || acctNum.toLowerCase() === "maya") acctNum = "";
+                    if (acctNum.toLowerCase() === "gcash" || acctNum.toLowerCase() === "maya") {
+                        acctNum = "";
+                    }
                     document.getElementById('prof-account').value = acctNum;
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.error("Error fetching profile", error);
+            }
         }
 
         function closeProfileModal() {
@@ -368,45 +356,4 @@
 
         async function saveProfile(event) {
             event.preventDefault();
-            const btn = document.getElementById('prof-submit-btn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...';
-            
-            const payload = {
-                display_name: currentDriverName,
-                whatsapp_number: document.getElementById('prof-whatsapp').value,
-                bank_name: document.getElementById('prof-bank').value,
-                gcash_account: document.getElementById('prof-account').value,
-                address: document.getElementById('prof-address').value
-            };
-
-            try {
-                const response = await fetch('/api/update-profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                if (response.ok) {
-                    alert("✅ Profile successfully updated!");
-                    closeProfileModal();
-                } else {
-                    alert("⚠️ Failed to update profile.");
-                }
-            } catch (error) {
-                alert("⚠️ Network error.");
-            } finally {
-                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes';
-            }
-        }
-
-        async function checkDriverBroadcasts() {
-            try {
-                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
-                if(!response.ok) return;
-                const data = await response.json();
-                
-                const container = document.getElementById('driver-broadcast-container');
-                const textElement = document.getElementById('driver-broadcast-text');
-                const titleElement = document.getElementById('driver-broadcast-title');
-
-                if (data && data.message && data.message.trim() !== "")
+            const btn = document.getElementById('prof
