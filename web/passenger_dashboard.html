@@ -10,6 +10,7 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        /* Hide scrollbar for cleaner app look */
         ::-webkit-scrollbar { display: none; }
         .service-btn.active {
             background: #78350f; 
@@ -33,8 +34,17 @@
             <i class="fa-solid fa-bars mr-1"></i> Menu
         </button>
         <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
+            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
+                🔑 Login / Register
+            </a>
             <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
                 📱 Passenger Dash
+            </a>
+            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
+                🏍️ Driver Dash
+            </a>
+            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
+                🏍️ TODA Dash
             </a>
             <a href="help.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px; border-bottom: 1px solid #a35c27;">
                 <i class="fa-solid fa-circle-question mr-1"></i> Help & FAQ
@@ -125,7 +135,7 @@
         </div>
     </div>
 
-    <!-- PAYMENT & CHAT MODALS REMAIN EXACTLY THE SAME BELOW -->
+    <!-- PAYMENT MODAL -->
     <div id="payment-modal" class="hidden fixed inset-0 bg-slate-900/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-6 sm:p-8 max-w-[420px] w-full text-center shadow-2xl relative overflow-hidden">
             <div id="qr-view" class="transition-all duration-300 block">
@@ -221,42 +231,49 @@
 
     <!-- LOGIC SCRIPTS -->
     <script>
+        // ==========================================
+        // AUDIO ENGINE (Try/Catch to prevent crashes)
+        // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         document.body.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
 
         function playAlert(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
 
-            if (type === 'success') {
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
-                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.8);
-                if (navigator.vibrate) navigator.vibrate([200]);
-            } else if (type === 'chat') {
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
-                oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.2);
-                if (navigator.vibrate) navigator.vibrate([50]);
+                if (type === 'success') {
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.8);
+                    if (navigator.vibrate) navigator.vibrate([200]);
+                } else if (type === 'chat') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                    if (navigator.vibrate) navigator.vibrate([50]);
+                }
+            } catch (e) {
+                console.warn("Audio blocked by browser.");
             }
         }
 
+        // --- Quick Menu Toggle ---
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
-
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
             const button = menu.previousElementSibling;
@@ -267,10 +284,7 @@
 
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-            if (match) {
-                let val = decodeURIComponent(match[2]);
-                return val.replace(/^"|"$/g, '').trim(); 
-            }
+            if (match) return decodeURIComponent(match[2]).replace(/^"|"$/g, '').trim();
             return "Guest"; 
         }
 
@@ -516,12 +530,30 @@
                     let statusHtml = "";
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
-                    } else if (ride.status === 'accepted') {
+                    } 
+                    // 🟢 FIX: KEEP CHAT BUTTON VISIBLE DURING BOTH ACCEPTED AND COMPLETED
+                    else if (ride.status === 'accepted' || ride.status === 'completed') {
                         
+                        let arrivedBanner = "";
+                        let bgClass = "bg-green-900/10 border-green-800/30";
+                        
+                        if (ride.status === 'completed') {
+                            bgClass = "bg-blue-900/10 border-blue-800/30";
+                            arrivedBanner = `
+                                <div class="bg-blue-900/20 rounded-lg p-3 mb-3 text-center border border-blue-800/20">
+                                    <p class="text-blue-800 text-sm font-bold m-0">📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay.</p>
+                                </div>
+                            `;
+                        } else {
+                            arrivedBanner = `
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} (TODA #${ride.driver_toda_number || 'N/A'}) has accepted your ride and is on the way!</p>
+                            `;
+                        }
+
                         // 🟢 DYNAMIC CHAT BUTTON WITH NOTIFICATION BADGE
                         statusHtml = `
-                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
-                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} (TODA #${ride.driver_toda_number || 'N/A'}) has accepted your ride and is on the way!</p>
+                            <div class="${bgClass} border rounded-lg p-3 mt-4 shadow-sm">
+                                ${arrivedBanner}
                                 <div class="flex gap-3 mt-2">
                                     <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-lg font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                         <i class="fa-solid fa-phone"></i> Call
@@ -532,12 +564,6 @@
                                         <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
                                     </button>
                                 </div>
-                            </div>
-                        `;
-                    } else if (ride.status === 'completed') {
-                        statusHtml = `
-                            <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
-                                <p class="text-blue-800 text-sm font-bold m-0">📍 Arrived! Please scan the QR code on Driver ${ride.driver_name}'s device to pay ${ride.fare}.</p>
                             </div>
                         `;
                     } else if (ride.status === 'paid' && !ride.rating) {
@@ -636,7 +662,7 @@
 
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
-                const isMe = data.sender === currentPassenger;
+                const isMe = data.sender.trim() === currentPassenger.trim();
                 const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
 
                 // If chat is open for this ride, display it normally
@@ -718,7 +744,7 @@
 
         function displayMessage(sender, text, isHistory = false) {
             const messageContainer = document.getElementById('chat-messages');
-            const isMe = sender === currentPassenger;
+            const isMe = sender.trim() === currentPassenger.trim();
             
             // Play chat pop sound ONLY if it's a new incoming message (not me, not old history)
             if (!isMe && !isHistory) playAlert('chat');
@@ -729,7 +755,9 @@
             const messageHTML = `
                 <div class="flex flex-col ${alignClass} max-w-[80%]">
                     ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
-                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">
+                        ${text}
+                    </div>
                 </div>
             `;
             
