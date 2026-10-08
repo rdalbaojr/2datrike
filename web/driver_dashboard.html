@@ -4,11 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2DA - Driver Dashboard</title>
-    
-    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
-    <link rel="icon" type="image/png" href="2da.png">
-    <link rel="apple-touch-icon" href="2da.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -45,31 +40,18 @@
     </div>
 
     <!-- ==================== MAIN FLOATING APP CARD ==================== -->
-    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 pt-8 shadow-2xl relative overflow-hidden">
+    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
-        <!-- 🟢 UNIFIED CENTERED LOGO HEADER (NEW UI) -->
-        <div class="text-center mb-8 relative">
-            
-            <!-- Top Right: Circular Logout Button -->
-            <div class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
-                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Driver Portal</h1>
+                <p class="text-xs text-green-800 font-bold mt-1"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse"></i> Online and Ready</p>
             </div>
-
-            <!-- Centered Logo w-24 h-24 with padding -->
-            <div class="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
-                <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
-            </div>
-
-            <!-- Title -->
-            <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-2">Driver Portal</h1>
-            
-            <!-- Centered Status & Welcome Info -->
-            <div class="flex flex-col items-center justify-center gap-1.5">
-                <p class="text-xs font-extrabold text-[#78350f]">Welcome, <span id="driver-welcome-name">Driver</span>!</p>
-                <div class="flex items-center gap-2">
-                    <span class="text-[10px] text-green-800 font-bold bg-green-600/10 border border-green-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-circle-dot text-[8px] mr-1 animate-pulse"></i>Online</span>
-                    <span id="driver-rating-display" class="hidden text-[10px] font-bold text-yellow-800 bg-yellow-600/10 border border-yellow-700/20 px-2 py-0.5 rounded-full"><i class="fa-solid fa-star text-yellow-600"></i> <span id="driver-star-val">5.0</span></span>
-                </div>
+            <div class="text-right">
+                <p class="text-xs text-[#78350f] font-medium">Welcome,</p>
+                <p id="driver-welcome-name" class="font-extrabold text-sm text-[#0f172a]">Driver</p>
+                <p id="driver-rating-display" class="text-xs font-bold text-yellow-600 mt-0.5 hidden"><i class="fa-solid fa-star"></i> <span id="driver-star-val">5.0</span></p>
             </div>
         </div>
 
@@ -150,6 +132,16 @@
         <div id="rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking for new orders...</p>
         </div>
+
+        <!-- NEW ACTION BUTTONS -->
+        <div class="space-y-3">
+            <button onclick="openProfileModal()" class="w-full text-center bg-[#F5E6D3] hover:bg-[#e8cda8] border border-[#d4aa7c] text-[#78350f] py-3.5 rounded-xl text-sm font-bold transition shadow-sm">
+                <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile & Payouts
+            </button>
+            <a href="login.html" onclick="logout()" class="block w-full text-center bg-red-900/10 hover:bg-red-900/20 border border-red-800/30 text-red-700 py-3.5 rounded-xl text-sm font-bold transition">
+                <i class="fa-solid fa-power-off mr-1"></i> Log Out
+            </a>
+        </div>
     </div> 
 
     <!-- ==================== PROFILE SETTINGS MODAL ==================== -->
@@ -221,7 +213,7 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (UNTOUCHED FROM USER) -->
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
         // ==========================================
         // ALERTS & VIBRATION ENGINE
@@ -241,7 +233,6 @@
             gainNode.connect(audioCtx.destination);
 
             if (type === 'radar') {
-                // Double Beep & Double Vibrate
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
                 oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
@@ -252,7 +243,6 @@
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
             } 
             else if (type === 'success') {
-                // Happy Chime & Long Vibrate (Accepted / Arrived)
                 oscillator.type = 'triangle';
                 oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
                 oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
@@ -264,7 +254,6 @@
                 if (navigator.vibrate) navigator.vibrate([200]);
             } 
             else if (type === 'chat') {
-                // Short Pop & Micro Vibrate (New Message)
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
@@ -287,26 +276,13 @@
             }
         });
 
-        // 🟢 UPGRADED GET COOKIE FUNCTION
         function getCookie(name) {
-            // 1. Check LocalStorage First (Crucial for Mobile WebViews)
-            let localVal = localStorage.getItem(name) || localStorage.getItem('username');
-            if (localVal) {
-                return localVal.replace(/^"|"$/g, '').trim();
-            }
-
-            // 2. Check Standard Cookies
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
             if (match) {
                 let val = decodeURIComponent(match[2]);
                 return val.replace(/^"|"$/g, '').trim();
             }
-
-            // 3. Fallback logic for passengers using driver dash
             if (name === 'driver_name') {
-                let pLocal = localStorage.getItem('passenger_name');
-                if (pLocal) return pLocal.replace(/^"|"$/g, '').trim();
-
                 let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
                 if (pMatch) {
                     let pVal = decodeURIComponent(pMatch[2]);
@@ -319,8 +295,6 @@
         function logout() {
             document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            localStorage.clear();
-            sessionStorage.clear();
             window.location.href = "login.html";
         }
 
@@ -424,7 +398,12 @@
             }
         }
 
-        let previousPendingCount = 0; // Remembers how many rides were on radar
+        let previousPendingCount = 0; 
+        
+        // 🟢 BACKGROUND RADIO VARIABLES
+        let backgroundSockets = {}; 
+        let unreadCounts = {}; 
+        let activeChatRideId = null;
 
         // ==========================================
         // MASTER FUNCTION: Fetch Pending & Active Rides
@@ -445,11 +424,8 @@
                 // --- 1. PENDING RIDES (RADAR) ---
                 const pendingRides = allRides.filter(ride => ride.status === 'pending');
                 
-                // 🟢 TRIGGER RADAR BEEP IF A NEW RIDE APPEARS
-                if (pendingRides.length > previousPendingCount) {
-                    playAlert('radar');
-                }
-                previousPendingCount = pendingRides.length; // Save for the next check
+                if (pendingRides.length > previousPendingCount) playAlert('radar');
+                previousPendingCount = pendingRides.length; 
 
                 if (pendingRides.length === 0) {
                     pendingContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-radar mr-1"></i> No pending orders right now.</p>';
@@ -462,7 +438,6 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
                         
-                        // 🟢 TICKET-STYLE BADGE FOR PENDING RIDES
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-center mb-3">
                                 <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
@@ -505,6 +480,10 @@
                 } else {
                     activeContainer.innerHTML = '';
                     activeRides.reverse().forEach(ride => {
+                        
+                        // 🟢 AUTO-CONNECT BACKGROUND RADIO
+                        setupBackgroundChat(ride.id);
+
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
                             actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
@@ -523,7 +502,7 @@
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
-                        // 🟢 TICKET-STYLE BADGE FOR ACTIVE RIDES
+                        // 🟢 DYNAMIC CHAT BUTTON WITH NOTIFICATION BADGE
                         rideBox.innerHTML = `
                             <div class="flex justify-between items-start mb-3">
                                 <div>
@@ -536,18 +515,22 @@
                             </div>
                             
                             <div class="flex gap-3 mb-3 mt-4">
-                                <a href="tel:0" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                     <i class="fa-solid fa-phone"></i> Call
                                 </a>
                                 
-                                <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                <button onclick="openChat(${ride.id})" class="relative flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
                                     <i class="fa-regular fa-comment-dots"></i> Chat
+                                    <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
                                 </button>
                             </div>
 
                             ${actionButtonHtml}
                         `;
                         activeContainer.appendChild(rideBox);
+                        
+                        // Enforce the badge visibility after rendering
+                        updateChatBadge(ride.id);
                     });
                 }
             } catch (error) {
@@ -598,7 +581,6 @@
             }
         }
 
-        // 🟢 FIXED DYNAMIC EARNINGS TABLE
         async function updateEarningsTable(allRides, driverName) {
             if (!Array.isArray(allRides)) return;
 
@@ -618,9 +600,7 @@
                         }
                     }
                 }
-            } catch (error) {
-                console.warn("Using default share rates.");
-            }
+            } catch (error) { console.warn("Using default share rates."); }
 
             const labelPlat = document.getElementById('label-platform');
             const labelToda = document.getElementById('label-katoda');
@@ -639,27 +619,18 @@
 
             completedRides.forEach(ride => {
                 let sType = ride.service_type || 'Pasundo';
-                
-                // 🟢 Detects the auto-tag sent by the passenger app
                 let isNight = sType.includes('(Night Rate)');
-                
-                // Strips the tag so it groups nicely on the report
                 sType = sType.replace(' (Night Rate)', '').trim();
 
                 let fareVal = 0.0;
-                if (ride.fare) {
-                    fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
-                }
+                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
 
-                // Extracts the exact extra 10% earned
                 if (isNight) {
                     let originalFare = fareVal / 1.10;
                     totalNightDiff += (fareVal - originalFare);
                 }
 
-                if (!serviceStats[sType]) {
-                    serviceStats[sType] = { qty: 0, amount: 0.0 };
-                }
+                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
                 
                 serviceStats[sType].qty += 1;
                 serviceStats[sType].amount += fareVal;
@@ -706,14 +677,58 @@
         }
 
         // ==========================================
-        // WEBSOCKET CHAT LOGIC
+        // 🟢 UPGRADED BACKGROUND CHAT & NOTIFICATIONS
         // ==========================================
-        let chatSocket = null;
         
+        function setupBackgroundChat(rideId) {
+            if (backgroundSockets[rideId]) return; // Already connected to this ride
+
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const isMe = data.sender === currentDriverName;
+                const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
+
+                // If the chat modal is currently open AND viewing this specific ride...
+                if (activeChatRideId === rideId && isModalOpen) {
+                    displayMessage(data.sender, data.text, false);
+                } 
+                // If the chat modal is closed OR they are viewing a different ride...
+                else {
+                    if (!isMe) {
+                        unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
+                        playAlert('chat'); // Tiny pop sound for notification
+                        updateChatBadge(rideId); // Add the red bubble
+                    }
+                }
+            };
+
+            ws.onclose = () => { delete backgroundSockets[rideId]; };
+            backgroundSockets[rideId] = ws;
+        }
+
+        function updateChatBadge(rideId) {
+            const badge = document.getElementById(`chat-badge-${rideId}`);
+            if (badge) {
+                const count = unreadCounts[rideId] || 0;
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
         async function openChat(rideId) {
+            activeChatRideId = rideId;
+            unreadCounts[rideId] = 0; // Clear the badge count
+            updateChatBadge(rideId);  // Hide the badge
+
             document.getElementById('chat-modal').classList.remove('hidden');
             const messagesContainer = document.getElementById('chat-messages');
-            
             messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
             
             try {
@@ -721,24 +736,21 @@
                 if (response.ok) {
                     const history = await response.json();
                     messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-                    history.forEach(msg => displayMessage(msg.sender, msg.text));
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text, true); // True = don't play sound for history
+                    });
                 }
             } catch (error) {
                 console.error("Could not load chat history.");
             }
             
-            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
-            chatSocket = new WebSocket(wsUrl);
-            
-            chatSocket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                displayMessage(data.sender, data.text);
-            };
+            // Ensure background listener is running just in case
+            setupBackgroundChat(rideId);
         }
 
         function closeChat() {
             document.getElementById('chat-modal').classList.add('hidden');
-            if(chatSocket) chatSocket.close();
+            activeChatRideId = null; // We closed the UI, but keep the background socket running!
         }
 
         function handleEnter(event) {
@@ -749,19 +761,19 @@
             const input = document.getElementById('chat-input');
             const messageText = input.value.trim();
             
-            if (messageText !== '' && chatSocket) {
+            if (messageText !== '' && activeChatRideId && backgroundSockets[activeChatRideId]) {
                 const payload = { sender: currentDriverName, text: messageText };
-                chatSocket.send(JSON.stringify(payload));
+                backgroundSockets[activeChatRideId].send(JSON.stringify(payload));
                 input.value = ''; 
             }
         }
 
-        function displayMessage(sender, text) {
+        function displayMessage(sender, text, isHistory = false) {
             const messageContainer = document.getElementById('chat-messages');
             const isMe = sender === currentDriverName;
             
-            // 🟢 Play chat pop sound if the message is from someone else
-            if (!isMe) playAlert('chat');
+            // Play chat pop sound ONLY if it's a new incoming message (not me, not old history)
+            if (!isMe && !isHistory) playAlert('chat');
             
             const alignClass = isMe ? 'self-end' : 'self-start';
             const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
