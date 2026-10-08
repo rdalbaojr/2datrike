@@ -239,7 +239,7 @@
     <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
         // ==========================================
-        // SAFE ALERTS & VIBRATION ENGINE (WebView Safe)
+        // SAFE ALERTS & VIBRATION ENGINE
         // ==========================================
         let audioCtx = null;
         
@@ -253,7 +253,7 @@
                     audioCtx.resume();
                 }
             } catch (e) {
-                console.warn("Web Audio API blocked or unsupported in this browser/webview.");
+                console.warn("Web Audio API blocked or unsupported.");
             }
         }
 
@@ -316,21 +316,17 @@
             }
         });
 
-        // 🟢 UPGRADED SESSION RETRIEVAL (Catches Cookies, LocalStorage, SessionStorage & URL)
+        // 🟢 UPGRADED SESSION RETRIEVAL
         function getCookie(name) {
-            // 1. Standard Cookies
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
             if (match) return decodeURIComponent(match[2]).replace(/^"|"$/g, '').trim();
 
-            // 2. LocalStorage (Very common for modern web apps)
             let localVal = localStorage.getItem(name) || localStorage.getItem('username');
             if (localVal) return localVal.replace(/^"|"$/g, '').trim();
 
-            // 3. SessionStorage
             let sessionVal = sessionStorage.getItem(name) || sessionStorage.getItem('username');
             if (sessionVal) return sessionVal.replace(/^"|"$/g, '').trim();
 
-            // 4. URL Parameters (Fallback)
             let urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has(name)) return urlParams.get(name);
             if (urlParams.has('username')) return urlParams.get('username');
@@ -346,7 +342,6 @@
             window.location.href = "login.html";
         }
 
-        // AGGRESSIVELY FIND THE DRIVER'S NAME
         let currentDriverName = getCookie("driver_name");
         if (currentDriverName === "Unknown") currentDriverName = getCookie("username");
         if (currentDriverName === "Unknown") currentDriverName = getCookie("passenger_name");
@@ -418,89 +413,4 @@
                     alert("✅ Profile successfully updated!");
                     closeProfileModal();
                 } else {
-                    alert("⚠️ Failed to update profile. Please try again.");
-                }
-            } catch (error) {
-                alert("⚠️ Network error.");
-            } finally {
-                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes';
-            }
-        }
-
-        async function checkDriverBroadcasts() {
-            if (!currentDriverName || currentDriverName === "Unknown") return;
-            try {
-                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
-                const data = await response.json();
-                
-                const container = document.getElementById('driver-broadcast-container');
-                const textElement = document.getElementById('driver-broadcast-text');
-                const titleElement = document.getElementById('driver-broadcast-title');
-
-                if (data && data.message && data.message.trim() !== "") {
-                    textElement.innerText = data.message;
-                    titleElement.innerText = `${data.toda_name || 'TODA'} Official Broadcast`;
-                    container.classList.remove('hidden');
-                } else {
-                    container.classList.add('hidden');
-                }
-            } catch (error) {
-                console.error("Error fetching broadcast:", error);
-            }
-        }
-
-        let previousPendingCount = 0; 
-        
-        // 🟢 BACKGROUND RADIO VARIABLES
-        let backgroundSockets = {}; 
-        let unreadCounts = {}; 
-        let activeChatRideId = null;
-
-        // ==========================================
-        // MASTER FUNCTION: Fetch Pending & Active Rides
-        // ==========================================
-        async function loadDashboardRides() {
-            try {
-                const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
-                const allRides = await response.json();
-                
-                if (!Array.isArray(allRides)) return;
-                
-                updateEarningsTable(allRides, currentDriverName);
-
-                const pendingContainer = document.getElementById('rides-container');
-                const activeContainer = document.getElementById('active-rides-container');
-                if (!pendingContainer || !activeContainer) return;
-
-                // --- 1. PENDING RIDES (RADAR) ---
-                const pendingRides = allRides.filter(ride => ride.status === 'pending');
-                
-                if (pendingRides.length > previousPendingCount) playAlert('radar');
-                previousPendingCount = pendingRides.length; 
-
-                if (pendingRides.length === 0) {
-                    pendingContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-radar mr-1"></i> No pending orders right now.</p>';
-                } else {
-                    pendingContainer.innerHTML = ''; 
-                    pendingRides.reverse().forEach(ride => {
-                        const passFullName = ride.passenger_name || "Passenger";
-                        const passengerFirstName = passFullName.split(' ')[0];
-                        
-                        const rideBox = document.createElement('div');
-                        rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
-                        
-                        rideBox.innerHTML = `
-                            <div class="flex justify-between items-center mb-3">
-                                <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
-                                <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
-                            </div>
-                            <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
-                                <div class="flex justify-between items-center mb-3">
-                                    <p class="text-[#0f172a] text-sm font-bold"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
-                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
-                                        ${ride.local_ref || 'N/A'}
-                                    </span>
-                                </div>
-                                <div class="space-y-2">
-                                    <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
-                                        <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-
+                    alert("⚠️ Failed to update profile
