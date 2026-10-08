@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2DA TODA Command Center</title>
-    
-    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
-    <link rel="icon" type="image/png" href="2da.png">
-    <link rel="apple-touch-icon" href="2da.png">
-
-    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
-    <meta property="og:title" content="2DA TODA Command Center">
-    <meta property="og:description" content="Secure administrative portal for local TODA fleet management and monitoring.">
-    <meta property="og:image" content="2da.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -58,10 +48,9 @@
         
         <!-- 🟢 SECURE TODA LOGIN OVERLAY (BULLETPROOF FORM) -->
         <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
-            <!-- Used logo instead of FontAwesome icon -->
-            <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
-    <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
-</div>
+            <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                <i class="fa-solid fa-users-gear text-3xl text-white"></i>
+            </div>
             <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
             <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
             
@@ -82,9 +71,8 @@
             <!-- Header -->
             <div class="glass-card rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-4">
-                    <!-- Circular Logo -->
-                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg shrink-0 border-2 border-amber-900 overflow-hidden">
-                        <img src="2da.png" alt="TODA Logo" class="w-full h-full object-cover">
+                    <div class="bg-amber-900 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg shrink-0">
+                        <i class="fa-solid fa-users-gear text-xl"></i>
                     </div>
                     <div>
                         <h1 id="cmd-center-title" class="text-2xl font-extrabold text-slate-900">Command Center</h1>
@@ -113,4 +101,334 @@
                     <p class="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1">This Month</p>
                     <h3 id="fin-month" class="text-xl font-extrabold text-slate-900">₱0.00</h3>
                 </div>
-                <div class="bg-amber-900 border border-amber-800 rounded-2xl p-4 shadow-
+                <div class="bg-amber-900 border border-amber-800 rounded-2xl p-4 shadow-sm text-white relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-white/10 text-6xl"><i class="fa-solid fa-vault"></i></div>
+                    <p class="text-[10px] font-bold text-amber-200 uppercase tracking-wider mb-1">YTD Earnings</p>
+                    <h3 id="fin-ytd" class="text-xl font-extrabold">₱0.00</h3>
+                </div>
+            </div>
+
+            <!-- Moderation Tools -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Broadcast Card -->
+                <div class="glass-card rounded-3xl p-6 md:col-span-1 h-fit">
+                    <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-bullhorn text-amber-800"></i> Broadcast
+                    </h2>
+                    <p id="broadcast-subtitle" class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all drivers.</p>
+                    <textarea id="broadcast-msg" rows="4" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 outline-none focus:border-amber-700 text-sm font-medium resize-none mb-3" placeholder="Type your message here..."></textarea>
+                    <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md">
+                        <i class="fa-regular fa-paper-plane"></i> Send to Fleet
+                    </button>
+                </div>
+
+                <!-- Driver Roster with Filters & Search -->
+                <div class="glass-card rounded-3xl p-0 md:col-span-2 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-[#d4aa7c] bg-[#e8cda8] flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
+                                <i class="fa-solid fa-id-card-clip text-amber-800"></i> Driver Roster
+                            </h2>
+                            <span id="roster-count" class="text-[10px] font-bold bg-amber-900 text-white px-2 py-1 rounded-md">0 Drivers</span>
+                        </div>
+                        
+                        <!-- Search & Filter Controls -->
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-amber-800/50 text-xs"></i>
+                                <input type="text" id="driver-search" onkeyup="handleDriverSearch(event)" placeholder="Search Name or ID..." class="w-full bg-white border border-[#d4aa7c] rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-amber-700 shadow-sm font-medium">
+                            </div>
+                            <div class="flex gap-1 overflow-x-auto" style="scrollbar-width: none;">
+                                <button onclick="setFilter('all')" id="flt-all" class="filter-btn active whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">All</button>
+                                <button onclick="setFilter('online')" id="flt-online" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Online</button>
+                                <button onclick="setFilter('offline')" id="flt-offline" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Offline</button>
+                                <button onclick="setFilter('suspended')" id="flt-suspended" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Suspended</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-y-auto driver-scroll p-3 flex-1 bg-[#F5E6D3]" id="driver-list">
+                        <!-- Drivers dynamically injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        let allDrivers = [];
+        let currentFilter = 'all';
+        let currentSearchQuery = '';
+        let activeTodaName = '';
+
+        // 🟢 BULLETPROOF LOGIN FUNCTION
+        async function unlockTodaDashboard() {
+            const u = document.getElementById('todaUser').value.trim();
+            const p = document.getElementById('todaPass').value;
+            const btn = document.getElementById('toda-login-btn');
+            const errorMsg = document.getElementById('toda-login-error');
+            
+            if (!u || !p) return;
+
+            // Show loading state
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+            errorMsg.classList.add('hidden');
+
+            try {
+                // Send credentials to the Python Backend for secure verification
+                const response = await fetch('/api/toda/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const verifiedTodaName = data.toda_name; 
+                    
+                    sessionStorage.setItem("active_toda_admin", verifiedTodaName);
+                    document.getElementById('todaLockOverlay').style.display = 'none';
+                    document.getElementById('toda-main-section').classList.remove('hidden');
+                    
+                    initializeDashboard(verifiedTodaName);
+                } else {
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Network error. Could not reach server.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        window.onload = function() {
+            const savedToda = sessionStorage.getItem('active_toda_admin');
+            if (savedToda) {
+                document.getElementById('todaLockOverlay').style.display = 'none';
+                document.getElementById('toda-main-section').classList.remove('hidden');
+                initializeDashboard(savedToda);
+            }
+        };
+
+        function logoutToda() {
+            sessionStorage.removeItem("active_toda_admin");
+            document.getElementById('toda-main-section').classList.add('hidden');
+            
+            const overlay = document.getElementById('todaLockOverlay');
+            overlay.style.display = 'flex';
+            
+            // Clear passwords so they have to type again
+            document.getElementById('todaUser').value = "";
+            document.getElementById('todaPass').value = "";
+        }
+
+        function initializeDashboard(todaName) {
+            activeTodaName = todaName;
+            document.getElementById('cmd-center-title').innerText = `${todaName} Command Center`;
+            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${todaName} drivers.`;
+            
+            loadLiveTodaData();
+            setInterval(loadLiveTodaData, 10000); 
+        }
+
+        // --- Live Backend Fetching ---
+        async function loadLiveTodaData() {
+            if(!activeTodaName) return;
+
+            try {
+                const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
+                if(driverRes.ok) {
+                    allDrivers = await driverRes.json();
+                    renderDrivers();
+                }
+
+                const financeRes = await fetch(`/api/toda/finances?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
+                if(financeRes.ok) {
+                    const finances = await financeRes.json();
+                    document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
+                    document.getElementById('fin-week').innerText = `₱${finances.week.toFixed(2)}`;
+                    document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
+                    document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
+                }
+            } catch (error) {
+                console.error("Error loading live TODA data:", error);
+            }
+        }
+
+        // --- Filter Logic ---
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`flt-${filterType}`).classList.add('active');
+            renderDrivers();
+        }
+
+        function handleDriverSearch(event) {
+            currentSearchQuery = event.target.value.toLowerCase();
+            renderDrivers();
+        }
+
+        // --- Render the Driver Fleet List ---
+        function renderDrivers() {
+            const container = document.getElementById('driver-list');
+            container.innerHTML = '';
+
+            if (!allDrivers || allDrivers.length === 0) {
+                container.innerHTML = '<p class="text-center text-amber-900/70 text-sm font-medium italic py-6">No registered drivers found for this TODA.</p>';
+                document.getElementById('roster-count').innerText = "0 Drivers";
+                return;
+            }
+
+            let filteredDrivers = allDrivers.filter(driver => {
+                const searchStr = `${driver.name} ${driver.whatsapp_number} ${driver.toda_number} ${driver.id}`.toLowerCase();
+                const matchesSearch = searchStr.includes(currentSearchQuery);
+                if (!matchesSearch) return false;
+
+                if (currentFilter === 'online') return driver.status === 'online' && driver.is_suspended !== 1;
+                if (currentFilter === 'offline') return driver.status === 'offline' && driver.is_suspended !== 1;
+                if (currentFilter === 'suspended') return driver.is_suspended === 1;
+                return true;
+            });
+
+            document.getElementById('roster-count').innerText = `${filteredDrivers.length} Drivers`;
+
+            if (filteredDrivers.length === 0) {
+                container.innerHTML = '<p class="text-center text-amber-900/70 text-xs font-medium italic py-6">No drivers match this filter.</p>';
+                return;
+            }
+
+            filteredDrivers.sort((a, b) => (a.status === 'online' ? -1 : 1));
+
+            filteredDrivers.forEach(driver => {
+                const isOnline = driver.status === 'online';
+                const statusDot = isOnline ? 'text-green-600 animate-pulse' : 'text-slate-400';
+                const statusText = isOnline ? 'Online' : 'Offline';
+                const isLowRating = driver.rating < 4.0;
+                const starColor = isLowRating ? 'text-red-600' : 'text-yellow-500';
+                const ratingClass = isLowRating ? 'bg-red-100 text-red-800 border-red-300' : 'bg-white text-slate-800 border-[#d4aa7c]';
+
+                const isSuspended = driver.is_suspended === 1;
+                const rowStyles = isSuspended ? 'bg-red-100/80 border-red-300 opacity-90' : 'bg-white/80 border-[#d4aa7c] hover:bg-white';
+                const suspendBadge = isSuspended ? `<span class="text-[9px] text-red-800 bg-red-200 px-1.5 py-0.5 rounded ml-1 font-extrabold uppercase"><i class="fa-solid fa-ban"></i> Suspended</span>` : '';
+
+                let actionButtons = '';
+                if (isSuspended) {
+                    actionButtons = `
+                        <button onclick="disciplineAction(${driver.id}, 'reinstate')" class="bg-green-700 hover:bg-green-800 text-white px-3 h-7 rounded flex items-center justify-center transition shadow-sm text-[10px] font-bold" title="Reinstate Account">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Reinstate
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold text-amber-800 mr-1" title="Warnings">${driver.warnings}/3 <i class="fa-solid fa-triangle-exclamation"></i></span>
+                            <button onclick="disciplineAction(${driver.id}, 'warn')" class="bg-amber-500 hover:bg-amber-600 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm" title="Issue Warning">
+                                <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                            </button>
+                            <button onclick="disciplineAction(${driver.id}, 'suspend')" class="bg-red-700 hover:bg-red-800 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm" title="Suspend Account">
+                                <i class="fa-solid fa-ban text-[10px]"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = `border rounded-xl p-2.5 mb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 transition shadow-sm ${rowStyles}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-amber-900/10 border border-amber-900/20 flex items-center justify-center text-amber-900 font-bold uppercase text-sm shrink-0">
+                            ${driver.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm capitalize flex items-center flex-wrap gap-1 leading-tight">
+                                ${driver.name} 
+                                <span class="text-[9px] text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">ID: ${driver.toda_number || 'N/A'}</span>
+                                ${suspendBadge}
+                            </h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <p class="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                                    <i class="fa-solid fa-circle text-[6px] ${statusDot}"></i> ${statusText}
+                                </p>
+                                <span class="text-[10px] text-slate-300">|</span>
+                                <p class="text-[10px] font-medium text-slate-600">${driver.totalRides || 0} Rides</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="flex flex-col items-center justify-center px-2 py-0.5 border rounded ${ratingClass}">
+                            <div class="flex items-center gap-1 text-xs font-extrabold">
+                                ${(driver.rating || 5.0).toFixed(1)} <i class="fa-solid fa-star text-[9px] ${starColor}"></i>
+                            </div>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function disciplineAction(driverId, action) {
+            let msg = "";
+            if (action === "warn") msg = "Are you sure you want to issue a warning to this driver? (3 warnings = Auto-Suspend)";
+            if (action === "suspend") msg = "Are you sure you want to immediately SUSPEND this driver? They will not be able to log in.";
+            if (action === "reinstate") msg = "Are you sure you want to REINSTATE this driver? Their warnings will be reset to 0.";
+
+            if (!confirm(msg)) return;
+
+            try {
+                const response = await fetch('/api/admin/discipline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driver_id: driverId, action: action })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if(action !== 'reinstate') {
+                        alert(`Action successful. Driver currently has ${data.warnings}/3 warnings.`);
+                    } else {
+                        alert(`Driver has been successfully reinstated.`);
+                    }
+                    loadLiveTodaData(); 
+                } else {
+                    alert("Failed to update driver status. Check server logs.");
+                }
+            } catch (error) {
+                alert("Network error while trying to update driver.");
+            }
+        }
+
+        async function sendBroadcast() {
+            const msg = document.getElementById('broadcast-msg').value;
+            if(!msg.trim()) return alert("Please type a message first.");
+
+            try {
+                const payload = { 
+                    toda_name: activeTodaName, 
+                    message: msg 
+                };
+                
+                const response = await fetch('/api/toda/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert(`✅ BROADCAST SENT TO ALL ${activeTodaName} DRIVERS:\n\n"${msg}"`);
+                    document.getElementById('broadcast-msg').value = '';
+                } else {
+                    const errorDetails = await response.text();
+                    alert(`❌ Server rejected broadcast.\n\nReason: ${errorDetails}`);
+                }
+            } catch (error) {
+                alert("Network error while sending broadcast. Is the server offline?");
+            }
+        }
+    </script>
+</body>
+</html>
