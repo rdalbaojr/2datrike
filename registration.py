@@ -87,30 +87,65 @@ class OTPVerifySchema(BaseModel):
 
 # ==================== FRONTEND ENDPOINTS ====================
 
-@app.get("/book", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
+@app.get("/login.html", response_class=HTMLResponse)
+async def serve_home():
+    """Serves the main login and registration page."""
+    try:
+        return FileResponse("login.html")
+    except Exception:
+        return "<h3>login.html not found. Please ensure it is in the same directory.</h3>"
+
+@app.get("/booking.html", response_class=HTMLResponse)
 async def serve_passenger_portal():
     """Serves the passenger booking dashboard."""
     try:
         return FileResponse("booking.html")
     except Exception:
-        return "<h3>booking.html not found. Please create the file.</h3>"
+        return "<h3>booking.html not found.</h3>"
 
-@app.get("/driver-portal", response_class=HTMLResponse)
+@app.get("/driver_dashboard.html", response_class=HTMLResponse)
 async def serve_driver_portal():
     """Serves the driver dashboard."""
     try:
-        return FileResponse("driver.html")
+        return FileResponse("driver_dashboard.html")
     except Exception:
-        return "<h3>driver.html not found. Please create the file.</h3>"
+        return "<h3>driver_dashboard.html not found.</h3>"
 
-
-@app.get("/", response_class=HTMLResponse)
-async def serve_home():
-    """Serves the main registration page (index.html)."""
+@app.get("/admin_dashboard.html", response_class=HTMLResponse)
+async def serve_admin_portal():
+    """Serves the master admin dashboard."""
     try:
-        return FileResponse("index.html")
+        return FileResponse("admin_dashboard.html")
     except Exception:
-        return "<h3>index.html not found in current directory.</h3>"    
+        return "<h3>admin_dashboard.html not found.</h3>"
+
+@app.get("/toda_dashboard.html", response_class=HTMLResponse)
+async def serve_toda_portal():
+    """Serves the TODA admin dashboard."""
+    try:
+        return FileResponse("toda_dashboard.html")
+    except Exception:
+        return "<h3>toda_dashboard.html not found.</h3>"
+
+# ==================== STATIC ASSETS (LOGOS & IMAGES) ====================
+
+@app.get("/2da.png")
+async def serve_logo():
+    """Serves the official app logo for the UI and social media sharing."""
+    try:
+        return FileResponse("2da.png")
+    except Exception:
+        raise HTTPException(status_code=404, detail="Logo not found")
+
+@app.get("/bpi.png")
+@app.get("/bpi.png")
+async def serve_qr():
+    """Serves the BPI QR code for payments."""
+    try:
+        return FileResponse("bpi.png")
+    except Exception:
+        raise HTTPException(status_code=404, detail="QR code not found")
 
 
 # ==================== API ENDPOINTS ====================
