@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2DA - Help & Support</title>
+    
+    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
+    <link rel="icon" type="image/png" href="2da.png">
+    <link rel="apple-touch-icon" href="2da.png">
+
+    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
+    <meta property="og:title" content="2DA App - Support Center">
+    <meta property="og:description" content="Get help with the 2DA App, read our FAQs, and contact our support team.">
+    <meta property="og:image" content="2da.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,13 +23,20 @@
 
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative">
         
-        <!-- Header -->
-        <div class="flex items-center gap-4 mb-6 border-b border-[#c99c6b] pb-4">
-            <button onclick="window.history.back()" class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] text-[#78350f] hover:bg-[#d4aa7c] transition shadow-sm">
+        <!-- 🟢 UPDATED HEADER WITH CIRCULAR LOGO -->
+        <div class="flex items-center gap-3 mb-6 border-b border-[#c99c6b] pb-4">
+            <!-- Back Button -->
+            <button onclick="window.history.back()" class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] text-[#78350f] hover:bg-[#d4aa7c] transition shadow-sm shrink-0">
                 <i class="fa-solid fa-arrow-left"></i>
             </button>
+            
+            <!-- Circular Logo -->
+            <div class="w-10 h-10 bg-white rounded-full shadow-md border-2 border-[#78350f] overflow-hidden shrink-0 ml-1">
+                <img src="2da.png" alt="2DA Logo" class="w-full h-full object-cover">
+            </div>
+            
             <div>
-                <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Help & FAQ</h1>
+                <h1 class="text-xl font-extrabold text-[#0f172a] tracking-tight leading-none">Help & FAQ</h1>
                 <p class="text-xs text-[#78350f] font-bold mt-1">2DA Support Center</p>
             </div>
         </div>
