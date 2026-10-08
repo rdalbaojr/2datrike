@@ -221,7 +221,7 @@
         </div>
     </div>
 
-    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (100% UNTOUCHED FROM USER) -->
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT (UNTOUCHED FROM USER) -->
     <script>
         // ==========================================
         // ALERTS & VIBRATION ENGINE
@@ -287,13 +287,26 @@
             }
         });
 
+        // 🟢 UPGRADED GET COOKIE FUNCTION
         function getCookie(name) {
+            // 1. Check LocalStorage First (Crucial for Mobile WebViews)
+            let localVal = localStorage.getItem(name) || localStorage.getItem('username');
+            if (localVal) {
+                return localVal.replace(/^"|"$/g, '').trim();
+            }
+
+            // 2. Check Standard Cookies
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
             if (match) {
                 let val = decodeURIComponent(match[2]);
                 return val.replace(/^"|"$/g, '').trim();
             }
+
+            // 3. Fallback logic for passengers using driver dash
             if (name === 'driver_name') {
+                let pLocal = localStorage.getItem('passenger_name');
+                if (pLocal) return pLocal.replace(/^"|"$/g, '').trim();
+
                 let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
                 if (pMatch) {
                     let pVal = decodeURIComponent(pMatch[2]);
@@ -306,6 +319,8 @@
         function logout() {
             document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            localStorage.clear();
+            sessionStorage.clear();
             window.location.href = "login.html";
         }
 
@@ -356,4 +371,411 @@
 
         async function saveProfile(event) {
             event.preventDefault();
-            const btn = document.getElementById('prof
+            const btn = document.getElementById('prof-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...';
+            
+            const payload = {
+                display_name: currentDriverName,
+                whatsapp_number: document.getElementById('prof-whatsapp').value,
+                bank_name: document.getElementById('prof-bank').value,
+                gcash_account: document.getElementById('prof-account').value,
+                address: document.getElementById('prof-address').value
+            };
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("✅ Profile successfully updated!");
+                    closeProfileModal();
+                } else {
+                    alert("⚠️ Failed to update profile. Please try again.");
+                }
+            } catch (error) {
+                alert("⚠️ Network error.");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes';
+            }
+        }
+
+        async function checkDriverBroadcasts() {
+            if (!currentDriverName || currentDriverName === "Unknown") return;
+            try {
+                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('driver-broadcast-container');
+                const textElement = document.getElementById('driver-broadcast-text');
+                const titleElement = document.getElementById('driver-broadcast-title');
+
+                if (data && data.message && data.message.trim() !== "") {
+                    textElement.innerText = data.message;
+                    titleElement.innerText = `${data.toda_name || 'TODA'} Official Broadcast`;
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error fetching broadcast:", error);
+            }
+        }
+
+        let previousPendingCount = 0; // Remembers how many rides were on radar
+
+        // ==========================================
+        // MASTER FUNCTION: Fetch Pending & Active Rides
+        // ==========================================
+        async function loadDashboardRides() {
+            try {
+                const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
+                const allRides = await response.json();
+                
+                if (!Array.isArray(allRides)) return;
+                
+                updateEarningsTable(allRides, currentDriverName);
+
+                const pendingContainer = document.getElementById('rides-container');
+                const activeContainer = document.getElementById('active-rides-container');
+                if (!pendingContainer || !activeContainer) return;
+
+                // --- 1. PENDING RIDES (RADAR) ---
+                const pendingRides = allRides.filter(ride => ride.status === 'pending');
+                
+                // 🟢 TRIGGER RADAR BEEP IF A NEW RIDE APPEARS
+                if (pendingRides.length > previousPendingCount) {
+                    playAlert('radar');
+                }
+                previousPendingCount = pendingRides.length; // Save for the next check
+
+                if (pendingRides.length === 0) {
+                    pendingContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-radar mr-1"></i> No pending orders right now.</p>';
+                } else {
+                    pendingContainer.innerHTML = ''; 
+                    pendingRides.reverse().forEach(ride => {
+                        const passFullName = ride.passenger_name || "Passenger";
+                        const passengerFirstName = passFullName.split(' ')[0];
+                        
+                        const rideBox = document.createElement('div');
+                        rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
+                        
+                        // 🟢 TICKET-STYLE BADGE FOR PENDING RIDES
+                        rideBox.innerHTML = `
+                            <div class="flex justify-between items-center mb-3">
+                                <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
+                                <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
+                            </div>
+                            <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
+                                <div class="flex justify-between items-center mb-3">
+                                    <p class="text-[#0f172a] text-sm font-bold"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
+                                </div>
+                                <div class="space-y-2">
+                                    <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                        <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                        <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
+                                    </p>
+                                    <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                        <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                        <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            <button onclick="acceptRide(${ride.id})" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-amber-900/20">
+                                Accept Order
+                            </button>
+                        `;
+                        pendingContainer.appendChild(rideBox);
+                    });
+                }
+
+                // --- 2. ACTIVE RIDES (ACCEPTED/COMPLETED) ---
+                const activeRides = allRides.filter(ride => 
+                    (ride.status === 'accepted' || ride.status === 'completed') && 
+                    ride.driver_name === currentDriverName
+                );
+
+                if (activeRides.length === 0) {
+                    activeContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>';
+                } else {
+                    activeContainer.innerHTML = '';
+                    activeRides.reverse().forEach(ride => {
+                        let actionButtonHtml = "";
+                        if (ride.status === 'accepted') {
+                            actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
+                        } else if (ride.status === 'completed') {
+                            actionButtonHtml = `
+                                <div class="bg-white border-2 border-dashed border-green-700/50 rounded-xl p-4 mb-4 mt-2 text-center">
+                                    <p class="text-green-800 font-bold text-sm mb-3"><i class="fa-solid fa-qrcode mr-1"></i> Scan to Pay via BPI</p>
+                                    <img src="bpi_qr.png" alt="BPI QR Code" class="w-36 h-36 mx-auto rounded-lg shadow-sm border border-slate-200 object-cover" />
+                                </div>
+                                <button onclick="confirmPayment(${ride.id})" class="w-full bg-green-800 hover:bg-green-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-green-900/20">
+                                    <i class="fa-solid fa-check-double mr-1"></i> Confirm Payment
+                                </button>
+                            `;
+                        }
+
+                        const rideBox = document.createElement('div');
+                        rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
+                        
+                        // 🟢 TICKET-STYLE BADGE FOR ACTIVE RIDES
+                        rideBox.innerHTML = `
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold block mb-1.5"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
+                                </div>
+                                <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
+                            </div>
+                            
+                            <div class="flex gap-3 mb-3 mt-4">
+                                <a href="tel:0" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                    <i class="fa-solid fa-phone"></i> Call
+                                </a>
+                                
+                                <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                    <i class="fa-regular fa-comment-dots"></i> Chat
+                                </button>
+                            </div>
+
+                            ${actionButtonHtml}
+                        `;
+                        activeContainer.appendChild(rideBox);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard rides:", error);
+            }
+        }
+
+        loadDashboardRides();
+        setInterval(() => {
+            loadDashboardRides();
+            checkDriverBroadcasts();
+        }, 3000); 
+
+        // ==========================================
+        // Action Functions
+        // ==========================================
+        async function acceptRide(rideId) {
+            try {
+                const response = await fetch(`/accept-ride/${rideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driver_name: currentDriverName })
+                });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not accept the ride. It may have already been taken.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function completeRide(rideId) {
+            try {
+                const response = await fetch(`/complete-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not complete the ride.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function confirmPayment(rideId) {
+            try {
+                const response = await fetch(`/pay-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not confirm the payment.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        // 🟢 FIXED DYNAMIC EARNINGS TABLE
+        async function updateEarningsTable(allRides, driverName) {
+            if (!Array.isArray(allRides)) return;
+
+            let platformPct = 17.0;
+            let katodaPct = 3.0;
+
+            try {
+                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.toda_name) {
+                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
+                        if (configRes.ok) {
+                            const config = await configRes.json();
+                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
+                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn("Using default share rates.");
+            }
+
+            const labelPlat = document.getElementById('label-platform');
+            const labelToda = document.getElementById('label-katoda');
+            if (labelPlat) labelPlat.innerText = "Platform Share:";
+            if (labelToda) labelToda.innerText = "TODA Share:";
+
+            const completedRides = allRides.filter(ride => 
+                (ride.status === 'paid' || ride.status === 'completed') && 
+                ride.driver_name && 
+                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
+            );
+
+            let serviceStats = {};
+            let totalGross = 0.0;
+            let totalNightDiff = 0.0;
+
+            completedRides.forEach(ride => {
+                let sType = ride.service_type || 'Pasundo';
+                
+                // 🟢 Detects the auto-tag sent by the passenger app
+                let isNight = sType.includes('(Night Rate)');
+                
+                // Strips the tag so it groups nicely on the report
+                sType = sType.replace(' (Night Rate)', '').trim();
+
+                let fareVal = 0.0;
+                if (ride.fare) {
+                    fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
+                }
+
+                // Extracts the exact extra 10% earned
+                if (isNight) {
+                    let originalFare = fareVal / 1.10;
+                    totalNightDiff += (fareVal - originalFare);
+                }
+
+                if (!serviceStats[sType]) {
+                    serviceStats[sType] = { qty: 0, amount: 0.0 };
+                }
+                
+                serviceStats[sType].qty += 1;
+                serviceStats[sType].amount += fareVal;
+                totalGross += fareVal;
+            });
+
+            const platformCut = totalGross * (platformPct / 100.0);
+            const katodaCut = totalGross * (katodaPct / 100.0);
+            const netEarnings = totalGross - platformCut - katodaCut;
+
+            const tbody = document.getElementById('shift-report-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (Object.keys(serviceStats).length === 0) {
+                    tbody.innerHTML = `
+                        <tr class="hover:bg-[#e8cda8]/50 transition">
+                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
+                        </tr>
+                    `;
+                } else {
+                    for (const [sType, data] of Object.entries(serviceStats)) {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8cda8]/50 transition">
+                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+
+            const elGross = document.getElementById('amt-gross');
+            const elNight = document.getElementById('amt-night-diff');
+            const elPlat = document.getElementById('amt-platform');
+            const elToda = document.getElementById('amt-katoda');
+            const elNet = document.getElementById('amt-net');
+
+            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
+            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
+            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
+            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
+            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
+        }
+
+        // ==========================================
+        // WEBSOCKET CHAT LOGIC
+        // ==========================================
+        let chatSocket = null;
+        
+        async function openChat(rideId) {
+            document.getElementById('chat-modal').classList.remove('hidden');
+            const messagesContainer = document.getElementById('chat-messages');
+            
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            try {
+                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    history.forEach(msg => displayMessage(msg.sender, msg.text));
+                }
+            } catch (error) {
+                console.error("Could not load chat history.");
+            }
+            
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+            chatSocket = new WebSocket(wsUrl);
+            
+            chatSocket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                displayMessage(data.sender, data.text);
+            };
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.add('hidden');
+            if(chatSocket) chatSocket.close();
+        }
+
+        function handleEnter(event) {
+            if(event.key === 'Enter') sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            
+            if (messageText !== '' && chatSocket) {
+                const payload = { sender: currentDriverName, text: messageText };
+                chatSocket.send(JSON.stringify(payload));
+                input.value = ''; 
+            }
+        }
+
+        function displayMessage(sender, text) {
+            const messageContainer = document.getElementById('chat-messages');
+            const isMe = sender === currentDriverName;
+            
+            // 🟢 Play chat pop sound if the message is from someone else
+            if (!isMe) playAlert('chat');
+            
+            const alignClass = isMe ? 'self-end' : 'self-start';
+            const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
+            
+            const messageHTML = `
+                <div class="flex flex-col ${alignClass} max-w-[80%]">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
+                </div>
+            `;
+            
+            messageContainer.innerHTML += messageHTML;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
