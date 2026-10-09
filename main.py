@@ -557,8 +557,11 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     clean_pass_name = sanitize_name(request.passenger_name)
-    user_profile = db.query(User).filter(User.full_name == clean_pass_name).first()
+    user_profile = db.query(User).filter(
+        (User.full_name == clean_pass_name) | (User.username == clean_pass_name)
+    ).first()
     
+    # 🟢 Safe fallbacks if profile isn't found immediately
     city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
