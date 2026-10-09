@@ -355,13 +355,38 @@
                         }
                     }
                     if (!hasServices) container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">No services currently configured.</div>';
-                    toggleBudgetContainer(currentService);
+                    
+                    toggleServiceDetails(currentService);
                 }
             } catch (e) {
+                console.error(e);
                 container.innerHTML = '<div class="col-span-3 text-center text-xs font-bold text-red-800 py-4">Error loading services.</div>';
             }
         });
 
+        // 🟢 RESTORED SELECT SERVICE FUNCTION
+        function selectService(service) {
+            currentService = service;
+            document.querySelectorAll('.service-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-white');
+                btn.classList.add('text-[#78350f]');
+            });
+            
+            let safeId = `btn-${service.replace(/[^a-zA-Z0-9]/g, '')}`;
+            const activeBtn = document.getElementById(safeId);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'text-white');
+                activeBtn.classList.remove('text-[#78350f]');
+            }
+            
+            toggleServiceDetails(service);
+            
+            document.getElementById('fare-estimate').classList.add('hidden');
+            document.getElementById('submit-btn').classList.remove('hidden');
+            document.getElementById('confirm-btn').classList.add('hidden');
+        }
+
+        // 🟢 NEW DYNAMIC CONTAINER LOGIC
         function toggleServiceDetails(service) {
             const container = document.getElementById('service-details-container');
             const pabiliFields = document.getElementById('pabili-fields');
@@ -383,7 +408,7 @@
                     container.classList.remove('hidden');
                     papickupFields.classList.remove('hidden');
                 } else {
-                    container.classList.add('hidden'); // E.g., Pasundo doesn't need details
+                    container.classList.add('hidden'); 
                 }
             } else {
                 container.classList.add('hidden');
@@ -399,10 +424,8 @@
                 let baseFare = allServicePrices[currentService] || 0; 
                 const nightBadge = document.getElementById('night-diff-badge');
                 
-                // Get the user's current local hour (0-23)
                 const currentHour = new Date().getHours();
                 
-                // If it is 10 PM (22) or later, OR before 6 AM... auto-apply the 10%
                 if (currentHour >= 22 || currentHour < 6) {
                     baseFare = baseFare + (baseFare * 0.10); 
                     nightBadge.innerHTML = '<i class="fa-solid fa-moon"></i> +10% Night Rate';
@@ -443,7 +466,7 @@
                 pickup_location: pickupLocation,
                 dropoff_location: dropoffLocation,
                 pabili_list: document.getElementById('pabili-list').value || "", 
-                item_description: document.getElementById('papickup-desc').value || "", // 🟢 Send item desc to DB
+                item_description: document.getElementById('papickup-desc').value || "", 
                 service_type: isNightRateApplied ? currentService + " (Night Rate)" : currentService, 
                 fare: document.getElementById('fare-amount').innerText 
             };
@@ -486,12 +509,9 @@
         }
 
         let previousRideStatus = '';
-
-        // 🟢 NEW: Variables to store the rating data
         let currentRatingRideId = null;
         let selectedRating = 5; 
 
-        // 🟢 UPDATED: Radar loop includes checking for the 'paid' status
         async function fetchMyRides() {
             try {
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
@@ -500,10 +520,8 @@
                 const container = document.getElementById('my-rides-container');
                 if (!container) return; 
                 
-                // Keep the ride on the screen if it is NOT paid, OR if it IS paid but hasn't been rated yet
                 const myRides = allRides.filter(ride => ride.passenger_name === currentPassenger && (ride.status !== 'paid' || (ride.status === 'paid' && !ride.rating)));
                 
-                // Track active statuses including 'paid'
                 const activeRide = myRides.find(r => ['pending', 'accepted', 'completed', 'paid'].includes(r.status));
 
                 const currentStatus = activeRide ? activeRide.status : '';
@@ -561,7 +579,6 @@
                             </div>
                         `;
                     } else if (ride.status === 'paid' && !ride.rating) {
-                        // 🟢 NEW: Prompts the passenger to rate the driver after payment
                         statusHtml = `
                             <div class="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3 mt-4 text-center">
                                 <p class="text-yellow-800 text-sm font-bold m-0 mb-3">🎉 Payment Confirmed!</p>
@@ -590,7 +607,6 @@
         fetchMyRides();
         setInterval(fetchMyRides, 3000);
 
-        // 🟢 NEW: Rating Modal Logic
         function openRatingModal(rideId, driverName) {
             currentRatingRideId = rideId;
             document.getElementById('rating-driver-name').innerText = driverName;
@@ -627,7 +643,7 @@
 
                 if (response.ok) {
                     document.getElementById('rating-modal').classList.add('hidden');
-                    fetchMyRides(); // Refresh UI instantly
+                    fetchMyRides(); 
                 } else {
                     alert("Failed to submit rating. Please try again.");
                 }
@@ -639,7 +655,6 @@
         }
 
         function skipRating() {
-            // Automatically gives a 5-star to help the driver if skipped
             setRating(5);
             submitRating();
         }
