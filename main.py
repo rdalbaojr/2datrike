@@ -91,10 +91,8 @@ class RideRequestCreate(BaseModel):
     dropoff_location: str
     service_type: str = "PASSENGER"
     fare: str = "₱0.00"
-    
-    # 🟢 ALLOW THESE FIELDS IN THE INCOMING REQUEST JSON
-    pabili_list: Optional[str] = None
-    item_description: Optional[str] = None
+    pabili_list: Optional[str] = ""         # 🟢 Optional field
+    item_description: Optional[str] = ""    # 🟢 Optional field
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -572,12 +570,17 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         dropoff_location=request.dropoff_location,
         service_type=request.service_type,
         fare=request.fare,
-        pabili_list=request.pabili_list,         # 🟢 Save to DB
-        item_description=request.item_description, # 🟢 Save to DB
         status="pending",
         branch=f"{city_str} - {brgy_str} ({toda_str})",
         local_ref=origin_ref
     )
+    
+    # 🟢 Safely attach optional details if they exist on the model
+    if hasattr(new_ride, 'pabili_list'):
+        new_ride.pabili_list = request.pabili_list
+    if hasattr(new_ride, 'item_description'):
+        new_ride.item_description = request.item_description
+
     db.add(new_ride)
     db.commit()
     db.refresh(new_ride)
