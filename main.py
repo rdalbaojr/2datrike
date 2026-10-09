@@ -181,6 +181,8 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN pabili_list TEXT"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN item_description TEXT"))
         db.commit()
     except Exception:
         db.rollback()
