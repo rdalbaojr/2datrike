@@ -82,9 +82,16 @@
                 <input type="text" id="dropoff" required placeholder="Drop-off Location (Point B)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <div id="pabili-budget-container" class="hidden relative shadow-sm">
-                <div class="absolute left-4 top-4 text-green-800 font-bold">₱</div>
-                <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+            <!-- 🟢 PABILI SPECIFIC FIELDS (Hidden by default) -->
+            <div id="pabili-details-container" class="hidden space-y-4">
+                <div class="relative shadow-sm">
+                    <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-clipboard-list"></i></div>
+                    <textarea id="pabili-list" rows="2" placeholder="Shopping List (e.g. 1 Whole Chicken, 1.5L Coke)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold resize-none"></textarea>
+                </div>
+                <div class="relative shadow-sm">
+                    <div class="absolute left-4 top-4 text-green-800 font-bold">₱</div>
+                    <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+                </div>
             </div>
 
             <!-- FARE DISPLAY WITH NIGHT BADGE -->
@@ -107,7 +114,6 @@
                 Confirm & Find Driver <i class="fa-solid fa-motorcycle ml-2"></i>
             </button>
         </form>
-
         <!-- SEARCHING STATE -->
         <div id="searching-state" class="hidden flex flex-col items-center justify-center py-10 text-center">
             <div class="relative w-20 h-20 mb-6">
