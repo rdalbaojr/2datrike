@@ -82,15 +82,27 @@
                 <input type="text" id="dropoff" required placeholder="Drop-off Location (Point B)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <!-- 🟢 PABILI SPECIFIC FIELDS (Hidden by default) -->
-            <div id="pabili-details-container" class="hidden space-y-4">
-                <div class="relative shadow-sm">
-                    <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-clipboard-list"></i></div>
-                    <textarea id="pabili-list" rows="2" placeholder="Shopping List (e.g. 1 Whole Chicken, 1.5L Coke)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold resize-none"></textarea>
+            <!-- 🟢 DYNAMIC SERVICE DETAILS (Hidden by default) -->
+            <div id="service-details-container" class="hidden space-y-4">
+                
+                <!-- Pabili Fields -->
+                <div id="pabili-fields" class="hidden space-y-4">
+                    <div class="relative shadow-sm">
+                        <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-clipboard-list"></i></div>
+                        <textarea id="pabili-list" rows="2" placeholder="Shopping List (e.g. 1 Whole Chicken, 1.5L Coke)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold resize-none"></textarea>
+                    </div>
+                    <div class="relative shadow-sm">
+                        <div class="absolute left-4 top-4 text-green-800 font-bold">₱</div>
+                        <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+                    </div>
                 </div>
-                <div class="relative shadow-sm">
-                    <div class="absolute left-4 top-4 text-green-800 font-bold">₱</div>
-                    <input type="number" id="pabili-budget" placeholder="Estimated Pabili Budget" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+
+                <!-- Papickup Fields -->
+                <div id="papickup-fields" class="hidden space-y-4">
+                    <div class="relative shadow-sm">
+                        <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-box-open"></i></div>
+                        <textarea id="papickup-desc" rows="2" placeholder="Item Description (e.g. 1 medium box, approx 5kg)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold resize-none"></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -98,7 +110,6 @@
             <div id="fare-estimate" class="hidden bg-[#F5E6D3] border border-[#d4aa7c] p-4 rounded-xl flex justify-between items-center mt-4 shadow-sm relative overflow-hidden">
                 <div>
                     <div class="text-xs text-[#78350f] font-bold uppercase tracking-wider">Est. Total Fare</div>
-                    <!-- This badge only appears during 10PM - 6AM -->
                     <div id="night-diff-badge" class="hidden mt-1 bg-blue-900/10 border border-blue-900/20 text-blue-800 text-[9px] font-extrabold px-2 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
                         <i class="fa-solid fa-moon"></i> +10% Night Rate
                     </div>
@@ -351,34 +362,32 @@
             }
         });
 
-        function toggleBudgetContainer(service) {
-            const pabiliContainer = document.getElementById('pabili-details-container');
-            if (service && (service.toLowerCase().includes('pabili') || service.toLowerCase().includes('buy'))) {
-                pabiliContainer.classList.remove('hidden');
+        function toggleServiceDetails(service) {
+            const container = document.getElementById('service-details-container');
+            const pabiliFields = document.getElementById('pabili-fields');
+            const papickupFields = document.getElementById('papickup-fields');
+            
+            // Reset everything first
+            pabiliFields.classList.add('hidden');
+            papickupFields.classList.add('hidden');
+            document.getElementById('pabili-budget').value = '';
+            document.getElementById('pabili-list').value = '';
+            document.getElementById('papickup-desc').value = '';
+
+            if (service) {
+                const s = service.toLowerCase();
+                if (s.includes('pabili') || s.includes('buy')) {
+                    container.classList.remove('hidden');
+                    pabiliFields.classList.remove('hidden');
+                } else if (s.includes('pickup') || s.includes('padala') || s.includes('deliver') || s.includes('box')) {
+                    container.classList.remove('hidden');
+                    papickupFields.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden'); // E.g., Pasundo doesn't need details
+                }
             } else {
-                pabiliContainer.classList.add('hidden');
-                document.getElementById('pabili-budget').value = '';
-                document.getElementById('pabili-list').value = ''; // Clear the list too
+                container.classList.add('hidden');
             }
-        }
-        function selectService(service) {
-            currentService = service;
-            document.querySelectorAll('.service-btn').forEach(btn => {
-                btn.classList.remove('active', 'text-white');
-                btn.classList.add('text-[#78350f]');
-            });
-            
-            let safeId = `btn-${service.replace(/[^a-zA-Z0-9]/g, '')}`;
-            const activeBtn = document.getElementById(safeId);
-            if (activeBtn) {
-                activeBtn.classList.add('active', 'text-white');
-                activeBtn.classList.remove('text-[#78350f]');
-            }
-            
-            toggleBudgetContainer(service);
-            document.getElementById('fare-estimate').classList.add('hidden');
-            document.getElementById('submit-btn').classList.remove('hidden');
-            document.getElementById('confirm-btn').classList.add('hidden');
         }
 
         // 🟢 AUTOMATIC TIME-BASED NIGHT DIFFERENTIAL
@@ -433,7 +442,8 @@
                 passenger_name: currentPassenger, 
                 pickup_location: pickupLocation,
                 dropoff_location: dropoffLocation,
-                // 🟢 Automatically tags the database if the clock triggered the night rate
+                pabili_list: document.getElementById('pabili-list').value || "", 
+                item_description: document.getElementById('papickup-desc').value || "", // 🟢 Send item desc to DB
                 service_type: isNightRateApplied ? currentService + " (Night Rate)" : currentService, 
                 fare: document.getElementById('fare-amount').innerText 
             };
