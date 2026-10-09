@@ -591,6 +591,24 @@
                         `;
                     }
 
+                    // 🟢 CHECK FOR PABILI OR PAPICKUP LIST TO SHOW PASSENGER
+                    let extraDetailsHtml = "";
+                    if (ride.pabili_list && ride.pabili_list.trim() !== "") {
+                        extraDetailsHtml = `
+                            <div class="mt-3 pt-3 border-t border-dashed border-[#d4aa7c]">
+                                <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1.5"><i class="fa-solid fa-clipboard-list mr-1"></i> Shopping List:</p>
+                                <p class="text-[#0f172a] text-xs font-bold bg-white/60 p-2.5 rounded-lg border border-[#c99c6b] shadow-inner whitespace-pre-wrap">${ride.pabili_list}</p>
+                            </div>
+                        `;
+                    } else if (ride.item_description && ride.item_description.trim() !== "") {
+                        extraDetailsHtml = `
+                            <div class="mt-3 pt-3 border-t border-dashed border-[#d4aa7c]">
+                                <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1.5"><i class="fa-solid fa-box-open mr-1"></i> Item Description:</p>
+                                <p class="text-[#0f172a] text-xs font-bold bg-white/60 p-2.5 rounded-lg border border-[#c99c6b] shadow-inner whitespace-pre-wrap">${ride.item_description}</p>
+                            </div>
+                        `;
+                    }
+
                     rideBox.innerHTML = `
                         <div class="flex justify-between items-center mb-4">
                             <strong class="text-[#78350f] text-sm tracking-wider uppercase font-extrabold">${ride.service_type || 'Passenger'}</strong>
@@ -598,6 +616,9 @@
                         </div>
                         <p class="text-slate-700 text-sm mb-1 font-medium"><strong class="text-[#0f172a]">Pick-up:</strong> ${ride.pickup_location}</p>
                         <p class="text-slate-700 text-sm font-medium"><strong class="text-[#0f172a]">Drop-off:</strong> ${ride.dropoff_location}</p>
+                        
+                        ${extraDetailsHtml}
+                        
                         <hr class="border-0 border-t border-dashed border-[#d4aa7c] my-3">
                         ${statusHtml}
                     `;
