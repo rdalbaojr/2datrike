@@ -19,9 +19,10 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
 
-    <div class="w-full max-w-[1000px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+    <!-- 🟢 THE UNIFIED SINGLE CARD WRAPPER -->
+    <div class="w-full max-w-[1100px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-10 shadow-2xl relative overflow-hidden">
         
-        <!-- 🟢 UPGRADED SECURE LOCK OVERLAY -->
+        <!-- SECURE LOCK OVERLAY -->
         <div id="lockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
             <i class="fa-solid fa-lock text-5xl text-[#78350f] mb-4"></i>
             <h3 class="text-2xl font-extrabold text-[#0f172a] mb-2 tracking-tight">Dashboard Secured</h3>
@@ -36,150 +37,158 @@
             </form>
         </div>
 
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-5 border-b border-[#d4aa7c]/50 mb-6 relative gap-4">
-            <button onclick="lockDashboard()" class="absolute top-0 right-0 text-white bg-red-800 px-4 py-2 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-sm">
-                <i class="fa-solid fa-power-off"></i> Lock System
+        <!-- ================= HEADER SECTION ================= -->
+        <div class="relative flex flex-col items-center mb-10">
+            <!-- Corner Action Buttons -->
+            <button onclick="lockDashboard()" class="absolute left-0 top-0 text-white bg-red-800 px-4 py-2.5 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-xs sm:text-sm">
+                <i class="fa-solid fa-power-off"></i> <span class="hidden sm:inline">Lock System</span>
             </button>
-            <div>
-                <div class="text-center mb-8 relative">
-    
-    <div class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
-        <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
-    </div>
+            <button onclick="logout()" class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] hover:bg-[#d4aa7c] transition shadow-sm" title="Logout">
+                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
+            </button>
 
-    <div class="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
-        <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
-    </div>
-
-    <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-2">Admin Portal</h1>
-    
-    
-</div>
-
-            <!-- Global Payout Branch Selector -->
-            <div class="flex items-center gap-2 bg-[#F5E6D3] px-4 py-2.5 rounded-2xl border border-[#d4aa7c] shadow-sm">
-                <label for="branchSelector" class="text-xs font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i> Payout View:</label>
-                <select id="branchSelector" onchange="loadPayoutSummary()" class="bg-[#E3BC90] border border-[#c99c6b] text-[#0f172a] text-xs font-extrabold rounded-xl px-3 py-1.5 outline-none cursor-pointer">
-                    <option value="All">🌐 All Branches (Master)</option>
-                </select>
+            <!-- Centered Circular Logo -->
+            <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
+                <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
+            <h1 class="text-3xl font-extrabold text-[#0f172a] tracking-tight leading-none mb-1">Admin Portal</h1>
+            <p class="text-xs font-bold text-[#78350f] uppercase tracking-widest">Master Command Center</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- ================= UNIFIED CONTENT CONTAINER ================= -->
+        <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-10">
             
-            <!-- 🟢 LEFT COLUMN: 5-SLOT BRANCH CONFIGURATOR -->
-            <div class="lg:col-span-1">
-                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-3xl p-6 shadow-sm">
-                    <h2 class="text-xl font-extrabold text-[#0f172a] mb-5 flex items-center gap-2">
-                        <i class="fa-solid fa-sliders text-[#78350f]"></i> Branch Configurator
-                    </h2>
-                    
-                    <form onsubmit="saveBranchConfig(event)" class="flex flex-col gap-5">
-                        
-                        <!-- 1. SELECT TODA -->
-                        <div class="bg-white p-3 rounded-2xl border border-[#c99c6b] shadow-sm">
-                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-1 block">1. Select Branch to Edit</label>
-                            <select id="config-branch-select" onchange="loadBranchConfig()" required class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2.5 text-sm font-bold text-[#0f172a] outline-none cursor-pointer focus:border-[#78350f]">
+            <!-- 🟢 SECTION 1: BRANCH CONFIGURATOR -->
+            <form onsubmit="saveBranchConfig(event)" class="w-full">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#c99c6b]/50">
+                    <div class="w-10 h-10 bg-[#78350f] rounded-xl flex items-center justify-center shadow-md">
+                        <i class="fa-solid fa-sliders text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-extrabold text-[#0f172a] leading-none">Branch Configurator</h2>
+                        <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Manage rules & pricing per TODA</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Left: Select & Rev Rules -->
+                    <div class="flex flex-col gap-6">
+                        <div>
+                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">1. Select Branch to Edit</label>
+                            <select id="config-branch-select" onchange="loadBranchConfig()" required class="w-full bg-white border border-[#c99c6b] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] shadow-sm outline-none cursor-pointer focus:border-[#78350f]">
                                 <option value="">-- Choose TODA --</option>
                             </select>
                         </div>
-
-                        <!-- 2. THE 5 BLANK SERVICE SLOTS -->
+                        
                         <div>
-                            <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-[#78350f] mb-2 block">2. Custom Services & Fares</h3>
-                            <div class="flex flex-col gap-2">
-                                <div class="flex gap-2">
-                                    <input type="text" id="s1-name" placeholder="Service 1" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                                    <input type="number" id="s1-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
+                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">3. Branch Revenue Rules</label>
+                            <div class="bg-white p-4 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-4">
+                                <div class="flex justify-between items-center bg-[#F5E6D3] px-3 py-2 rounded-xl">
+                                    <label class="text-xs font-extrabold text-[#0f172a]">Platform %</label>
+                                    <input type="number" id="cfg-plat" step="0.1" placeholder="17" class="w-20 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
                                 </div>
-                                <div class="flex gap-2">
-                                    <input type="text" id="s2-name" placeholder="Service 2" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                                    <input type="number" id="s2-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
-                                </div>
-                                <div class="flex gap-2">
-                                    <input type="text" id="s3-name" placeholder="Service 3" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                                    <input type="number" id="s3-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
-                                </div>
-                                <div class="flex gap-2">
-                                    <input type="text" id="s4-name" placeholder="Service 4 (Optional)" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                                    <input type="number" id="s4-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
-                                </div>
-                                <div class="flex gap-2">
-                                    <input type="text" id="s5-name" placeholder="Service 5 (Optional)" class="w-[60%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-xs font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                                    <input type="number" id="s5-price" placeholder="₱0" class="w-[40%] bg-white border border-[#c99c6b] rounded-xl py-2 px-3 text-sm font-extrabold text-[#0f172a] text-right outline-none focus:border-[#78350f]">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 3. REVENUE SHARING -->
-                        <div>
-                            <h3 class="text-[10px] font-extrabold uppercase tracking-widest text-[#78350f] mb-2 block">3. Branch Revenue Rules</h3>
-                            <div class="bg-white p-3 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-3">
-                                <div class="flex justify-between items-center">
-                                    <label class="text-xs font-bold text-[#78350f]">Platform %</label>
-                                    <input type="number" id="cfg-plat" step="0.1" placeholder="17" class="w-20 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1 px-2 text-sm font-extrabold text-right outline-none focus:border-[#78350f]">
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <label class="text-xs font-bold text-[#78350f]">TODA %</label>
-                                    <input type="number" id="cfg-toda" step="0.1" placeholder="3" class="w-20 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1 px-2 text-sm font-extrabold text-right outline-none focus:border-[#78350f]">
+                                <div class="flex justify-between items-center bg-[#F5E6D3] px-3 py-2 rounded-xl">
+                                    <label class="text-xs font-extrabold text-[#0f172a]">TODA %</label>
+                                    <input type="number" id="cfg-toda" step="0.1" placeholder="3" class="w-20 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
                                 </div>
                                 <div class="pt-2 border-t border-[#d4aa7c]/50">
-                                    <label class="text-[9px] font-extrabold uppercase text-[#78350f] block mb-1">TODA Payout Account</label>
+                                    <label class="text-[9px] font-extrabold uppercase text-[#78350f] block mb-2">TODA Payout Account</label>
                                     <div class="flex gap-2">
-                                        <select id="cfg-bank" class="w-1/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-2 text-xs font-bold outline-none cursor-pointer focus:border-[#78350f]">
+                                        <select id="cfg-bank" class="w-1/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer">
                                             <option value="GCash">GCash</option>
                                             <option value="Maya">Maya</option>
                                         </select>
-                                        <input type="text" id="cfg-acct" placeholder="Account #" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-1.5 px-3 text-xs font-bold outline-none focus:border-[#78350f]">
+                                        <input type="text" id="cfg-acct" placeholder="Account #" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2 text-xs font-bold outline-none">
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <button type="submit" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-md transition text-sm mt-2 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-floppy-disk"></i> Save Branch Config
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- RIGHT COLUMN: PAYOUT TABLE -->
-            <div class="lg:col-span-2">
-                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-3xl p-6 shadow-sm h-full">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                        <div>
-                            <h2 class="text-xl font-extrabold text-[#0f172a]">Daily Payouts</h2>
-                            <p class="text-xs text-[#78350f] font-bold mt-1">Real-time collective settlement</p>
+                    <!-- Right: Custom Services -->
+                    <div>
+                        <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">2. Custom Services & Fares</label>
+                        <div class="bg-white p-4 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-3">
+                            <div class="flex gap-2">
+                                <input type="text" id="s1-name" placeholder="Service 1" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s1-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="s2-name" placeholder="Service 2" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s2-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="s3-name" placeholder="Service 3" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s3-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="s4-name" placeholder="Service 4 (Optional)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s4-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                            </div>
+                            <div class="flex gap-2">
+                                <input type="text" id="s5-name" placeholder="Service 5 (Optional)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s5-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                            </div>
                         </div>
-                        <a id="exportBizLinkBtn" href="/api/admin/generate-bizlink-payout?branch=All" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-2 shrink-0">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-4 rounded-xl shadow-md transition text-sm mt-6 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Branch Config
+                </button>
+            </form>
+
+            <hr class="border-[#c99c6b]">
+
+            <!-- 🟢 SECTION 2: PAYOUT TABLE -->
+            <div class="w-full">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-[#78350f] rounded-xl flex items-center justify-center shadow-md">
+                            <i class="fa-solid fa-file-invoice-dollar text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-extrabold text-[#0f172a] leading-none">Daily Payouts</h2>
+                            <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Real-time collective settlement</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                        <div class="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot"></i> View:</label>
+                            <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer w-full">
+                                <option value="All">🌐 All Branches (Master)</option>
+                            </select>
+                        </div>
+                        <a id="exportBizLinkBtn" href="/api/admin/generate-bizlink-payout?branch=All" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center justify-center gap-2 shrink-0">
                             <i class="fa-solid fa-download"></i> Export for BizLink
                         </a>
                     </div>
+                </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-[#c99c6b] table-scroll pb-2">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-[#E3BC90]/50">
-                                <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
-                                    <th class="py-3 px-4">Entity / Driver</th>
-                                    <th class="py-3 px-4">Provider</th>
-                                    <th class="py-3 px-4">Account Number</th>
-                                    <th class="py-3 px-4 text-center">Rides</th>
-                                    <th class="py-3 px-4 text-right">Gross</th>
-                                    <th class="py-3 px-4 text-right text-[#175d33]">Net (80%)</th>
-                                    <th id="toda-label-3" class="py-3 px-4 text-right">LOCAL TODA</th>
-                                    <th class="py-3 px-4 text-right">Platform</th>
-                                </tr>
-                            </thead>
-                            <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a] bg-white/40">
-                                <tr>
-                                    <td colspan="8" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="overflow-x-auto rounded-2xl border border-[#c99c6b] table-scroll bg-white shadow-sm">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-[#F5E6D3]">
+                            <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
+                                <th class="py-4 px-4">Entity / Driver</th>
+                                <th class="py-4 px-4">Provider</th>
+                                <th class="py-4 px-4">Account Number</th>
+                                <th class="py-4 px-4 text-center">Rides</th>
+                                <th class="py-4 px-4 text-right">Gross</th>
+                                <th class="py-4 px-4 text-right text-[#175d33]">Net (80%)</th>
+                                <th id="toda-label-3" class="py-4 px-4 text-right">LOCAL TODA</th>
+                                <th class="py-4 px-4 text-right">Platform</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a]">
+                            <tr>
+                                <td colspan="8" class="py-8 text-center italic text-[#78350f]/70"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading payouts data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
+            
         </div>
     </div>
 
@@ -194,7 +203,6 @@
         async function handleMasterLogin(event) {
             event.preventDefault();
             
-            // Extract inputs and vigorously clear spaces
             const rawU = document.getElementById('masterUser').value || "";
             const rawP = document.getElementById('masterPass').value || "";
             
@@ -208,15 +216,13 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
 
             setTimeout(() => {
-                // Completely Standalone Verification (No Server Needed)
                 if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
-                    document.cookie = "admin_session=masterom_active; path=/; max-age=86400"; // Stay logged in for 24 hours
+                    document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
                     const overlay = document.getElementById('lockOverlay');
                     overlay.style.transition = "opacity 0.3s ease";
                     overlay.style.opacity = "0";
                     setTimeout(() => { overlay.style.display = 'none'; }, 300);
                 } else {
-                    // This alert tells you exactly what invisible characters got accidentally typed!
                     alert(`❌ Invalid credentials.\nDetected Username: "${u}"\nDetected Password: "${p}"`);
                 }
                 btn.innerHTML = originalText;
@@ -233,13 +239,12 @@
             document.getElementById('masterPass').value = "";
         }
 
-       window.onload = async function() {
+        window.onload = async function() {
             if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
             }
 
             try {
-                // 🟢 ADDED CACHE-BUSTER HERE
                 const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
                 if (locRes.ok) {
                     const data = await locRes.json();
@@ -278,7 +283,6 @@
             }
 
             try {
-                // 🟢 ADDED CACHE-BUSTER HERE TOO
                 const response = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
                 if (response.ok) {
                     const config = await response.json();
@@ -297,7 +301,6 @@
             loadPayoutSummary();
         };
 
-        // 🟢 FETCH BRANCH CONFIGURATION (5 SLOTS)
         async function loadBranchConfig() {
             const selectedToda = document.getElementById('config-branch-select').value;
             if (!selectedToda) {
@@ -329,7 +332,6 @@
             }
         }
 
-        // 🟢 SAVE BRANCH CONFIGURATION (5 SLOTS)
         async function saveBranchConfig(event) {
             event.preventDefault();
             const selectedToda = document.getElementById('config-branch-select').value;
@@ -365,7 +367,7 @@
 
                 if (response.ok) {
                     alert(`✅ Branch Configuration successfully saved for ${selectedToda}!`);
-                    loadPayoutSummary(); // Refresh payouts instantly to reflect any new Rev Share rules
+                    loadPayoutSummary(); 
                 } else {
                     alert("❌ Failed to save configuration.");
                 }
