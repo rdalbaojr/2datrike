@@ -589,16 +589,6 @@ def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_
     db.commit()
     db.refresh(ride)
     return {"message": "Ride accepted successfully", "id": ride.id}
-    # 🟢 Safely attach optional details if they exist on the model
-    if hasattr(new_ride, 'pabili_list'):
-        new_ride.pabili_list = request.pabili_list
-    if hasattr(new_ride, 'item_description'):
-        new_ride.item_description = request.item_description
-
-    db.add(new_ride)
-    db.commit()
-    db.refresh(new_ride)
-    return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
 
 @app.post("/complete-ride/{ride_id}")
 def complete_ride(ride_id: int, db: Session = Depends(get_db)):
