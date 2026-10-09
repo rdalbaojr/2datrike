@@ -179,8 +179,7 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
-        db.execute(text("ALTER TABLE ride_requests ADD COLUMN pabili_list TEXT"))
-        db.execute(text("ALTER TABLE ride_requests ADD COLUMN item_description TEXT"))
+        
         db.commit()
     except Exception:
         db.rollback()
@@ -189,6 +188,8 @@ def initialize_config():
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN rating INTEGER"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN branch VARCHAR DEFAULT 'Main'"))
         db.execute(text("ALTER TABLE ride_requests ADD COLUMN local_ref VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN pabili_list TEXT"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN item_description TEXT"))
         db.execute(text("ALTER TABLE users ADD COLUMN plate_number VARCHAR DEFAULT ''"))
         db.commit()
     except Exception:
@@ -570,10 +571,16 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         dropoff_location=request.dropoff_location,
         service_type=request.service_type,
         fare=request.fare,
+        pabili_list=request.pabili_list,
+        item_description=request.item_description,
         status="pending",
         branch=f"{city_str} - {brgy_str} ({toda_str})",
         local_ref=origin_ref
     )
+    db.add(new_ride)
+    db.commit()
+    db.refresh(new_ride)
+    return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
     
     # 🟢 Safely attach optional details if they exist on the model
     if hasattr(new_ride, 'pabili_list'):
