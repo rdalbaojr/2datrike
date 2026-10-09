@@ -690,11 +690,14 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             display_account = branch_config.katoda_account if branch_config.katoda_account else "Not Configured"
     else:
         config = db.query(SystemConfig).first()
-        if config:
-            display_bank = config.katoda_bank if config.katoda_bank else "GCash"
-            display_account = config.katoda_account if config.katoda_account else "Not Configured"
+        # 🟢 Fallback to the configured TodaConfig if SystemConfig is empty
+        first_toda = db.query(TodaConfig).filter(TodaConfig.katoda_account != "").first()
+        
+        display_bank = (config.katoda_bank if config and config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
+        display_account = (config.katoda_account if config and config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
 
     driver_pct = 1.0 - (platform_pct + katoda_pct)
+    # ... rest of get_payout_summary remains unchanged
 
     payouts = {}
     clean_branch = branch.strip()
@@ -786,6 +789,12 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
             katoda_pct = branch_config.katoda_share / 100
             katoda_bank = branch_config.katoda_bank
             katoda_account = branch_config.katoda_account
+    else:
+        # 🟢 Use the active TodaConfig account for the master export batch
+        first_toda = db.query(TodaConfig).filter(TodaConfig.katoda_account != "").first()
+        if first_toda and first_toda.katoda_account:
+            katoda_bank = first_toda.katoda_bank
+            katoda_account = first_toda.katoda_account
 
     driver_pct = 1.0 - (platform_pct + katoda_pct)
 
