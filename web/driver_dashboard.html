@@ -491,7 +491,8 @@ if (ride.pabili_list && ride.pabili_list.trim() !== "") {
                 // --- 2. ACTIVE RIDES (ACCEPTED/COMPLETED) ---
                 const activeRides = allRides.filter(ride => 
                     (ride.status === 'accepted' || ride.status === 'completed') && 
-                    ride.driver_name === currentDriverName
+                    ride.driver_name &&
+                    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
                 );
 
                 if (activeRides.length === 0) {
@@ -519,6 +520,7 @@ if (ride.pabili_list && ride.pabili_list.trim() !== "") {
                                 </div>
                             `;
                         }
+
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
                             actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
@@ -547,10 +549,22 @@ if (ride.pabili_list && ride.pabili_list.trim() !== "") {
                                 </div>
                                 <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
                             </div>
+
+                            <!-- 🟢 Pick-up and Drop-off Details for Active Driver -->
+                            <div class="bg-white/50 rounded-lg p-3 mb-3 border border-[#d4aa7c] space-y-1.5">
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
+                                </p>
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
+                                </p>
+                            </div>
                             
-                            ${activePabiliListHtml}
+                            ${activeExtraDetailsHtml}
                             
-                            <div class="flex gap-3 mb-3 mt-4">
+                            <div class="flex gap-3 mb-3 mt-3">
                                 <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
                                     <i class="fa-solid fa-phone"></i> Call
                                 </a>
