@@ -4,42 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>2DA - Help & Support</title>
-    
-    <!-- 🟢 FAVICON & HOME SCREEN ICONS -->
-    <link rel="icon" type="image/png" href="2da.png">
-    <link rel="apple-touch-icon" href="2da.png">
-
-    <!-- 🟢 SOCIAL MEDIA SHARING TAGS -->
-    <meta property="og:title" content="2DA App - Support Center">
-    <meta property="og:description" content="Get help with the 2DA App, read our FAQs, and contact our support team.">
-    <meta property="og:image" content="2da.png">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>body { font-family: 'Plus Jakarta Sans', sans-serif; } ::-webkit-scrollbar { display: none; }</style>
 </head>
-<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center py-10 px-4 antialiased">
+<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased">
 
-    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 pt-10 shadow-2xl relative overflow-hidden">
+    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative">
         
-        <!-- 🟢 CENTERED LOGO HEADER WITH BACK BUTTON -->
-        <div class="flex flex-col items-center text-center mb-6 relative">
-            <!-- Back Button on the top left -->
-            <button onclick="window.history.back()" class="absolute left-0 top-0 w-9 h-9 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] text-[#78350f] hover:bg-[#d4aa7c] transition shadow-sm" title="Go Back">
-                <i class="fa-solid fa-arrow-left text-xs"></i>
+        <!-- Header -->
+        <div class="flex items-center gap-4 mb-6 border-b border-[#c99c6b] pb-4">
+            <button onclick="window.history.back()" class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] text-[#78350f] hover:bg-[#d4aa7c] transition shadow-sm">
+                <i class="fa-solid fa-arrow-left"></i>
             </button>
-
-            <!-- Centered Circular Logo with Padding -->
-            <div class="text-center mb-8 relative">
-    
-    <div class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()" title="Logout">
-        <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
-    </div>
-
-    <div class="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
-        <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
-    </div>
+            <div>
+                <h1 class="text-2xl font-extrabold text-[#0f172a] tracking-tight">Help & FAQ</h1>
+                <p class="text-xs text-[#78350f] font-bold mt-1">2DA Support Center</p>
+            </div>
+        </div>
 
         <!-- FAQ Section -->
         <div class="space-y-4 mb-8">
