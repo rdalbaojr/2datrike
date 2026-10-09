@@ -78,7 +78,23 @@ class RideRequest(Base):
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
+    
+    # 🟢 ADD THESE TWO COLUMNS TO SAVE SHOPPING LISTS & ITEM DESCRIPTIONS
+    pabili_list = Column(Text, nullable=True)
+    item_description = Column(Text, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.now)
+
+class RideRequestCreate(BaseModel):
+    passenger_name: str
+    pickup_location: str
+    dropoff_location: str
+    service_type: str = "PASSENGER"
+    fare: str = "₱0.00"
+    
+    # 🟢 ALLOW THESE FIELDS IN THE INCOMING REQUEST JSON
+    pabili_list: Optional[str] = None
+    item_description: Optional[str] = None
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -554,6 +570,8 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         dropoff_location=request.dropoff_location,
         service_type=request.service_type,
         fare=request.fare,
+        pabili_list=request.pabili_list,                 # 🟢 Saved here
+        item_description=request.item_description,       # 🟢 Saved here
         status="pending",
         branch=f"{city_str} - {brgy_str} ({toda_str})",
         local_ref=origin_ref
@@ -562,16 +580,6 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
-
-@app.post("/accept-ride/{ride_id}")
-def accept_ride(ride_id: int, request: AcceptRideSchema, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride: raise HTTPException(status_code=404, detail="Ride not found")
-    ride.status = "accepted"
-    ride.driver_name = sanitize_name(request.driver_name)
-    db.commit()
-    db.refresh(ride)
-    return {"message": "Ride accepted successfully!", "ride_id": ride.id}
 
 @app.post("/complete-ride/{ride_id}")
 def complete_ride(ride_id: int, db: Session = Depends(get_db)):
@@ -937,7 +945,9 @@ def get_pending_rides(db: Session = Depends(get_db)):
             "passenger_phone": pass_phone, "driver_phone": drv_phone, 
             "driver_toda_number": drv_toda_num, 
             "branch": r.branch,
-            "local_ref": r.local_ref if r.local_ref else "N/A"
+            "local_ref": r.local_ref if r.local_ref else "N/A",
+            "pabili_list": r.pabili_list if r.pabili_list else "",             # 🟢 Returned to frontend
+            "item_description": r.item_description if r.item_description else "" # 🟢 Returned to frontend
         })
     return results
 
@@ -1122,30 +1132,28 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
 
 @app.get("/api/driver/shift/{driver_name}")
 def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
-    clean_name = sanitize_name(driver_name)
-    driver = db.query(User).filter(
-        (User.full_name == clean_name) | (User.username == clean_name),
-        User.role == 'driver'
-    ).first()
+    clean_name = sanitize_name(driver_name).lower()
+    
+    # Fetch all completed/paid rides and match robustly in python memory
+    all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    rides = []
+    for r in all_rides:
+        if r.driver_name and sanitize_name(r.driver_name).lower() == clean_name:
+            rides.append(r)
 
-    if not driver:
-        raise HTTPException(status_code=404, detail="Driver not found")
-
-    # 1. Get Rev Share from TODA config (Defaults to 17% and 3%)
     platform_pct = 0.17
     toda_pct = 0.03
 
-    if driver.toda_name:
+    driver = db.query(User).filter(
+        (User.full_name.ilike(f"%{clean_name}%")) | (User.username.ilike(f"%{clean_name}%")),
+        User.role == 'driver'
+    ).first()
+
+    if driver and driver.toda_name:
         toda_config = db.query(TodaConfig).filter(TodaConfig.toda_name == driver.toda_name.upper()).first()
         if toda_config:
             platform_pct = toda_config.platform_share / 100
             toda_pct = toda_config.katoda_share / 100
-
-    # 2. Get Completed/Paid Rides for this driver
-    rides = db.query(RideRequest).filter(
-        RideRequest.driver_name.ilike(f"%{clean_name}%"),
-        RideRequest.status.in_(["completed", "paid"])
-    ).all()
 
     total_gross = 0.0
     ride_counts = {}
@@ -1159,7 +1167,6 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
         except ValueError:
             continue
 
-    # 3. Calculate exact peso splits
     platform_cut = total_gross * platform_pct
     toda_cut = total_gross * toda_pct
     net_earnings = total_gross - platform_cut - toda_cut
@@ -1173,7 +1180,6 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
         "net": net_earnings,
         "breakdown": breakdown
     }
-
 # ==========================================
 # 7. MOUNT WEB FOLDER & START SERVER
 # ==========================================
