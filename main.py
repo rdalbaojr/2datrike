@@ -951,8 +951,8 @@ def get_pending_rides(db: Session = Depends(get_db)):
             "driver_toda_number": drv_toda_num, 
             "branch": r.branch,
             "local_ref": r.local_ref if r.local_ref else "N/A",
-            "pabili_list": r.pabili_list if r.pabili_list else "",             # 🟢 Returned to frontend
-            "item_description": r.item_description if r.item_description else "" # 🟢 Returned to frontend
+            "pabili_list": getattr(r, 'pabili_list', "") or "",
+            "item_description": getattr(r, 'item_description', "") or ""
         })
     return results
 
