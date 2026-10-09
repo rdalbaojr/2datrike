@@ -352,15 +352,15 @@
         });
 
         function toggleBudgetContainer(service) {
-            const pabiliContainer = document.getElementById('pabili-budget-container');
+            const pabiliContainer = document.getElementById('pabili-details-container');
             if (service && (service.toLowerCase().includes('pabili') || service.toLowerCase().includes('buy'))) {
                 pabiliContainer.classList.remove('hidden');
             } else {
                 pabiliContainer.classList.add('hidden');
                 document.getElementById('pabili-budget').value = '';
+                document.getElementById('pabili-list').value = ''; // Clear the list too
             }
         }
-
         function selectService(service) {
             currentService = service;
             document.querySelectorAll('.service-btn').forEach(btn => {
