@@ -597,18 +597,23 @@ if (ride.pabili_list && ride.pabili_list.trim() !== "") {
         // Action Functions
         // ==========================================
         async function acceptRide(rideId) {
-            try {
-                const response = await fetch(`/accept-ride/${rideId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ driver_name: currentDriverName })
-                });
-                if (response.ok) loadDashboardRides(); 
-                else alert("Error: Could not accept the ride. It may have already been taken.");
-            } catch (error) {
-                alert("Network error. Please try again.");
-            }
+    try {
+        const response = await fetch(`/accept-ride/${rideId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ driver_name: currentDriverName || "Driver" })
+        });
+        
+        if (response.ok) {
+            loadDashboardRides();
+        } else {
+            const errData = await response.json().catch(() => ({}));
+            alert(errData.detail || "Error: Could not accept the ride.");
         }
+    } catch (error) {
+        alert("Network error. Please try again.");
+    }
+}
 
         async function completeRide(rideId) {
             try {
