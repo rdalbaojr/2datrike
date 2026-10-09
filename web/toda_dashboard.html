@@ -47,27 +47,23 @@
     <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
         <!-- 🟢 SECURE TODA LOGIN OVERLAY (BULLETPROOF FORM) -->
-       <div id="todaLockOverlay" class="fixed inset-0 bg-[#C87F37] z-[100] flex items-center justify-center p-4">
-    
-    <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-8 max-w-[420px] w-full text-center shadow-2xl relative">
-        
-        <div class="w-24 h-24 bg-white rounded-full mx-auto flex items-center justify-center mb-4 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
-    <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
-        
-        <h3 class="text-2xl font-extrabold text-[#0f172a] mb-1 tracking-tight">TODA Admin Portal</h3>
-        <p class="text-xs font-semibold text-[#78350f] mb-6 leading-relaxed">Secure login required to access your chapter's command center.</p>
-        
-        <form onsubmit="event.preventDefault(); unlockTodaDashboard();" class="space-y-4">
-            <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3.5 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest shadow-inner">
-            <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3.5 text-sm font-bold text-[#0f172a] outline-none text-center shadow-inner">
+        <div id="todaLockOverlay" class="fixed inset-0 bg-[#E3BC90]/98 backdrop-blur-xl z-[100] flex flex-col items-center justify-center text-center p-6">
+            <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                <i class="fa-solid fa-users-gear text-3xl text-white"></i>
+            </div>
+            <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
+            <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
             
-            <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-4 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2">
-                <i class="fa-solid fa-lock"></i> Secure Login
-            </button>
-            <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
-        </form>
-    </div>
-</div>
+            <form onsubmit="event.preventDefault(); unlockTodaDashboard();" class="w-full max-w-[320px] flex flex-col gap-3">
+                <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                
+                <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                    <i class="fa-solid fa-lock"></i> Secure Login
+                </button>
+                <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
+            </form>
+        </div>
 
         <!-- 🟢 TODA MAIN DASHBOARD -->
         <div id="toda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-4">
