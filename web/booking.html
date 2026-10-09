@@ -73,16 +73,8 @@
 
         <!-- Routing Form -->
         <form id="booking-form" class="space-y-4">
-            <div class="relative shadow-sm">
-                <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-location-dot"></i></div>
-                <input type="text" id="pickup" required placeholder="Pick-up Location (Point A)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-            <div class="relative shadow-sm">
-                <div class="absolute left-4 top-4 text-rose-700"><i class="fa-solid fa-location-crosshairs"></i></div>
-                <input type="text" id="dropoff" required placeholder="Drop-off Location (Point B)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-
-            <!-- 🟢 DYNAMIC SERVICE DETAILS (Hidden by default) -->
+            
+            <!-- 🟢 DYNAMIC SERVICE DETAILS MOVED TO THE TOP -->
             <div id="service-details-container" class="hidden space-y-4">
                 
                 <!-- Pabili Fields -->
@@ -104,6 +96,16 @@
                         <textarea id="papickup-desc" rows="2" placeholder="Item Description (e.g. 1 medium box, approx 5kg)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold resize-none"></textarea>
                     </div>
                 </div>
+            </div>
+
+            <!-- 🟢 PERMANENT ROUTING FIELDS MOVED BELOW DETAILS -->
+            <div class="relative shadow-sm">
+                <div class="absolute left-4 top-4 text-[#78350f]"><i class="fa-solid fa-location-dot"></i></div>
+                <input type="text" id="pickup" required placeholder="Pick-up Location (Point A)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
+            </div>
+            <div class="relative shadow-sm">
+                <div class="absolute left-4 top-4 text-rose-700"><i class="fa-solid fa-location-crosshairs"></i></div>
+                <input type="text" id="dropoff" required placeholder="Drop-off Location (Point B)" class="input-field w-full border rounded-xl pl-10 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
             <!-- FARE DISPLAY WITH NIGHT BADGE -->
