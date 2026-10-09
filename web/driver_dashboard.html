@@ -501,17 +501,23 @@
                         
                         setupBackgroundChat(ride.id);
 
-                        // 🟢 CHECK FOR PABILI LIST IN ACTIVE MODE
-                        let activePabiliListHtml = "";
+                        // 🟢 CHECK FOR PABILI OR PAPICKUP LIST IN ACTIVE MODE
+                        let activeExtraDetailsHtml = "";
                         if (ride.pabili_list && ride.pabili_list.trim() !== "") {
-                            activePabiliListHtml = `
+                            activeExtraDetailsHtml = `
                                 <div class="bg-white/60 border border-[#d4aa7c] rounded-xl p-3 mb-3 shadow-inner">
                                     <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1"><i class="fa-solid fa-clipboard-list mr-1"></i> Items to Buy:</p>
                                     <p class="text-[#0f172a] text-xs font-bold whitespace-pre-wrap">${ride.pabili_list}</p>
                                 </div>
                             `;
+                        } else if (ride.item_description && ride.item_description.trim() !== "") {
+                            activeExtraDetailsHtml = `
+                                <div class="bg-white/60 border border-[#d4aa7c] rounded-xl p-3 mb-3 shadow-inner">
+                                    <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1"><i class="fa-solid fa-box-open mr-1"></i> Item to Pick-up:</p>
+                                    <p class="text-[#0f172a] text-xs font-bold whitespace-pre-wrap">${ride.item_description}</p>
+                                </div>
+                            `;
                         }
-
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
                             actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
