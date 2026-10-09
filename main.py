@@ -575,6 +575,20 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
     
+    @app.post("/accept-ride/{ride_id}")
+def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    if ride.status != "pending":
+        raise HTTPException(status_code=400, detail="Ride has already been accepted")
+
+    ride.driver_name = sanitize_name(data.driver_name)
+    ride.status = "accepted"
+    db.commit()
+    db.refresh(ride)
+    return {"message": "Ride accepted successfully", "id": ride.id}
     # 🟢 Safely attach optional details if they exist on the model
     if hasattr(new_ride, 'pabili_list'):
         new_ride.pabili_list = request.pabili_list
