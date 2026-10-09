@@ -215,6 +215,8 @@ class RideRequestCreate(BaseModel):
     dropoff_location: str
     service_type: str = "PASSENGER"
     fare: str = "₱0.00"
+    pabili_list: Optional[str] = ""
+    item_description: Optional[str] = ""
 
 class AcceptRideSchema(BaseModel):
     driver_name: str
@@ -576,19 +578,19 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
     
     @app.post("/accept-ride/{ride_id}")
-def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
+    def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
+        ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+        if not ride:
+            raise HTTPException(status_code=404, detail="Ride not found")
     
-    if ride.status != "pending":
-        raise HTTPException(status_code=400, detail="Ride has already been accepted")
+        if ride.status != "pending":
+            raise HTTPException(status_code=400, detail="Ride has already been accepted")
 
-    ride.driver_name = sanitize_name(data.driver_name)
-    ride.status = "accepted"
-    db.commit()
-    db.refresh(ride)
-    return {"message": "Ride accepted successfully", "id": ride.id}
+        ride.driver_name = sanitize_name(data.driver_name)
+        ride.status = "accepted"
+        db.commit()
+        db.refresh(ride)
+        return {"message": "Ride accepted successfully", "id": ride.id}
 
 @app.post("/complete-ride/{ride_id}")
 def complete_ride(ride_id: int, db: Session = Depends(get_db)):
