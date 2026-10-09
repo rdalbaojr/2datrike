@@ -85,15 +85,6 @@ class RideRequest(Base):
     
     created_at = Column(DateTime, default=datetime.now)
 
-class RideRequestCreate(BaseModel):
-    passenger_name: str
-    pickup_location: str
-    dropoff_location: str
-    service_type: str = "PASSENGER"
-    fare: str = "₱0.00"
-    pabili_list: Optional[str] = ""         # 🟢 Optional field
-    item_description: Optional[str] = ""    # 🟢 Optional field
-
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
     id = Column(Integer, primary_key=True, index=True)
@@ -561,7 +552,6 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         (User.full_name == clean_pass_name) | (User.username == clean_pass_name)
     ).first()
     
-    # 🟢 Safe fallbacks if profile isn't found immediately
     city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
@@ -574,8 +564,8 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         dropoff_location=request.dropoff_location,
         service_type=request.service_type,
         fare=request.fare,
-        pabili_list=request.pabili_list,
-        item_description=request.item_description,
+        pabili_list=getattr(request, 'pabili_list', "") or "",
+        item_description=getattr(request, 'item_description', "") or "",
         status="pending",
         branch=f"{city_str} - {brgy_str} ({toda_str})",
         local_ref=origin_ref
