@@ -587,7 +587,23 @@ def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_
     if ride.status != "pending":
         raise HTTPException(status_code=400, detail="Ride has already been accepted")
 
-    ride.driver_name = sanitize_name(data.driver_name)
+    clean_driver = sanitize_name(data.driver_name)
+    driver_user = db.query(User).filter(
+        (User.full_name == clean_driver) | (User.username == clean_driver),
+        User.role == "driver"
+    ).first()
+
+    # 🟢 Strict TODA boundary check
+    if driver_user and driver_user.toda_name:
+        driver_toda = driver_user.toda_name.strip().upper()
+        ride_branch = (ride.branch or "").upper()
+        if driver_toda not in ride_branch:
+            raise HTTPException(
+                status_code=403, 
+                detail=f"Boundary restriction: You belong to {driver_toda}. This order is for {ride.branch}."
+            )
+
+    ride.driver_name = clean_driver
     ride.status = "accepted"
     db.commit()
     db.refresh(ride)
