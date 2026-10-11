@@ -837,6 +837,34 @@
                 btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save & Switch Area';
             }
         }
+        async function loadAvailableTodaSuggestions() {
+    try {
+        const response = await fetch('/api/admin/locations');
+        if (response.ok) {
+            const locationMap = await response.json();
+            const dataList = document.getElementById('active-toda-list');
+            if (!dataList) return;
+            
+            dataList.innerHTML = '';
+            const allTodas = new Set();
+            
+            // Extract all unique TODA names across all barangays
+            Object.values(locationMap).forEach(todaArray => {
+                todaArray.forEach(t => {
+                    if (t && t !== "No TODA") allTodas.add(t.toUpperCase());
+                });
+            });
+
+            allTodas.forEach(todaName => {
+                const opt = document.createElement('option');
+                opt.value = todaName;
+                dataList.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.warn("Could not load dynamic TODA suggestions:", e);
+    }
+}
     </script>
     <!-- ==================== PASSENGER PROFILE & LOCATION MODAL ==================== -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
@@ -877,9 +905,29 @@
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Default Pickup / Landmark</label>
-                    <input type="text" id="prof-address" placeholder="e.g. Near 7-Eleven, Brixton" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
-                </div>
+                    <div>
+    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">
+        Local TODA Association
+    </label>
+    
+    <div class="relative">
+        <input 
+            type="text" 
+            id="prof-toda" 
+            list="active-toda-list"
+            required 
+            placeholder="TYPE ANY TODA (E.G. MAYTODA, BAMBAM, PINATUBO)" 
+            oninput="this.value = this.value.toUpperCase()"
+            class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3.5 text-sm font-black text-[#0f172a] outline-none focus:border-[#78350f] uppercase tracking-wider shadow-inner"
+        >
+        <!-- Browser automatically suggests registered TODAs as they type -->
+        <datalist id="active-toda-list"></datalist>
+    </div>
+
+    <p class="text-[10px] text-[#78350f]/80 font-semibold mt-1.5 leading-relaxed">
+        💡 Type any TODA name. It converts to <strong>UPPERCASE</strong> automatically to match local drivers on duty.
+    </p>
+</div>
 
                 <button type="submit" id="prof-submit-btn" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm cursor-pointer">
                     <i class="fa-solid fa-floppy-disk mr-1"></i> Save & Switch Area
