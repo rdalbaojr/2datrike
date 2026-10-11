@@ -59,10 +59,26 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-[22px] font-extrabold text-[#0f172a] tracking-tight">2DA App</h1>
-                <p class="text-xs text-[#78350f] font-bold mt-1"><i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse text-green-700"></i> <span id="welcome-name">Passenger</span></p>
+                <p class="text-xs text-[#78350f] font-bold mt-0.5">
+                    <i class="fa-solid fa-circle-dot text-[10px] mr-1 animate-pulse text-green-700"></i> 
+                    <span id="welcome-name">Passenger</span>
+                </p>
+                <!-- Clickable TODA Location Badge -->
+                <button type="button" onclick="openProfileModal()" class="mt-1.5 inline-flex items-center gap-1.5 bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] px-2.5 py-1 rounded-full text-[11px] font-extrabold text-[#78350f] transition shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-location-dot text-amber-700 text-[10px]"></i>
+                    <span id="display-passenger-toda">Loading TODA...</span>
+                    <i class="fa-solid fa-pen text-[9px] opacity-70 ml-0.5"></i>
+                </button>
             </div>
-            <div class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#d4aa7c] transition shadow-sm" onclick="logout()">
-                <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
+            
+            <!-- Profile Gear & Logout Buttons -->
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openProfileModal()" title="Edit Area & Profile" class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-[#ebd2b5] transition shadow-sm text-[#78350f]">
+                    <i class="fa-solid fa-user-gear text-sm"></i>
+                </button>
+                <div class="w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] cursor-pointer hover:bg-red-100 transition shadow-sm text-red-700" onclick="logout()" title="Log Out">
+                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                </div>
             </div>
         </div>
         <!-- 5-SLOT DYNAMIC SERVICE SELECTION -->
@@ -744,6 +760,132 @@
             messageContainer.innerHTML += messageHTML;
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
+        // ==========================================
+        // PASSENGER PROFILE & LOCATION CONTROLLER
+        // ==========================================
+        async function loadPassengerProfileBadge() {
+            if (!currentPassenger || currentPassenger === "Guest") return;
+            try {
+                const response = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const badge = document.getElementById('display-passenger-toda');
+                    if (badge) {
+                        const brgy = data.barangay || "Kapitolyo";
+                        const toda = data.toda_name || "KATODA";
+                        badge.innerText = `${brgy} (${toda})`;
+                    }
+                }
+            } catch (e) {
+                console.error("Could not load location badge:", e);
+            }
+        }
+
+        async function openProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            try {
+                const response = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('prof-barangay').value = data.barangay || "";
+                    document.getElementById('prof-toda').value = data.toda_name || "";
+                    document.getElementById('prof-whatsapp').value = data.whatsapp_number || "";
+                    document.getElementById('prof-address').value = data.address || "";
+                }
+            } catch (error) {
+                console.error("Error loading profile:", error);
+            }
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+            const btn = document.getElementById('prof-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Updating area...';
+            
+            const payload = {
+                display_name: currentPassenger,
+                barangay: document.getElementById('prof-barangay').value.trim(),
+                toda_name: document.getElementById('prof-toda').value.trim().toUpperCase(),
+                whatsapp_number: document.getElementById('prof-whatsapp').value.trim(),
+                address: document.getElementById('prof-address').value.trim(),
+                bank_name: "GCash",
+                gcash_account: ""
+            };
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    closeProfileModal();
+                    loadPassengerProfileBadge();
+                    // Reload services to reflect the newly selected TODA branch prices
+                    window.location.reload();
+                } else {
+                    alert("⚠️ Failed to update area. Please try again.");
+                }
+            } catch (error) {
+                alert("⚠️ Network error.");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save & Switch Area';
+            }
+        }
     </script>
+    <!-- ==================== PASSENGER PROFILE & LOCATION MODAL ==================== -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[420px] rounded-[24px] overflow-hidden shadow-2xl relative">
+            
+            <!-- Header -->
+            <div class="bg-[#78350f] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
+                <h3 class="font-bold flex items-center gap-2 text-lg">
+                    <i class="fa-solid fa-location-crosshairs"></i> Change Active Area / TODA
+                </h3>
+                <button onclick="closeProfileModal()" class="text-white/80 hover:text-white bg-white/10 w-8 h-8 rounded-full flex justify-center items-center transition hover:scale-110 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <!-- Form -->
+            <form id="profile-form" onsubmit="saveProfile(event)" class="p-5 space-y-4">
+                
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 text-xs text-[#78350f] font-semibold leading-relaxed">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    Traveling to another area? Update your Barangay & TODA here so nearby drivers can receive your booking.
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Current Barangay</label>
+                        <input type="text" id="prof-barangay" required placeholder="e.g. Kapitolyo" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3.5 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f] capitalize">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Local TODA</label>
+                        <input type="text" id="prof-toda" required placeholder="e.g. KATODA" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3.5 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f] uppercase">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Mobile / WhatsApp No.</label>
+                    <input type="text" id="prof-whatsapp" required placeholder="0917..." class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-[#78350f] uppercase tracking-wider mb-1.5">Default Pickup / Landmark</label>
+                    <input type="text" id="prof-address" placeholder="e.g. Near 7-Eleven, Brixton" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none focus:border-[#78350f]">
+                </div>
+
+                <button type="submit" id="prof-submit-btn" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> Save & Switch Area
+                </button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
