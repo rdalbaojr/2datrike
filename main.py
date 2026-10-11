@@ -13,6 +13,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Dict, Optional
 import csv
 from io import StringIO
+from fastapi.responses import FileResponse
+
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -524,7 +526,43 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
         "barangay": user.barangay if user.barangay else "",
         "local_ref": user.local_ref if user.local_ref else "N/A",
         "toda_name": user.toda_name if user.toda_name else "" 
-    }
+    }# ==========================================
+# 7. ROBUST HTML FILE SERVING
+# ==========================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+def find_file(filename: str):
+    # Check current directory first, then /web subfolder
+    direct_path = os.path.join(BASE_DIR, filename)
+    web_path = os.path.join(BASE_DIR, "web", filename)
+    if os.path.exists(direct_path):
+        return direct_path
+    if os.path.exists(web_path):
+        return web_path
+    return None
+
+@app.get("/")
+def serve_root():
+    login_path = find_file("login.html")
+    if login_path:
+        return FileResponse(login_path)
+    return RedirectResponse(url="/login.html")
+
+@app.get("/{page_name}.html")
+def serve_html_page(page_name: str):
+    filepath = find_file(f"{page_name}.html")
+    if filepath:
+        return FileResponse(filepath)
+    raise HTTPException(status_code=404, detail=f"Page {page_name}.html not found on server")
+
+# Fallback static mount for icons, images, etc.
+static_dir = os.path.join(BASE_DIR, "web") if os.path.isdir(os.path.join(BASE_DIR, "web")) else BASE_DIR
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
 
 @app.post("/api/update-profile")
 def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
