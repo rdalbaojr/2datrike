@@ -126,6 +126,15 @@
         </div>
 
         <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
+        <!-- Inside the Active Ride card in driver_dashboard.html -->
+<div class="flex gap-2 mt-3">
+    <button onclick="completeRide(${ride.id})" class="flex-1 py-3 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl text-sm transition shadow-md">
+        Complete Ride <i class="fa-solid fa-check ml-1"></i>
+    </button>
+    <button onclick="driverCancelRide(${ride.id})" class="px-3 py-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
+        Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
+    </button>
+</div>
 
         <!-- ==================== PENDING RADAR ==================== -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Radar (Orders)</h3>
@@ -858,6 +867,21 @@ const pendingRides = allRides.filter(ride => {
             messageContainer.innerHTML += messageHTML;
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
+        async function driverCancelRide(rideId) {
+    if (!confirm("Are you sure you want to release this ride back to the radar?")) return;
+    
+    try {
+        const response = await fetch(`/driver-cancel-ride/${rideId}`, { method: 'POST' });
+        if (response.ok) {
+            loadDashboardRides(); // Instantly clears Active Rides
+        } else {
+            const err = await response.json();
+            alert(err.detail || "Error releasing ride.");
+        }
+    } catch (e) {
+        alert("Network error.");
+    }
+}
     </script>
 </body>
 </html>
