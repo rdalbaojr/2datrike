@@ -3,7 +3,7 @@ import shutil
 import json
 import random
 from datetime import datetime
-from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import RedirectResponse, JSONResponse, HTMLResponse
 from fastapi import FastAPI, Depends, Form, HTTPException, File, UploadFile, WebSocket, WebSocketDisconnect, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -13,6 +13,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Dict, Optional
 import csv
 from io import StringIO
+from fastapi.responses import StreamingResponse
 
 # ==========================================
 # 1. INITIALIZE APP & FOLDERS
@@ -48,6 +49,7 @@ class User(Base):
     last_online = Column(DateTime, nullable=True)
     last_offline = Column(DateTime, nullable=True)
     
+    # 🟢 Security Questions for Password Resets
     security_q = Column(String, nullable=True)
     security_a = Column(String, nullable=True)
     
@@ -77,6 +79,7 @@ class RideRequest(Base):
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
     
+    # 🟢 ADD THESE TWO COLUMNS TO SAVE SHOPPING LISTS & ITEM DESCRIPTIONS
     pabili_list = Column(Text, nullable=True)
     item_description = Column(Text, nullable=True)
     
@@ -167,6 +170,7 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
+        
         db.commit()
     except Exception:
         db.rollback()
@@ -375,8 +379,8 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
         security_a=user.security_a,
         toda_number=user.toda_number,    
         plate_number=user.plate_number.upper() if user.plate_number else "", 
-        bank_name=user.bank_name,            
-        gcash_account=user.gcash_account,    
+        bank_name=user.bank_name,           
+        gcash_account=user.gcash_account,   
         rating_sum=25.0,
         rating_count=5
     )
@@ -536,9 +540,8 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     if data.barangay: user.barangay = data.barangay
     if data.toda_name: user.toda_name = data.toda_name
     
-    city_str = user.city or "Pasig City"
-    if user.barangay and user.toda_name:
-        assigned_branch = f"{city_str} - {user.barangay} ({user.toda_name})"
+    if data.city and data.barangay and data.toda_name:
+        assigned_branch = f"{data.city} - {data.barangay} ({data.toda_name})"
         user.branch = assigned_branch if user.role == "driver" else f"Passenger - {assigned_branch}"
 
     db.commit()
@@ -573,23 +576,8 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
-@app.post("/driver-cancel-ride/{ride_id}")
-def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
     
-    # 🟢 Only allow releasing if the ride is accepted and not completed/paid
-    if ride.status != "accepted":
-        raise HTTPException(status_code=400, detail="Cannot cancel a ride that is not in progress")
-
-    # 🟢 Reset back to pending so other drivers can see it
-    ride.driver_name = None
-    ride.status = "pending"
-    db.commit()
-    db.refresh(ride)
-
-    return {"message": "Ride returned to radar", "id": ride.id}
+    # 🟢 Ensure both lines start at column 0 (no leading spaces)
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -718,12 +706,14 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             display_account = branch_config.katoda_account if branch_config.katoda_account else "Not Configured"
     else:
         config = db.query(SystemConfig).first()
+        # 🟢 Fallback to the configured TodaConfig if SystemConfig is empty
         first_toda = db.query(TodaConfig).filter(TodaConfig.katoda_account != "").first()
         
         display_bank = (config.katoda_bank if config and config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
         display_account = (config.katoda_account if config and config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
 
     driver_pct = 1.0 - (platform_pct + katoda_pct)
+    # ... rest of get_payout_summary remains unchanged
 
     payouts = {}
     clean_branch = branch.strip()
@@ -816,6 +806,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
             katoda_bank = branch_config.katoda_bank
             katoda_account = branch_config.katoda_account
     else:
+        # 🟢 Use the active TodaConfig account for the master export batch
         first_toda = db.query(TodaConfig).filter(TodaConfig.katoda_account != "").first()
         if first_toda and first_toda.katoda_account:
             katoda_bank = first_toda.katoda_bank
@@ -850,12 +841,14 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
         else: driver_payouts[clean_driver_name] = driver_cut
         total_katoda_payout += katoda_cut
 
+    # 🟢 BATCH ID (Anti-Tampering via file name and remarks)
     now = datetime.now()
     batch_id = now.strftime("BZ%Y%m%d%H%M")
 
     output = StringIO()
     writer = csv.writer(output)
     
+    # 🟢 Standard BPI BizLink Columns
     writer.writerow(["Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
     for driver_name, amount in driver_payouts.items():
@@ -870,6 +863,7 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
                 
             local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
             
+            # 🟢 Clean BPI-compliant rows. Batch ID securely logged in Remarks.
             remarks_string = f"{local_tag} {batch_id}"[:30]
             writer.writerow([account_number, driver_name, f"{amount:.2f}", remarks_string])
 
@@ -1088,6 +1082,7 @@ def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
                 clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
                 toda_cut = clean_fare * toda_pct
                 
+                # Filter by Date
                 r_date = r.created_at if r.created_at else now
                 
                 if r_date.date() == now.date(): finances["today"] += toda_cut
@@ -1114,6 +1109,7 @@ def get_admin_finances(db: Session = Depends(get_db)):
         try:
             clean_fare = float(str(r.fare).replace('₱', '').replace(',', '').strip())
             
+            # Match the platform share percentage to the specific branch
             p_pct = default_platform_pct
             if r.branch:
                 for t_name, t_share in toda_configs.items():
@@ -1123,6 +1119,7 @@ def get_admin_finances(db: Session = Depends(get_db)):
                         
             platform_cut = clean_fare * p_pct
             
+            # Filter by Date
             r_date = r.created_at if r.created_at else now
             
             if r_date.date() == now.date(): finances["today"] += platform_cut
@@ -1174,6 +1171,7 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
 def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(driver_name).lower()
     
+    # Fetch all completed/paid rides and match robustly in python memory
     all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     rides = []
     for r in all_rides:
@@ -1219,7 +1217,6 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
         "net": net_earnings,
         "breakdown": breakdown
     }
-
 # ==========================================
 # 7. MOUNT WEB FOLDER & START SERVER
 # ==========================================
