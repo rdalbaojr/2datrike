@@ -573,7 +573,23 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
+@app.post("/driver-cancel-ride/{ride_id}")
+def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    # 🟢 Only allow releasing if the ride is accepted and not completed/paid
+    if ride.status != "accepted":
+        raise HTTPException(status_code=400, detail="Cannot cancel a ride that is not in progress")
 
+    # 🟢 Reset back to pending so other drivers can see it
+    ride.driver_name = None
+    ride.status = "pending"
+    db.commit()
+    db.refresh(ride)
+
+    return {"message": "Ride returned to radar", "id": ride.id}
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
