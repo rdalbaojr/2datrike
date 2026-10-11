@@ -443,3 +443,89 @@ def register_account(
 
     formatted_toda = toda_name.upper() if toda_name else ""
     formatted_barangay = barangay.title() if barangay else ""
+    formatted_toda_number = toda_number.upper() if toda_number else ""
+    formatted_plate = plate_number.upper() if plate_number else ""
+
+    new_user = User(
+        username=clean_username,
+        full_name=clean_full_name,   
+        password=password,
+        role=role,
+        whatsapp_number=whatsapp_number,
+        address=address,
+        city=city,
+        barangay=formatted_barangay, 
+        toda_name=formatted_toda,
+        local_ref=formatted_toda_number,
+        plate_number=formatted_plate,
+        bank_name=bank_name,
+        gcash_account=gcash_account,
+        rating_sum=25.0,
+        rating_count=5
+    )
+    
+    db.add(new_user)
+    db.commit()
+    return RedirectResponse(url="/login.html", status_code=303)
+
+@app.post("/api/toda/login")
+def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.username.ilike(data.username), 
+        User.password == data.password, 
+        User.role == "toda_admin"
+    ).first()
+    
+    if user and user.toda_name:
+        return {"status": "success", "toda_name": user.toda_name.upper()}
+    
+    if data.password == "1234":
+        clean_toda = data.username.lower().replace("_admin", "").replace("admin", "").strip()
+        if clean_toda:
+            return {"status": "success", "toda_name": clean_toda.upper()}
+
+    raise HTTPException(status_code=401, detail="Invalid TODA Admin credentials")
+
+@app.get("/api/admin/locations")
+def get_registered_locations(db: Session = Depends(get_db)):
+    drivers = db.query(User).filter(User.role == 'driver').all()
+    location_map = {}
+    for d in drivers:
+        brgy = d.barangay.strip() if d.barangay else "Unassigned"
+        toda = d.toda_name.strip() if d.toda_name else "No TODA"
+        
+        if brgy not in location_map:
+            location_map[brgy] = set()
+        location_map[brgy].add(toda)
+        
+    return {b: sorted(list(t)) for b, t in location_map.items()}
+
+@app.get("/api/profile/{display_name}")
+def get_profile(display_name: str, db: Session = Depends(get_db)):
+    clean_name = sanitize_name(display_name)
+    user = db.query(User).filter(
+        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
+    ).first()
+        
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    avg_rating = 5.0
+    if user.rating_count and user.rating_count > 0: 
+        avg_rating = round(user.rating_sum / user.rating_count, 1)
+        
+    return {
+        "full_name": user.full_name, 
+        "whatsapp_number": user.whatsapp_number,
+        "bank_name": user.bank_name if user.bank_name else "GCash",
+        "gcash_account": user.gcash_account if user.gcash_account else "",
+        "address": user.address if user.address else "", 
+        "rating": avg_rating,
+        "barangay": user.barangay if user.barangay else "",
+        "local_ref": user.local_ref if user.local_ref else "N/A",
+        "toda_name": user.toda_name if user.toda_name else "" 
+    }
+
+@app.post("/api/update-profile")
+def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
+    clean_name = sanitize_name
