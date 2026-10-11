@@ -865,6 +865,13 @@
         console.warn("Could not load dynamic TODA suggestions:", e);
     }
 }
+        function setQuickToda(toda) {
+    const input = document.getElementById('prof-toda');
+    if (input) {
+        input.value = toda.toUpperCase();
+        input.focus();
+    }
+}
     </script>
     <!-- ==================== PASSENGER PROFILE & LOCATION MODAL ==================== -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
