@@ -499,12 +499,13 @@ def get_registered_locations(db: Session = Depends(get_db)):
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(display_name)
-    user = db.query(User).filter(User.full_name == clean_name, User.role == 'driver').first()
-    if not user: user = db.query(User).filter(User.username == clean_name, User.role == 'driver').first()
-    if not user: user = db.query(User).filter(User.full_name == clean_name, User.role == 'passenger').first()
-    if not user: user = db.query(User).filter(User.username == clean_name, User.role == 'passenger').first()
+    # 🟢 Use .ilike() so casing differences never cause a 404
+    user = db.query(User).filter(
+        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
+    ).first()
         
-    if not user: raise HTTPException(status_code=404, detail="User not found")
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found")
     
     avg_rating = 5.0
     if user.rating_count and user.rating_count > 0: avg_rating = round(user.rating_sum / user.rating_count, 1)
@@ -534,7 +535,8 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     
     if data.city: user.city = data.city
     if data.barangay: user.barangay = data.barangay
-    if data.toda_name: user.toda_name = data.toda_name
+    if data.toda_name: 
+    user.toda_name = data.toda_name.strip().upper()
     
     city_str = user.city or "Pasig City"
     if user.barangay and user.toda_name:
