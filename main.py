@@ -522,29 +522,47 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
 @app.post("/api/update-profile")
 def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     clean_name = sanitize_name(data.display_name)
-    user = db.query(User).filter(User.full_name == clean_name, User.role == 'driver').first()
-    if not user: user = db.query(User).filter(User.username == clean_name, User.role == 'driver').first()
-    if not user: user = db.query(User).filter(User.full_name == clean_name, User.role == 'passenger').first()
-    if not user: user = db.query(User).filter(User.username == clean_name, User.role == 'passenger').first()
-    if not user: raise HTTPException(status_code=404, detail="User not found")
+    user = db.query(User).filter(
+        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
+    ).first()
+    
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found")
         
     user.bank_name = data.bank_name
     user.gcash_account = data.gcash_account
     user.whatsapp_number = data.whatsapp_number
     user.address = data.address 
     
-    if data.city: user.city = data.city
-    if data.barangay: user.barangay = data.barangay
+    if data.city: 
+        user.city = data.city.strip().title()
+    if data.barangay: 
+        user.barangay = data.barangay.strip().title()
     if data.toda_name: 
         user.toda_name = data.toda_name.strip().upper()
     
     city_str = user.city or "Pasig City"
-    if user.barangay and user.toda_name:
-        assigned_branch = f"{city_str} - {user.barangay} ({user.toda_name})"
-        user.branch = assigned_branch if user.role == "driver" else f"Passenger - {assigned_branch}"
+    brgy_str = user.barangay or "Kapitolyo"
+    toda_str = user.toda_name or "KATODA"
+    assigned_branch = f"{city_str} - {brgy_str} ({toda_str})"
+    
+    if user.role == "driver":
+        user.branch = assigned_branch
+    else:
+        user.branch = f"Passenger - {assigned_branch}"
+        
+        # 🟢 AUTO-MIGRATE: Update any active pending ride to the new TODA immediately
+        pending_rides = db.query(RideRequest).filter(
+            RideRequest.passenger_name.ilike(clean_name),
+            RideRequest.status == "pending"
+        ).all()
+        
+        for pr in pending_rides:
+            pr.branch = assigned_branch
+            pr.local_ref = generate_local_ref(brgy_str, toda_str)
 
     db.commit()
-    return {"status": "success", "message": "Profile updated successfully"}
+    return {"status": "success", "message": "Profile updated and pending rides migrated successfully"}
 
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
