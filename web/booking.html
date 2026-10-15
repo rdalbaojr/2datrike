@@ -12,9 +12,9 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         ::-webkit-scrollbar { display: none; }
         .service-btn.active {
-            background: #78350f; 
-            color: white;
-            border-color: transparent;
+            background: #78350f !important; 
+            color: white !important;
+            border-color: transparent !important;
         }
         .input-field {
             background-color: #F5E6D3;
@@ -63,7 +63,7 @@
                 </p>
                 <button type="button" onclick="openProfileModal()" class="mt-1.5 inline-flex items-center gap-1.5 bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] px-2.5 py-1 rounded-full text-[11px] font-extrabold text-[#78350f] transition shadow-sm cursor-pointer">
                     <i class="fa-solid fa-location-dot text-amber-700 text-[10px]"></i>
-                    <span id="display-passenger-toda">Loading TODA...</span>
+                    <span id="display-passenger-toda">Kapitolyo (KATODA)</span>
                     <i class="fa-solid fa-pen text-[9px] opacity-70 ml-0.5"></i>
                 </button>
             </div>
@@ -78,10 +78,23 @@
             </div>
         </div>
 
-        <!-- 5-SLOT DYNAMIC SERVICE SELECTION -->
+        <!-- 🟢 DEFAULT BUTTONS IN HTML (Prevents empty UI) -->
         <div id="service-selection-box">
             <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
-            <div id="service-buttons-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6"></div>
+            <div id="service-buttons-container" class="grid grid-cols-3 gap-3 mb-6">
+                <button type="button" onclick="selectService('Pasundo')" id="btn-Pasundo" class="service-btn active text-white flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
+                    <i class="fa-solid fa-person-walking-luggage text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase text-center leading-tight">Pasundo</span>
+                </button>
+                <button type="button" onclick="selectService('Pabili')" id="btn-Pabili" class="service-btn text-[#78350f] flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
+                    <i class="fa-solid fa-basket-shopping text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase text-center leading-tight">Pabili</span>
+                </button>
+                <button type="button" onclick="selectService('Papickup')" id="btn-Papickup" class="service-btn text-[#78350f] flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
+                    <i class="fa-solid fa-box-open text-xl mb-2"></i>
+                    <span class="text-[10px] font-bold uppercase text-center leading-tight">Papickup</span>
+                </button>
+            </div>
         </div>
 
         <!-- Routing Form -->
@@ -122,7 +135,7 @@
                         <i class="fa-solid fa-moon"></i> +10% Night Rate
                     </div>
                 </div>
-                <div class="text-lg font-extrabold text-[#0f172a]" id="fare-amount">₱0.00</div>
+                <div class="text-lg font-extrabold text-[#0f172a]" id="fare-amount">₱50.00</div>
             </div>
 
             <button type="submit" id="submit-btn" class="w-full mt-2 py-4 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition-all duration-300">
@@ -157,7 +170,7 @@
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-4">My Rides & Requests</h3>
         
         <div id="my-rides-container" class="space-y-4">
-            <p class="text-center text-amber-800/70 text-sm font-medium italic py-4">Loading your history...</p>
+            <p class="text-center text-amber-800/70 text-sm font-medium italic py-4">No active requests right now.</p>
         </div>
     </div>
 
@@ -320,10 +333,11 @@
             return "Guest"; 
         }
 
-        let allServicePrices = {};
-        let currentService = '';
-        let isNightRateApplied = false; 
         const currentPassenger = getCookie("passenger_name");
+
+        let allServicePrices = { "Pasundo": 50, "Pabili": 50, "Papickup": 50 };
+        let currentService = 'Pasundo';
+        let isNightRateApplied = false; 
         let currentPendingRideId = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -333,10 +347,8 @@
             loadPassengerProfileBadge();
             loadAvailableTodaSuggestions();
 
-            const container = document.getElementById("service-buttons-container");
-            let branchToLoad = 'MASTER'; 
-            
             try {
+                let branchToLoad = 'MASTER';
                 if (currentPassenger && currentPassenger !== "Guest") {
                     const profileRes = await fetch(`/api/profile/${encodeURIComponent(currentPassenger)}?t=${new Date().getTime()}`);
                     if (profileRes.ok) {
@@ -344,48 +356,36 @@
                         if (profile.toda_name) branchToLoad = profile.toda_name;
                     }
                 }
-            } catch (e) {}
 
-            let config = {
-                s1_name: "Pasundo", s1_price: 50,
-                s2_name: "Pabili", s2_price: 50,
-                s3_name: "Papickup", s3_price: 50
-            };
-
-            try {
                 const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(branchToLoad)}`);
                 if (configRes.ok) {
-                    const serverConfig = await configRes.json();
-                    if (serverConfig && serverConfig.s1_name) config = serverConfig;
-                }
-            } catch (e) {}
-
-            container.innerHTML = ''; 
-            const icons = ['fa-person-walking-luggage', 'fa-basket-shopping', 'fa-box-open', 'fa-star', 'fa-bolt'];
-            let isFirst = true;
-
-            for (let i = 1; i <= 5; i++) {
-                let sName = config[`s${i}_name`];
-                let sPrice = config[`s${i}_price`];
-
-                if (sName && sName.trim() !== "") {
-                    allServicePrices[sName] = sPrice;
-                    if (isFirst) {
-                        currentService = sName;
-                        isFirst = false;
+                    const config = await configRes.json();
+                    if (config && config.s1_name) {
+                        const container = document.getElementById("service-buttons-container");
+                        container.innerHTML = '';
+                        const icons = ['fa-person-walking-luggage', 'fa-basket-shopping', 'fa-box-open', 'fa-star', 'fa-bolt'];
+                        
+                        for (let i = 1; i <= 5; i++) {
+                            let sName = config[`s${i}_name`];
+                            let sPrice = config[`s${i}_price`];
+                            if (sName && sName.trim() !== "") {
+                                allServicePrices[sName] = sPrice;
+                                let activeClass = currentService === sName ? 'active text-white' : 'text-[#78350f]';
+                                let safeId = `btn-${sName.replace(/[^a-zA-Z0-9]/g, '')}`;
+                                container.innerHTML += `
+                                    <button type="button" onclick="selectService('${sName}')" id="${safeId}" class="service-btn ${activeClass} flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
+                                        <i class="fa-solid ${icons[i-1]} text-xl mb-2"></i>
+                                        <span class="text-[10px] font-bold uppercase text-center leading-tight">${sName}</span>
+                                    </button>
+                                `;
+                            }
+                        }
                     }
-
-                    let activeClass = currentService === sName ? 'active text-white' : 'text-[#78350f]';
-                    let safeId = `btn-${sName.replace(/[^a-zA-Z0-9]/g, '')}`;
-
-                    container.innerHTML += `
-                        <button type="button" onclick="selectService('${sName}')" id="${safeId}" class="service-btn ${activeClass} flex flex-col items-center justify-center p-3 border border-[#c99c6b] rounded-2xl bg-[#d4aa7c]/40 hover:bg-[#d4aa7c] transition-all shadow-sm">
-                            <i class="fa-solid ${icons[i-1]} text-xl mb-2"></i>
-                            <span class="text-[10px] font-bold uppercase text-center leading-tight">${sName}</span>
-                        </button>
-                    `;
                 }
+            } catch (e) {
+                console.warn("Using baseline buttons");
             }
+
             toggleServiceDetails(currentService);
         });
 
@@ -463,7 +463,7 @@
                 document.getElementById('submit-btn').classList.add('hidden');
                 document.getElementById('confirm-btn').classList.remove('hidden');
                 document.getElementById('submit-btn').innerHTML = 'Calculate Fare <i class="fa-solid fa-calculator ml-2"></i>';
-            }, 500);
+            }, 400);
         });
 
         document.getElementById('confirm-btn').addEventListener('click', async function(event) {
@@ -509,22 +509,17 @@
                     fetchMyRides();
                 } else {
                     alert("Error requesting ride from server.");
-                    window.location.reload();
                 }
             } catch (error) {
                 alert("Network error connecting to server.");
-                window.location.reload();
             }
         });
 
-        // 🟢 CANCEL SEARCH (Cancels backend ride so radar clears immediately)
         async function cancelSearch() {
             if (currentPendingRideId) {
                 try {
                     await fetch(`/api/passenger-cancel-ride/${currentPendingRideId}`, { method: 'POST' });
-                } catch (e) {
-                    console.error("Cancel error", e);
-                }
+                } catch (e) {}
                 currentPendingRideId = null;
             }
             document.getElementById('searching-state').classList.add('hidden');
@@ -533,7 +528,6 @@
             fetchMyRides();
         }
 
-        // 🟢 PASSENGER CANCEL TRIP (When driver has accepted)
         async function passengerCancelTrip(rideId) {
             if (!confirm("Are you sure you want to cancel this ride?")) return;
             try {
@@ -598,7 +592,7 @@
                 }
 
                 if (myRides.length === 0) {
-                    container.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-4">You have no active requests right now.</p>';
+                    container.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-4">No active requests right now.</p>';
                     return;
                 }
 
@@ -611,23 +605,22 @@
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
                     } else if (ride.status === 'accepted') {
-    statusHtml = `
-        <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
-            <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} has accepted your ride and is on the way!</p>
-            <div class="flex gap-2 mt-2">
-                <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
-                    <i class="fa-solid fa-phone"></i> Call
-                </a>
-                <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
-                    <i class="fa-regular fa-comment-dots"></i> Chat
-                </button>
-                <button onclick="passengerCancelTrip(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-800 py-2 rounded-lg font-bold text-xs transition">
-                    <i class="fa-solid fa-xmark"></i> Cancel
-                </button>
-            </div>
-        </div>
-    `;
-}
+                        statusHtml = `
+                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
+                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} has accepted your ride and is on the way!</p>
+                                <div class="flex gap-2 mt-2">
+                                    <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
+                                        <i class="fa-solid fa-phone"></i> Call
+                                    </a>
+                                    <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
+                                        <i class="fa-regular fa-comment-dots"></i> Chat
+                                    </button>
+                                    <button onclick="passengerCancelTrip(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-800 py-2 rounded-lg font-bold text-xs transition">
+                                        <i class="fa-solid fa-xmark"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        `;
                     } else if (ride.status === 'completed') {
                         statusHtml = `
                             <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
@@ -902,20 +895,6 @@
                 console.warn("Could not load dynamic TODA suggestions:", e);
             }
         }
-    <async function passengerCancelTrip(rideId) {
-    if (!confirm("Are you sure you want to cancel this ride?")) return;
-    try {
-        const res = await fetch(`/api/passenger-cancel-ride/${rideId}`, { method: 'POST' });
-        if (res.ok) {
-            fetchMyRides();
-        } else {
-            const data = await res.json().catch(() => ({}));
-            alert(data.detail || "Could not cancel ride.");
-        }
-    } catch (e) {
-        alert("Network error.");
-    }
-}
-        /script>
+    </script>
 </body>
 </html>
