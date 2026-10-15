@@ -625,6 +625,35 @@ def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(ride)
     return {"status": "success", "message": "Ride successfully cancelled", "id": ride.id}
+# ==========================================
+# CANCELLATION & RELEASE ENDPOINTS
+# ==========================================
+@app.post("/driver-cancel-ride/{ride_id}")
+def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    if ride.status != "accepted":
+        raise HTTPException(status_code=400, detail="Cannot release a ride that is not in progress")
+
+    ride.driver_name = None
+    ride.status = "pending"
+    db.commit()
+    db.refresh(ride)
+    return {"status": "success", "message": "Ride returned to radar", "id": ride.id}
+
+@app.post("/api/passenger-cancel-ride/{ride_id}")
+def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
+    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    if ride.status in ["completed", "paid"]:
+        raise HTTPException(status_code=400, detail="Cannot cancel a completed trip")
+
+    ride.status = "cancelled"
+    db.commit()
+    db.refresh(ride)
+    return {"status": "success", "message": "Ride successfully cancelled", "id": ride.id}
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
