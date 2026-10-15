@@ -434,17 +434,20 @@
                 if (!pendingContainer || !activeContainer) return;
 
                 // --- 1. PENDING RIDES (RADAR - STRICT TODA FILTER) ---
-                const pendingRides = allRides.filter(ride => {
-                    if (ride.status !== 'pending') return false;
-                    
-                    // 🟢 If driver belongs to a TODA, restrict radar to that TODA only
-                    if (currentDriverToda && currentDriverToda !== "") {
-                        const rideBranch = (ride.branch || "").toUpperCase();
-                        const rideRef = (ride.local_ref || "").toUpperCase();
-                        return rideBranch.includes(currentDriverToda) || rideRef.includes(currentDriverToda);
-                    }
-                    return true;
-                });
+const pendingRides = allRides.filter(ride => {
+    if (ride.status !== 'pending') return false;
+    
+    // 🟢 Guard: If driver TODA is still loading or empty, hide all orders
+    if (!currentDriverToda || currentDriverToda.trim() === "") {
+        return false;
+    }
+
+    const targetToda = currentDriverToda.trim().toUpperCase();
+    const rideBranch = (ride.branch || "").toUpperCase();
+    const rideRef = (ride.local_ref || "").toUpperCase();
+
+    return rideBranch.includes(targetToda) || rideRef.includes(targetToda);
+});
                 
                 if (pendingRides.length > previousPendingCount) playAlert('radar');
                 previousPendingCount = pendingRides.length; 
