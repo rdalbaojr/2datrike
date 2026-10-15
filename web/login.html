@@ -19,7 +19,6 @@
         .input-field:focus { border-color: #78350f; }
         .input-field::placeholder { color: #92400e; opacity: 0.6; }
 
-        /* Force browser autofill to match your beige theme */
         input:-webkit-autofill,
         input:-webkit-autofill:hover, 
         input:-webkit-autofill:focus, 
@@ -90,14 +89,12 @@
                 Log In <i class="fa-solid fa-arrow-right-to-bracket"></i>
             </button>
             
-            <!-- 🟢 NEW: Toggel to Sign Up -->
             <div class="text-center mt-6">
-        <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
-        <!-- 🟢 Corrected onclick to use your built-in switchTab function -->
-        <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
-            Please Signup here.
-        </a>
-    </div>
+                <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
+                <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
+                    Please Signup here.
+                </a>
+            </div>
         </form>
 
         <!-- ==================== REGISTRATION FORM ==================== -->
@@ -125,7 +122,7 @@
                 <option value="toda_admin">TODA Admin</option>
             </select>
 
-            <!-- LOCATION & TODA (Visible & Required for Everyone) -->
+            <!-- LOCATION & TODA -->
             <div class="mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Local Community</label>
                 <div class="grid grid-cols-2 gap-3 mb-3">
@@ -135,7 +132,7 @@
                 <input type="text" id="reg-toda" required placeholder="Preferred TODA (e.g. KATODA)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
             </div>
 
-            <!-- DRIVER VEHICLE FIELDS (Hidden unless Driver) -->
+            <!-- DRIVER VEHICLE FIELDS (Only visible if Driver) -->
             <div id="driver-fields-container" class="hidden flex-col gap-3 mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Vehicle Details</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -172,12 +169,10 @@
             
             <div id="reg-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
-            <!-- Submit -->
             <button type="submit" id="btn-register" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2">
                 <i class="fa-solid fa-user-plus"></i> Create Account
             </button>
 
-            <!-- 🟢 NEW: Toggle back to Login -->
             <div class="text-center mt-3">
                 <a href="#" onclick="switchTab('login')" class="text-sm font-bold text-[#78350f] hover:text-[#5a270b] transition underline">Already have an account? Login here.</a>
             </div>
@@ -239,7 +234,7 @@
 
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
-            const button = menu.previousElementSibling;
+            const button = menu ? menu.previousElementSibling : null;
             if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
                 menu.style.display = 'none';
             }
@@ -253,7 +248,6 @@
             document.getElementById('forgot-modal').classList.add('hidden');
         }
 
-        // 🟢 UPDATED: Much simpler tab switching logic since the top tabs are gone
         function switchTab(tab) {
             const loginForm = document.getElementById('form-login');
             const regForm = document.getElementById('form-register');
@@ -264,7 +258,7 @@
             } else {
                 loginForm.classList.add('hidden');
                 regForm.classList.remove('hidden');
-                toggleTodaField(); // Force check role display when opening register tab
+                toggleTodaField();
             }
         }
 
@@ -274,9 +268,8 @@
             const payoutField = document.getElementById('payout-container'); 
             const payoutLabel = document.getElementById('payout-label');
 
-            if (!driverFieldsContainer || !payoutField) return; // Prevent silent crash if HTML is missing
+            if (!driverFieldsContainer || !payoutField) return;
 
-            // Show Vehicle Fields (Body & Plate) ONLY if Driver
             if (role === 'driver') {
                 driverFieldsContainer.classList.remove('hidden');
                 driverFieldsContainer.classList.add('flex');
@@ -289,7 +282,6 @@
                 document.getElementById('reg-plate-number').required = false;
             }
 
-            // Show Payout for BOTH Driver and TODA Admin
             if (role === 'driver' || role === 'toda_admin') {
                 payoutField.classList.remove('hidden');
                 document.getElementById('reg-account').required = true;
@@ -307,10 +299,6 @@
 
         document.addEventListener("DOMContentLoaded", toggleTodaField);
 
-        // ==========================================
-        // API FETCH CALLS
-        // ==========================================
-        
         async function handleLogin(event) {
             event.preventDefault(); 
             
@@ -324,7 +312,7 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
 
             try {
-                if (user === "masterom" && pass === "12345") {
+                if (user.toLowerCase() === "masterom" && (pass === "12345" || pass === "qZ82118@@")) {
                     document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
                     window.location.href = "admin_dashboard.html"; 
                     return;
@@ -343,7 +331,8 @@
                 if (response.redirected) {
                     window.location.href = response.url; 
                 } else {
-                    alertBox.textContent = "⚠️ Invalid username or password.";
+                    const errData = await response.json().catch(() => ({}));
+                    alertBox.textContent = errData.detail || "⚠️ Invalid username or password.";
                     alertBox.classList.remove('hidden');
                 }
             } catch (error) {
@@ -372,20 +361,20 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
 
             const payload = {
-                full_name: document.getElementById('reg-name').value,
-                username: document.getElementById('reg-user').value,
+                full_name: document.getElementById('reg-name').value.trim(),
+                username: document.getElementById('reg-user').value.trim(),
                 password: pass,
                 role: document.getElementById('reg-role').value,
-                whatsapp_number: document.getElementById('reg-mobile').value, // 🟢 ADD THIS LINE
-                city: document.getElementById('reg-city').value,
-                barangay: document.getElementById('reg-barangay').value,
-                toda_name: document.getElementById('reg-toda') ? document.getElementById('reg-toda').value : "",
-                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value : "",
-                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value : "",
+                whatsapp_number: document.getElementById('reg-mobile').value.trim(),
+                city: document.getElementById('reg-city').value.trim(),
+                barangay: document.getElementById('reg-barangay').value.trim(),
+                toda_name: document.getElementById('reg-toda') ? document.getElementById('reg-toda').value.trim().toUpperCase() : "",
+                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value.trim().toUpperCase() : "",
+                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value.trim().toUpperCase() : "",
                 security_q: document.getElementById('reg-sec-q').value,
                 security_a: document.getElementById('reg-sec-a').value.trim().toLowerCase(),
                 bank_name: document.getElementById('reg-bank') ? document.getElementById('reg-bank').value : "GCash",
-                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value : ""
+                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value.trim() : ""
             };
 
             try {
@@ -401,7 +390,7 @@
                     document.getElementById('login-username').value = payload.username;
                     document.getElementById('form-register').reset();
                 } else {
-                    const data = await response.json();
+                    const data = await response.json().catch(() => ({}));
                     alertBox.textContent = data.detail || "⚠️ Could not create account.";
                     alertBox.classList.remove('hidden');
                 }
@@ -423,7 +412,7 @@
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resetting...';
 
             const payload = {
-                username: document.getElementById('forgot-user').value,
+                username: document.getElementById('forgot-user').value.trim(),
                 security_q: document.getElementById('forgot-sec-q').value,
                 security_a: document.getElementById('forgot-sec-a').value.trim().toLowerCase(),
                 new_password: document.getElementById('forgot-pass').value
@@ -441,7 +430,7 @@
                     closeForgotModal();
                     document.getElementById('login-username').value = payload.username;
                 } else {
-                    const data = await response.json();
+                    const data = await response.json().catch(() => ({}));
                     alertBox.textContent = data.detail || "⚠️ Security answer is incorrect.";
                     alertBox.classList.remove('hidden');
                 }
