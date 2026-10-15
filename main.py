@@ -319,7 +319,7 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
         return response
 
     clean_user = sanitize_name(username)
-    user = db.query(User).filter(User.username == clean_user, User.password == password).first()
+    user = db.query(User).filter(User.username.ilike(clean_user), User.password == password).first()
     if not user: raise HTTPException(status_code=400, detail="Invalid username or password")
     
     if user.is_suspended == 1: raise HTTPException(status_code=403, detail="ACCOUNT SUSPENDED: Please contact KATODA admin.")
@@ -338,7 +338,7 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
 @app.post("/api/logout/{username}")
 def logout_user(username: str, db: Session = Depends(get_db)):
     clean_username = sanitize_name(username)
-    user = db.query(User).filter(User.username == clean_username).first()
+    user = db.query(User).filter(User.username.ilike(clean_username)).first()
     if user:
         user.status = "offline"
         user.last_offline = datetime.now()
@@ -350,7 +350,7 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
     clean_username = sanitize_name(user.username)
     clean_full_name = sanitize_name(user.full_name).title() if user.full_name else clean_username
 
-    existing = db.query(User).filter(User.username == clean_username).first()
+    existing = db.query(User).filter(User.username.ilike(clean_username)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
@@ -397,7 +397,7 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
 @app.post("/api/reset-password-security")
 def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
-    user = db.query(User).filter(User.username == clean_user).first()
+    user = db.query(User).filter(User.username.ilike(clean_user)).first()
     
     if not user:
         raise HTTPException(status_code=404, detail="Account not found.")
@@ -433,7 +433,7 @@ def register_account(
     clean_username = sanitize_name(username)
     clean_full_name = sanitize_name(full_name).title() if full_name else clean_username
 
-    existing = db.query(User).filter(User.username == clean_username).first()
+    existing = db.query(User).filter(User.username.ilike(clean_username)).first()
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
 
@@ -467,7 +467,7 @@ def register_account(
 @app.post("/api/toda/login")
 def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(
-        User.username == data.username, 
+        User.username.ilike(data.username), 
         User.password == data.password, 
         User.role == "toda_admin"
     ).first()
@@ -499,7 +499,6 @@ def get_registered_locations(db: Session = Depends(get_db)):
 @app.get("/api/profile/{display_name}")
 def get_profile(display_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(display_name)
-    # 🟢 Use .ilike() so casing differences never cause a 404
     user = db.query(User).filter(
         (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
     ).first()
@@ -568,7 +567,7 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     clean_pass_name = sanitize_name(request.passenger_name)
     user_profile = db.query(User).filter(
-        (User.full_name == clean_pass_name) | (User.username == clean_pass_name)
+        (User.full_name.ilike(clean_pass_name)) | (User.username.ilike(clean_pass_name))
     ).first()
     
     city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
@@ -593,8 +592,9 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
+
 # ==========================================
-# CANCELLATION & RELEASE ENDPOINTS
+# CANCELLATION & RELEASE ENDPOINTS (Single Clean Block)
 # ==========================================
 @app.post("/driver-cancel-ride/{ride_id}")
 def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
@@ -605,7 +605,6 @@ def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
     if ride.status != "accepted":
         raise HTTPException(status_code=400, detail="Cannot release a ride that is not in progress")
 
-    # Reset back to radar
     ride.driver_name = None
     ride.status = "pending"
     db.commit()
@@ -625,35 +624,7 @@ def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(ride)
     return {"status": "success", "message": "Ride successfully cancelled", "id": ride.id}
-# ==========================================
-# CANCELLATION & RELEASE ENDPOINTS
-# ==========================================
-@app.post("/driver-cancel-ride/{ride_id}")
-def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status != "accepted":
-        raise HTTPException(status_code=400, detail="Cannot release a ride that is not in progress")
 
-    ride.driver_name = None
-    ride.status = "pending"
-    db.commit()
-    db.refresh(ride)
-    return {"status": "success", "message": "Ride returned to radar", "id": ride.id}
-
-@app.post("/api/passenger-cancel-ride/{ride_id}")
-def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
-    ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
-    if not ride:
-        raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status in ["completed", "paid"]:
-        raise HTTPException(status_code=400, detail="Cannot cancel a completed trip")
-
-    ride.status = "cancelled"
-    db.commit()
-    db.refresh(ride)
-    return {"status": "success", "message": "Ride successfully cancelled", "id": ride.id}
 @app.post("/accept-ride/{ride_id}")
 def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -665,7 +636,7 @@ def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_
 
     clean_driver = sanitize_name(data.driver_name)
     driver_user = db.query(User).filter(
-        (User.full_name == clean_driver) | (User.username == clean_driver),
+        (User.full_name.ilike(clean_driver)) | (User.username.ilike(clean_driver)),
         User.role == "driver"
     ).first()
 
@@ -708,8 +679,11 @@ def rate_ride(ride_id: int, data: RateRideSchema, db: Session = Depends(get_db))
     ride.rating = data.rating
     
     if ride.driver_name:
-        driver = db.query(User).filter(User.full_name == ride.driver_name, User.role == 'driver').first()
-        if not driver: driver = db.query(User).filter(User.username == ride.driver_name, User.role == 'driver').first()
+        clean_driver = sanitize_name(ride.driver_name)
+        driver = db.query(User).filter(
+            (User.full_name.ilike(clean_driver)) | (User.username.ilike(clean_driver)),
+            User.role == 'driver'
+        ).first()
         if driver:
             driver.rating_sum = (driver.rating_sum if driver.rating_sum else 0.0) + float(data.rating)
             driver.rating_count = (driver.rating_count if driver.rating_count else 0) + 1
@@ -924,8 +898,10 @@ def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
 
     for driver_name, amount in driver_payouts.items():
         if amount > 0:
-            driver_user = db.query(User).filter(User.full_name == driver_name, User.role == 'driver').first()
-            if not driver_user: driver_user = db.query(User).filter(User.username == driver_name, User.role == 'driver').first()
+            driver_user = db.query(User).filter(
+                (User.full_name.ilike(driver_name)) | (User.username.ilike(driver_name)),
+                User.role == 'driver'
+            ).first()
 
             raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
             if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: account_number = raw_acct
@@ -1031,16 +1007,22 @@ def get_pending_rides(db: Session = Depends(get_db)):
     results = []
     for r in rides:
         pass_phone = "0"
-        pass_user = db.query(User).filter(User.full_name == sanitize_name(r.passenger_name), User.role == 'passenger').first()
-        if not pass_user: pass_user = db.query(User).filter(User.username == sanitize_name(r.passenger_name), User.role == 'passenger').first()
+        clean_pass = sanitize_name(r.passenger_name)
+        pass_user = db.query(User).filter(
+            (User.full_name.ilike(clean_pass)) | (User.username.ilike(clean_pass)),
+            User.role == 'passenger'
+        ).first()
         if pass_user and pass_user.whatsapp_number: pass_phone = pass_user.whatsapp_number
             
         drv_phone = "0"
         drv_toda_num = "N/A"
         
         if r.driver_name:
-            drv_user = db.query(User).filter(User.full_name == sanitize_name(r.driver_name), User.role == 'driver').first()
-            if not drv_user: drv_user = db.query(User).filter(User.username == sanitize_name(r.driver_name), User.role == 'driver').first()
+            clean_drv = sanitize_name(r.driver_name)
+            drv_user = db.query(User).filter(
+                (User.full_name.ilike(clean_drv)) | (User.username.ilike(clean_drv)),
+                User.role == 'driver'
+            ).first()
             if drv_user:
                 if drv_user.whatsapp_number: drv_phone = drv_user.whatsapp_number
                 if drv_user.toda_number: drv_toda_num = drv_user.toda_number 
@@ -1066,7 +1048,7 @@ def get_available_rides(request: Request, db: Session = Depends(get_db)):
 
     if driver_name:
         clean_name = sanitize_name(driver_name)
-        driver = db.query(User).filter((User.full_name == clean_name) | (User.username == clean_name), User.role == 'driver').first()
+        driver = db.query(User).filter((User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name)), User.role == 'driver').first()
         if driver:
             driver_branch = driver.branch
             driver_brgy = driver.barangay
@@ -1221,7 +1203,7 @@ def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)):
     clean_name = sanitize_name(driver_name)
     
     driver = db.query(User).filter(
-        (User.full_name == clean_name) | (User.username == clean_name), 
+        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name)), 
         User.role == 'driver'
     ).first()
     
