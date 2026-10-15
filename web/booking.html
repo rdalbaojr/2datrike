@@ -611,22 +611,23 @@
                     if (ride.status === 'pending' || !ride.status) {
                         statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
                     } else if (ride.status === 'accepted') {
-                        statusHtml = `
-                            <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
-                                <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} has accepted your ride!</p>
-                                <div class="flex gap-2 mt-2">
-                                    <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
-                                        <i class="fa-solid fa-phone"></i> Call
-                                    </a>
-                                    <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
-                                        <i class="fa-regular fa-comment-dots"></i> Chat
-                                    </button>
-                                    <button onclick="passengerCancelTrip(${ride.id})" class="px-3 bg-rose-100 border border-rose-300 text-rose-800 py-2 rounded-lg font-bold text-xs hover:bg-rose-200 transition">
-                                        <i class="fa-solid fa-xmark"></i> Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        `;
+    statusHtml = `
+        <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
+            <p class="text-green-800 text-sm font-bold m-0 mb-3">✅ Driver ${ride.driver_name} has accepted your ride and is on the way!</p>
+            <div class="flex gap-2 mt-2">
+                <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
+                    <i class="fa-solid fa-phone"></i> Call
+                </a>
+                <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
+                    <i class="fa-regular fa-comment-dots"></i> Chat
+                </button>
+                <button onclick="passengerCancelTrip(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 border border-rose-300 text-rose-800 py-2 rounded-lg font-bold text-xs transition">
+                    <i class="fa-solid fa-xmark"></i> Cancel
+                </button>
+            </div>
+        </div>
+    `;
+}
                     } else if (ride.status === 'completed') {
                         statusHtml = `
                             <div class="bg-blue-900/10 border border-blue-800/30 rounded-lg p-3 mt-4">
@@ -901,6 +902,20 @@
                 console.warn("Could not load dynamic TODA suggestions:", e);
             }
         }
-    </script>
+    <async function passengerCancelTrip(rideId) {
+    if (!confirm("Are you sure you want to cancel this ride?")) return;
+    try {
+        const res = await fetch(`/api/passenger-cancel-ride/${rideId}`, { method: 'POST' });
+        if (res.ok) {
+            fetchMyRides();
+        } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.detail || "Could not cancel ride.");
+        }
+    } catch (e) {
+        alert("Network error.");
+    }
+}
+        /script>
 </body>
 </html>
