@@ -536,7 +536,7 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     if data.city: user.city = data.city
     if data.barangay: user.barangay = data.barangay
     if data.toda_name: 
-    user.toda_name = data.toda_name.strip().upper()
+        user.toda_name = data.toda_name.strip().upper()
     
     city_str = user.city or "Pasig City"
     if user.barangay and user.toda_name:
