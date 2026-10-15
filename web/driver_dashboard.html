@@ -271,8 +271,8 @@
         }
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
-            const button = menu.previousElementSibling;
-            if (!menu.contains(event.target) && !button.contains(event.target)) {
+            const button = menu ? menu.previousElementSibling : null;
+            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
                 menu.style.display = 'none';
             }
         });
@@ -434,20 +434,20 @@
                 if (!pendingContainer || !activeContainer) return;
 
                 // --- 1. PENDING RIDES (RADAR - STRICT TODA FILTER) ---
-const pendingRides = allRides.filter(ride => {
-    if (ride.status !== 'pending') return false;
-    
-    // 🟢 Guard: If driver TODA is still loading or empty, hide all orders
-    if (!currentDriverToda || currentDriverToda.trim() === "") {
-        return false;
-    }
+                const pendingRides = allRides.filter(ride => {
+                    if (ride.status !== 'pending') return false;
+                    
+                    // 🟢 Guard: If driver TODA is still loading or empty, hide all orders
+                    if (!currentDriverToda || currentDriverToda.trim() === "") {
+                        return false;
+                    }
 
-    const targetToda = currentDriverToda.trim().toUpperCase();
-    const rideBranch = (ride.branch || "").toUpperCase();
-    const rideRef = (ride.local_ref || "").toUpperCase();
+                    const targetToda = currentDriverToda.trim().toUpperCase();
+                    const rideBranch = (ride.branch || "").toUpperCase();
+                    const rideRef = (ride.local_ref || "").toUpperCase();
 
-    return rideBranch.includes(targetToda) || rideRef.includes(targetToda);
-});
+                    return rideBranch.includes(targetToda) || rideRef.includes(targetToda);
+                });
                 
                 if (pendingRides.length > previousPendingCount) playAlert('radar');
                 previousPendingCount = pendingRides.length; 
@@ -525,7 +525,6 @@ const pendingRides = allRides.filter(ride => {
                 } else {
                     activeContainer.innerHTML = '';
                     activeRides.reverse().forEach(ride => {
-                        
                         setupBackgroundChat(ride.id);
 
                         let activeExtraDetailsHtml = "";
@@ -547,7 +546,16 @@ const pendingRides = allRides.filter(ride => {
 
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
-                            actionButtonHtml = `<button onclick="completeRide(${ride.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20 mt-1"><i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete</button>`;
+                            actionButtonHtml = `
+                                <div class="flex gap-2 mt-2">
+                                    <button onclick="completeRide(${ride.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20">
+                                        <i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete
+                                    </button>
+                                    <button onclick="driverCancelRide(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
+                                        Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
+                                    </button>
+                                </div>
+                            `;
                         } else if (ride.status === 'completed') {
                             actionButtonHtml = `
                                 <div class="bg-white border-2 border-dashed border-green-700/50 rounded-xl p-4 mb-4 mt-2 text-center">
@@ -645,6 +653,22 @@ const pendingRides = allRides.filter(ride => {
                 else alert("Error: Could not complete the ride.");
             } catch (error) {
                 alert("Network error. Please try again.");
+            }
+        }
+
+        // 🟢 DRIVER CANCEL / RELEASE: Proper global scope placement
+        async function driverCancelRide(rideId) {
+            if (!confirm("Are you sure you want to release this ride back to the radar?")) return;
+            try {
+                const response = await fetch(`/driver-cancel-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) {
+                    loadDashboardRides(); // Instantly clears Active Rides and restores radar
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || "Error releasing ride.");
+                }
+            } catch (e) {
+                alert("Network error.");
             }
         }
 
