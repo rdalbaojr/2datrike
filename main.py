@@ -76,6 +76,8 @@ class RideRequest(Base):
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
+    cancelled_by = Column(String, nullable=True)     # "passenger" or "driver"
+    cancel_reason = Column(String, nullable=True)    # e.g., "Passenger no-show"
     
     pabili_list = Column(Text, nullable=True)
     item_description = Column(Text, nullable=True)
@@ -167,6 +169,9 @@ def initialize_config():
         db.execute(text("ALTER TABLE users ADD COLUMN local_ref VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_q VARCHAR DEFAULT ''"))
         db.execute(text("ALTER TABLE users ADD COLUMN security_a VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN cancelled_by VARCHAR DEFAULT ''"))
+        db.execute(text("ALTER TABLE ride_requests ADD COLUMN cancel_reason VARCHAR DEFAULT ''"))
+        
         db.commit()
     except Exception:
         db.rollback()
@@ -611,8 +616,11 @@ def driver_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
     db.refresh(ride)
     return {"status": "success", "message": "Ride returned to radar", "id": ride.id}
 
+class CancelRideSchema(BaseModel):
+    reason: str
+
 @app.post("/api/passenger-cancel-ride/{ride_id}")
-def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
+def passenger_cancel_ride(ride_id: int, data: CancelRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
@@ -621,24 +629,33 @@ def passenger_cancel_ride(ride_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Cannot cancel a completed trip")
 
     ride.status = "cancelled"
+    ride.cancelled_by = "passenger"
+    ride.cancel_reason = data.reason.strip()
     db.commit()
     db.refresh(ride)
-    return {"status": "success", "message": "Ride successfully cancelled", "id": ride.id}
+    return {"status": "success", "message": "Ride cancelled", "reason": ride.cancel_reason}
 
-@app.post("/accept-ride/{ride_id}")
-def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_db)):
+
+@app.post("/driver-cancel-ride/{ride_id}")
+def driver_cancel_ride(ride_id: int, data: CancelRideSchema, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride:
         raise HTTPException(status_code=404, detail="Ride not found")
     
-    if ride.status != "pending":
-        raise HTTPException(status_code=400, detail="Ride has already been accepted")
+    if ride.status != "accepted":
+        raise HTTPException(status_code=400, detail="Cannot release a ride that is not in progress")
 
-    clean_driver = sanitize_name(data.driver_name)
-    driver_user = db.query(User).filter(
-        (User.full_name.ilike(clean_driver)) | (User.username.ilike(clean_driver)),
-        User.role == "driver"
-    ).first()
+    # Record the release reason in history before resetting to pending
+    clean_driver = sanitize_name(ride.driver_name)
+    ride.cancelled_by = f"driver:{clean_driver}"
+    ride.cancel_reason = data.reason.strip()
+    
+    # Reset assignment so another TODA driver can claim it
+    ride.driver_name = None
+    ride.status = "pending"
+    db.commit()
+    db.refresh(ride)
+    return {"status": "success", "message": "Ride returned to radar", "reason": ride.cancel_reason}
 
     # 🟢 Strict TODA boundary check
     if driver_user and driver_user.toda_name:
@@ -739,7 +756,56 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
         })
         
     return results
+@app.get("/api/toda/cancellations/{toda_name}")
+def get_toda_cancellations(toda_name: str, db: Session = Depends(get_db)):
+    clean_toda = toda_name.strip().upper()
+    
+    # Query rides belonging to this TODA territory with cancellation records
+    rides = db.query(RideRequest).filter(
+        RideRequest.branch.ilike(f"%{clean_toda}%"),
+        RideRequest.cancel_reason != "",
+        RideRequest.cancel_reason.isnot(None)
+    ).order_by(RideRequest.id.desc()).limit(100).all()
 
+    # Aggregate cancellation frequency per passenger and driver
+    passenger_cancels = {}
+    driver_cancels = {}
+    incident_logs = []
+
+    for r in rides:
+        p_name = sanitize_name(r.passenger_name)
+        if r.cancelled_by == "passenger":
+            passenger_cancels[p_name] = passenger_cancels.get(p_name, 0) + 1
+        elif r.cancelled_by and r.cancelled_by.startswith("driver:"):
+            d_name = r.cancelled_by.replace("driver:", "").strip()
+            driver_cancels[d_name] = driver_cancels.get(d_name, 0) + 1
+
+        incident_logs.append({
+            "ride_id": r.id,
+            "local_ref": r.local_ref or "N/A",
+            "passenger_name": p_name,
+            "cancelled_by": r.cancelled_by,
+            "reason": r.cancel_reason,
+            "pickup": r.pickup_location,
+            "dropoff": r.dropoff_location,
+            "fare": r.fare,
+            "timestamp": r.created_at.strftime("%b %d, %I:%M %p") if r.created_at else "N/A"
+        })
+
+    # Flag users with 3 or more cancellations
+    flagged_passengers = [name for name, count in passenger_cancels.items() if count >= 3]
+    flagged_drivers = [name for name, count in driver_cancels.items() if count >= 3]
+
+    return {
+        "toda": clean_toda,
+        "incident_logs": incident_logs,
+        "flagged_passengers": flagged_passengers,
+        "flagged_drivers": flagged_drivers,
+        "stats": {
+            "passenger_cancel_counts": passenger_cancels,
+            "driver_cancel_counts": driver_cancels
+        }
+    }
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     platform_pct = 17.0 / 100
