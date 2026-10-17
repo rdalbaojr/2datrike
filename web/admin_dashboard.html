@@ -240,7 +240,20 @@
             if (match) return match[2];
             return null;
         }
-
+async function loadAdminPlatformFinances() {
+    try {
+        const response = await fetch(`/api/admin/finances?t=${new Date().getTime()}`);
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('adm-fin-today').innerText = `₱${(data.today || 0).toFixed(2)}`;
+            document.getElementById('adm-fin-week').innerText = `₱${(data.week || 0).toFixed(2)}`;
+            document.getElementById('adm-fin-month').innerText = `₱${(data.month || 0).toFixed(2)}`;
+            document.getElementById('adm-fin-ytd').innerText = `₱${(data.ytd || 0).toFixed(2)}`;
+        }
+    } catch (e) {
+        console.error("Could not load admin finances", e);
+    }
+}
         async function handleMasterLogin(event) {
             event.preventDefault();
             const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
@@ -287,6 +300,7 @@
         window.onload = async function() {
             if (getCookie('admin_session') === 'masterom_active') {
                 document.getElementById('lockOverlay').style.display = 'none';
+            loadAdminPlatformFinances();
             }
 
             // Default Cutoff Date to Today
