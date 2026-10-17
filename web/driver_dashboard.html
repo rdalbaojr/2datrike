@@ -774,99 +774,99 @@
         }
 
         async function updateEarningsTable(allRides, driverName) {
-            if (!Array.isArray(allRides)) return;
+    if (!Array.isArray(allRides)) return;
 
-            let platformPct = 17.0;
-            let katodaPct = 3.0;
+    let platformPct = 17.0;
+    let katodaPct = 3.0;
 
-            try {
-                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
-                if (profileRes.ok) {
-                    const profile = await profileRes.json();
-                    if (profile.toda_name) {
-                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
-                        if (configRes.ok) {
-                            const config = await configRes.json();
-                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
-                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
-                        }
-                    }
-                }
-            } catch (error) { console.warn("Using default share rates."); }
-
-            const labelPlat = document.getElementById('label-platform');
-            const labelToda = document.getElementById('label-katoda');
-            if (labelPlat) labelPlat.innerText = "Platform Share:";
-            if (labelToda) labelToda.innerText = "TODA Share:";
-
-            const completedRides = allRides.filter(ride => 
-                (ride.status === 'paid' || ride.status === 'completed') && 
-                ride.driver_name && 
-                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
-            );
-
-            let serviceStats = {};
-            let totalGross = 0.0;
-            let totalNightDiff = 0.0;
-
-            completedRides.forEach(ride => {
-                let sType = ride.service_type || 'Pasundo';
-                let isNight = sType.includes('(Night Rate)');
-                sType = sType.replace(' (Night Rate)', '').trim();
-
-                let fareVal = 0.0;
-                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
-
-                if (isNight) {
-                    let originalFare = fareVal / 1.10;
-                    totalNightDiff += (fareVal - originalFare);
-                }
-
-                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
-                
-                serviceStats[sType].qty += 1;
-                serviceStats[sType].amount += fareVal;
-                totalGross += fareVal;
-            });
-
-            const platformCut = totalGross * (platformPct / 100.0);
-            const katodaCut = totalGross * (katodaPct / 100.0);
-            const netEarnings = totalGross - platformCut - katodaCut;
-
-            const tbody = document.getElementById('shift-report-body');
-            if (tbody) {
-                tbody.innerHTML = '';
-                if (Object.keys(serviceStats).length === 0) {
-                    tbody.innerHTML = `
-                        <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
-                        </tr>
-                    `;
-                } else {
-                    for (const [sType, data] of Object.entries(serviceStats)) {
-                        tbody.innerHTML += `
-                            <tr class="hover:bg-[#e8cda8]/50 transition">
-                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
-                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
-                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
-                            </tr>
-                        `;
-                    }
+    try {
+        const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
+        if (profileRes.ok) {
+            const profile = await profileRes.json();
+            if (profile.toda_name) {
+                const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
+                if (configRes.ok) {
+                    const config = await configRes.json();
+                    if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
+                    if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
                 }
             }
-
-            const elGross = document.getElementById('amt-gross');
-            const elNight = document.getElementById('amt-night-diff');
-            const elPlat = document.getElementById('amt-platform');
-            const elToda = document.getElementById('amt-katoda');
-            const elNet = document.getElementById('amt-net');
-
-            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
-            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
-            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
-            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
-            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
         }
+    } catch (e) { console.warn("Using default share rates."); }
+
+    const totalMarkupRate = (platformPct + katodaPct) / 100.0; // 0.20
+
+    const completedRides = allRides.filter(ride => 
+        (ride.status === 'paid' || ride.status === 'completed') && 
+        ride.driver_name && 
+        ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
+    );
+
+    let serviceStats = {};
+    let totalGross = 0.0;
+    let totalEffectiveBase = 0.0;
+    let totalNightDiffEarned = 0.0;
+
+    completedRides.forEach(ride => {
+        let sType = ride.service_type || 'Pasundo';
+        let isNight = sType.includes('(Night Rate)');
+        let cleanType = sType.replace(' (Night Rate)', '').trim();
+
+        let fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
+
+        // Isolate effective base from customer gross (Gross / 1.20)
+        let effectiveBase = fareVal / (1.0 + totalMarkupRate);
+        
+        // Track the night diff portion earned by the driver
+        if (isNight) {
+            let standardDayBase = effectiveBase / 1.10;
+            totalNightDiffEarned += (effectiveBase - standardDayBase);
+        }
+
+        if (!serviceStats[cleanType]) serviceStats[cleanType] = { qty: 0, amount: 0.0 };
+        serviceStats[cleanType].qty += 1;
+        serviceStats[cleanType].amount += fareVal;
+
+        totalGross += fareVal;
+        totalEffectiveBase += effectiveBase;
+    });
+
+    // Deductions calculated directly on the effective base
+    const platformCut = totalEffectiveBase * (platformPct / 100.0);
+    const katodaCut = totalEffectiveBase * (katodaPct / 100.0);
+    const netEarnings = totalGross - platformCut - katodaCut; // Exactly equals totalEffectiveBase
+
+    // Render Table
+    const tbody = document.getElementById('shift-report-body');
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (Object.keys(serviceStats).length === 0) {
+            tbody.innerHTML = `<tr class="hover:bg-[#e8cda8]/50 transition"><td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td></tr>`;
+        } else {
+            for (const [sType, data] of Object.entries(serviceStats)) {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#e8cda8]/50 transition">
+                        <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                        <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
+                        <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+        }
+    }
+
+    // Dynamic Labels and Totals
+    const labelPlat = document.getElementById('label-platform');
+    const labelToda = document.getElementById('label-katoda');
+    if (labelPlat) labelPlat.innerText = `Platform Share (${platformPct}%):`;
+    if (labelToda) labelToda.innerText = `TODA Share (${katodaPct}%):`;
+
+    document.getElementById('amt-gross').innerText = `₱${totalGross.toFixed(2)}`;
+    document.getElementById('amt-night-diff').innerText = `₱${totalNightDiffEarned.toFixed(2)}`;
+    document.getElementById('amt-platform').innerText = `- ₱${platformCut.toFixed(2)}`;
+    document.getElementById('amt-katoda').innerText = `- ₱${katodaCut.toFixed(2)}`;
+    document.getElementById('amt-net').innerText = `₱${netEarnings.toFixed(2)}`;
+}
 
         function setupBackgroundChat(rideId) {
             if (backgroundSockets[rideId]) return;
