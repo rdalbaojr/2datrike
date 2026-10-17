@@ -63,6 +63,10 @@
 
         <!-- ==================== LOGIN FORM ==================== -->
         <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 block">
+            <div id="signup-success-alert" class="hidden p-3 rounded-xl text-xs font-bold border bg-green-100 border-green-800/30 text-green-900 text-center">
+                ✅ Account created successfully! Please enter your password to log in.
+            </div>
+
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <i class="fa-solid fa-user text-[#78350f] opacity-70"></i>
@@ -83,13 +87,13 @@
 
             <div id="login-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
-            <button type="submit" id="btn-login" class="w-full py-4 mt-2 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex justify-center items-center gap-2">
+            <button type="submit" id="btn-login" class="w-full py-4 mt-2 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer">
                 Log In <i class="fa-solid fa-arrow-right-to-bracket"></i>
             </button>
             
             <div class="text-center mt-6">
                 <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
-                <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1">
+                <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1 cursor-pointer">
                     Please Signup here.
                 </a>
             </div>
@@ -159,12 +163,12 @@
             
             <div id="reg-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
-            <button type="submit" id="btn-register" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2">
+            <button type="submit" id="btn-register" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-user-plus"></i> Create Account
             </button>
 
             <div class="text-center mt-3">
-                <a href="#" onclick="switchTab('login')" class="text-sm font-bold text-[#78350f] hover:text-[#5a270b] transition underline">Already have an account? Login here.</a>
+                <a href="#" onclick="switchTab('login')" class="text-sm font-bold text-[#78350f] hover:text-[#5a270b] transition underline cursor-pointer">Already have an account? Login here.</a>
             </div>
         </form>
     </div>
@@ -201,13 +205,13 @@
                 
                 <div id="forgot-alert" class="hidden mt-2 p-2 rounded-lg text-xs font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
 
-                <button type="submit" id="btn-forgot" class="w-full py-3.5 mt-2 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-md transition text-sm">
+                <button type="submit" id="btn-forgot" class="w-full py-3.5 mt-2 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer">
                     Reset & Update Password
                 </button>
             </form>
             
             <div class="text-center mt-4">
-                <button onclick="closeForgotModal()" class="text-xs font-bold text-[#78350f] hover:text-[#5a270b] transition underline">
+                <button onclick="closeForgotModal()" class="text-xs font-bold text-[#78350f] hover:text-[#5a270b] transition underline cursor-pointer">
                     Cancel & Return to Login
                 </button>
             </div>
@@ -240,6 +244,7 @@
         function switchTab(tab) {
             const loginForm = document.getElementById('form-login');
             const regForm = document.getElementById('form-register');
+            const successAlert = document.getElementById('signup-success-alert');
 
             if (tab === 'login') {
                 loginForm.classList.remove('hidden');
@@ -247,6 +252,7 @@
             } else {
                 loginForm.classList.add('hidden');
                 regForm.classList.remove('hidden');
+                if (successAlert) successAlert.classList.add('hidden');
                 toggleTodaField();
             }
         }
@@ -340,7 +346,7 @@
                         document.cookie = `driver_name=${encodeURIComponent(user)}; path=/; max-age=86400`;
                     }
 
-                    window.location.href = response.url || "driver_dashboard.html"; 
+                    window.location.href = response.url || "booking.html"; 
                 } else {
                     const errData = await response.json().catch(() => ({}));
                     alertBox.textContent = errData.detail || "⚠️ Invalid username or password.";
@@ -354,6 +360,9 @@
             }
         }
 
+        // ==========================================
+        // 🟢 REGISTRATION: SAVES TO DATABASE, THEN FORCES LOGIN
+        // ==========================================
         async function handleRegister(event) {
             event.preventDefault();
             const alertBox = document.getElementById('reg-alert');
@@ -369,7 +378,7 @@
 
             alertBox.classList.add('hidden');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Account...';
 
             const payload = {
                 full_name: document.getElementById('reg-name').value.trim(),
@@ -389,6 +398,7 @@
             };
 
             try {
+                // 1. Save new user account to SQLite database
                 const response = await fetch('/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -396,22 +406,24 @@
                 });
 
                 if (response.ok) {
-                    const realName = payload.full_name || payload.username;
-                    const realToda = payload.toda_name || "";
+                    // 2. Clear registration form
+                    document.getElementById('form-register').reset();
 
-                    localStorage.setItem('driver_name', realName);
-                    localStorage.setItem('passenger_name', realName);
-                    localStorage.setItem('driver_toda', realToda);
+                    // 3. Switch to Login tab and show success message
+                    switchTab('login');
+                    const successAlert = document.getElementById('signup-success-alert');
+                    if (successAlert) {
+                        successAlert.innerText = `✅ Account created for "${payload.username}"! Please enter your password to log in.`;
+                        successAlert.classList.remove('hidden');
+                    }
 
-                    document.cookie = `driver_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
-                    document.cookie = `passenger_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
-
-                    if (payload.role === 'driver') {
-                        window.location.href = "driver_dashboard.html";
-                    } else if (payload.role === 'toda_admin') {
-                        window.location.href = "toda_dashboard.html";
-                    } else {
-                        window.location.href = "booking.html";
+                    // 4. Pre-fill username into login field and focus password
+                    const loginUserInput = document.getElementById('login-username');
+                    const loginPassInput = document.getElementById('login-password');
+                    if (loginUserInput) loginUserInput.value = payload.username;
+                    if (loginPassInput) {
+                        loginPassInput.value = '';
+                        loginPassInput.focus();
                     }
                 } else {
                     const data = await response.json().catch(() => ({}));
@@ -453,6 +465,7 @@
                     alert("✅ Password successfully reset! You can now log in.");
                     closeForgotModal();
                     document.getElementById('login-username').value = payload.username;
+                    document.getElementById('login-password').value = '';
                 } else {
                     const data = await response.json().catch(() => ({}));
                     alertBox.textContent = data.detail || "⚠️ Security answer is incorrect.";
