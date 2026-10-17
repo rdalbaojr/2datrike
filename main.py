@@ -735,10 +735,10 @@ def get_toda_cancellations(toda_name: str, db: Session = Depends(get_db)):
     }
 
 # ==========================================
-# 🟢 UPDATED FINANCIAL PAYOUTS (BASE + 20% TOP-UP)
+# 🟢 ADMIN PAYOUT SUMMARY WITH CUTOFF & EXCLUSIVITY
 # ==========================================
 @app.get("/api/admin/payout-summary")
-def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
+def get_payout_summary(branch: str = "All", cutoff_date: Optional[str] = None, db: Session = Depends(get_db)):
     display_bank = "GCash"
     display_account = "Not Configured"
     
@@ -747,8 +747,9 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
     default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
     default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
 
-    if branch != "All":
-        b_conf = toda_configs.get(branch.strip().upper())
+    clean_branch = branch.strip()
+    if clean_branch != "All":
+        b_conf = toda_configs.get(clean_branch.upper())
         if b_conf:
             display_bank = b_conf.katoda_bank or "GCash"
             display_account = b_conf.katoda_account or "Not Configured"
@@ -757,9 +758,8 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
         display_bank = (sys_config.katoda_bank if sys_config and sys_config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
         display_account = (sys_config.katoda_account if sys_config and sys_config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
 
+    # 1. Initialize Driver payout buckets
     payouts = {}
-    clean_branch = branch.strip()
-
     query = db.query(User).filter(User.role == 'driver')
     if clean_branch != "All":
         query = query.filter(
@@ -769,8 +769,7 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             (User.city.ilike(f"%{clean_branch}%"))
         )
     
-    all_drivers = query.all()
-    for driver in all_drivers:
+    for driver in query.all():
         d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
         raw_acct = driver.gcash_account.strip() if driver.gcash_account else ""
         if raw_acct and raw_acct.lower() not in ["gcash", "maya"]:
@@ -789,12 +788,24 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             "driver_share": 0.0,
             "katoda_share": 0.0,
             "platform_share": 0.0,
-            "local_ref": driver.local_ref if driver.local_ref else "N/A"
+            "local_ref": driver.local_ref if driver.local_ref else "2DA"
         }
 
-    unsettled_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    # 2. Query rides and filter by Cutoff Date (up to 23:59:59 of selected date)
+    rides_query = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"]))
+    if cutoff_date and cutoff_date.strip():
+        try:
+            c_date = datetime.strptime(cutoff_date.strip(), "%Y-%m-%d").date()
+            cutoff_dt = datetime.combine(c_date, datetime.max.time())
+            rides_query = rides_query.filter(RideRequest.created_at <= cutoff_dt)
+        except ValueError:
+            pass
+
+    unsettled_rides = rides_query.all()
     total_katoda = 0.0
     total_platform = 0.0
+    total_gross_all = 0.0
+    total_rides_all = 0
 
     for ride in unsettled_rides:
         if not ride.driver_name or not ride.fare: continue
@@ -803,7 +814,6 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             
         clean_fare = parse_fare(ride.fare)
 
-        # Dynamic rate lookup for this ride's chapter
         p_pct = default_p_pct
         k_pct = default_k_pct
         if ride.branch:
@@ -813,16 +823,17 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
                     k_pct = (tc.katoda_share or 3.0) / 100.0
                     break
 
-        total_markup_rate = p_pct + k_pct  # 0.20
-        # 🟢 Base Fare is 100% Driver's Share (includes +10% night diff automatically if applied)
-        effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
+        total_markup = p_pct + k_pct  # 0.20
+        effective_base = clean_fare / (1.0 + total_markup) if (1.0 + total_markup) > 0 else clean_fare
 
         katoda_cut = effective_base * k_pct
         platform_cut = effective_base * p_pct
-        driver_cut = clean_fare - katoda_cut - platform_cut  # Equals effective_base
+        driver_cut = effective_base
 
         total_katoda += katoda_cut
         total_platform += platform_cut
+        total_gross_all += clean_fare
+        total_rides_all += 1
 
         if clean_driver_name in payouts:
             payouts[clean_driver_name]["ride_count"] += 1
@@ -830,14 +841,144 @@ def get_payout_summary(branch: str = "All", db: Session = Depends(get_db)):
             payouts[clean_driver_name]["driver_share"] += driver_cut
             payouts[clean_driver_name]["katoda_share"] += katoda_cut
             payouts[clean_driver_name]["platform_share"] += platform_cut
-    
+
+    total_driver_net = sum(p["driver_share"] for p in payouts.values())
+    total_bizlink_disbursement = total_driver_net + total_katoda  # 🟢 Platform share strictly excluded
+
     return {
         "drivers": list(payouts.values()),
+        "total_rides": total_rides_all,
+        "total_gross": total_gross_all,
+        "total_driver_net": total_driver_net,
         "total_katoda": total_katoda,
         "total_platform": total_platform,
+        "total_bizlink_disbursement": total_bizlink_disbursement,
         "katoda_bank": display_bank,
-        "katoda_account": display_account
+        "katoda_account": display_account,
+        "cutoff_date": cutoff_date or datetime.now().strftime("%Y-%m-%d")
     }
+
+# ==========================================
+# 🟢 BIZLINK EXPORT WITH CUTOFF (EXCLUDES ADMIN)
+# ==========================================
+@app.get("/api/admin/generate-bizlink-payout")
+def generate_bizlink_payout(branch: str = "All", cutoff_date: Optional[str] = None, db: Session = Depends(get_db)):
+    toda_configs = {tc.toda_name.upper(): tc for tc in db.query(TodaConfig).all()}
+    sys_config = db.query(SystemConfig).first()
+    default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
+    default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
+
+    katoda_bank = "GCash"
+    katoda_account = "MISSING_KATODA_ACCOUNT"
+    clean_branch = branch.strip()
+
+    if clean_branch != "All":
+        b_conf = toda_configs.get(clean_branch.upper())
+        if b_conf:
+            katoda_bank = b_conf.katoda_bank or "GCash"
+            katoda_account = b_conf.katoda_account or "MISSING_ACCOUNT"
+    else:
+        first_toda = next((tc for tc in toda_configs.values() if tc.katoda_account), None)
+        if first_toda:
+            katoda_bank = first_toda.katoda_bank
+            katoda_account = first_toda.katoda_account
+
+    driver_payouts = {}
+    query = db.query(User).filter(User.role == 'driver')
+    if clean_branch != "All":
+        query = query.filter((User.city == clean_branch) | (User.branch == clean_branch) | (User.toda_name == clean_branch))
+        
+    for driver in query.all():
+        d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
+        driver_payouts[d_name] = 0.0
+
+    # Filter rides up to cutoff date
+    rides_query = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"]))
+    if cutoff_date and cutoff_date.strip():
+        try:
+            c_date = datetime.strptime(cutoff_date.strip(), "%Y-%m-%d").date()
+            cutoff_dt = datetime.combine(c_date, datetime.max.time())
+            rides_query = rides_query.filter(RideRequest.created_at <= cutoff_dt)
+        except ValueError:
+            pass
+
+    unsettled_rides = rides_query.all()
+    total_katoda_payout = 0.0
+
+    for ride in unsettled_rides:
+        if not ride.driver_name or not ride.fare: continue
+        clean_driver_name = sanitize_name(ride.driver_name)
+        if clean_branch != "All" and clean_driver_name not in driver_payouts: continue
+            
+        clean_fare = parse_fare(ride.fare)
+
+        p_pct = default_p_pct
+        k_pct = default_k_pct
+        if ride.branch:
+            for t_name, tc in toda_configs.items():
+                if t_name in ride.branch.upper():
+                    p_pct = (tc.platform_share or 17.0) / 100.0
+                    k_pct = (tc.katoda_share or 3.0) / 100.0
+                    break
+
+        total_markup = p_pct + k_pct
+        effective_base = clean_fare / (1.0 + total_markup) if (1.0 + total_markup) > 0 else clean_fare
+
+        katoda_cut = effective_base * k_pct
+        driver_cut = effective_base
+
+        if clean_driver_name in driver_payouts: 
+            driver_payouts[clean_driver_name] += driver_cut
+        else: 
+            driver_payouts[clean_driver_name] = driver_cut
+        total_katoda_payout += katoda_cut
+
+    # Format Date & Batch
+    now = datetime.now()
+    batch_id = now.strftime("BZ%m%d%H%M")
+    cutoff_label = cutoff_date.replace("-", "") if cutoff_date else now.strftime("%Y%m%d")
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Account Number", "Beneficiary Name", "Amount", "Remarks"])
+
+    # 🟢 1. Driver rows (100% Base Fare)
+    for driver_name, amount in driver_payouts.items():
+        if amount > 0:
+            driver_user = db.query(User).filter(
+                (User.full_name.ilike(driver_name)) | (User.username.ilike(driver_name)),
+                User.role == 'driver'
+            ).first()
+
+            raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
+            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: 
+                account_number = raw_acct
+            elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip(): 
+                account_number = driver_user.whatsapp_number
+            else: 
+                account_number = "MISSING_ACCOUNT"
+                
+            local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
+            # Strict 30-character BizLink Remark format
+            remarks_string = f"{local_tag} CO{cutoff_label[-4:]} {batch_id}"[:30]
+            writer.writerow([account_number, driver_name, f"{amount:.2f}", remarks_string])
+
+    # 🟢 2. TODA Chapter Row (remittance only)
+    if total_katoda_payout > 0:
+        org_title = f"{clean_branch} TODA" if clean_branch != "All" else "TODA Chapters"
+        remarks_toda = f"TODA CO{cutoff_label[-4:]} {batch_id}"[:30]
+        writer.writerow([katoda_account, f"{org_title} Org", f"{total_katoda_payout:.2f}", remarks_toda])
+
+    # 🔴 NOTE: Platform / Admin share is NEVER written to the CSV
+
+    output.seek(0)
+    filename_branch = clean_branch.replace(' ', '_')
+    
+    return StreamingResponse(
+        iter([output.getvalue()]), 
+        media_type="text/csv", 
+        headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Cutoff_{cutoff_label}.csv"}
+    )
 
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
