@@ -57,7 +57,7 @@
                 <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
                 
                 <form onsubmit="event.preventDefault(); unlockTodaDashboard();" class="w-full max-w-[320px] flex flex-col gap-3">
-                    <input type="text" id="todaUser" required placeholder="Admin Username (e.g., MAYTODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                    <input type="text" id="todaUser" required placeholder="Admin Username (e.g., KATODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
                     <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                     
                     <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
@@ -79,15 +79,18 @@
                     </div>
                     <div>
                         <h1 id="cmd-center-title" class="text-2xl font-extrabold text-slate-900">Command Center</h1>
-                        <p class="text-sm text-amber-900 font-medium">Monitoring & Fleet Management</p>
+                        <p class="text-sm text-amber-900 font-medium">
+                            Monitoring & Fleet Management 
+                            <span id="active-share-badge" class="ml-2 bg-amber-950 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">3.0% Share</span>
+                        </p>
                     </div>
                 </div>
-                <button onclick="logoutToda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shrink-0">
+                <button onclick="logoutToda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shrink-0 cursor-pointer">
                     <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                 </button>
             </div>
 
-            <!-- Financial Growth -->
+            <!-- Financial Growth Cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm relative overflow-hidden">
                     <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-day"></i></div>
@@ -120,7 +123,7 @@
                     </h2>
                     <p id="broadcast-subtitle" class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all drivers.</p>
                     <textarea id="broadcast-msg" rows="4" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 outline-none focus:border-amber-700 text-sm font-medium resize-none mb-3" placeholder="Type your message here..."></textarea>
-                    <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md">
+                    <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md cursor-pointer">
                         <i class="fa-regular fa-paper-plane"></i> Send to Fleet
                     </button>
                 </div>
@@ -165,7 +168,7 @@
                         </h2>
                         <p class="text-[11px] text-amber-900 font-semibold mt-0.5">Audit releases, passenger cancel reasons, and habitual offenders.</p>
                     </div>
-                    <button onclick="loadCancellations()" class="text-xs font-bold bg-amber-900/10 hover:bg-amber-900/20 text-[#78350f] px-3.5 py-1.5 rounded-xl border border-[#78350f]/20 transition flex items-center gap-1.5 shadow-sm">
+                    <button onclick="loadCancellations()" class="text-xs font-bold bg-amber-900/10 hover:bg-amber-900/20 text-[#78350f] px-3.5 py-1.5 rounded-xl border border-[#78350f]/20 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
                         <i class="fa-solid fa-arrows-rotate"></i> Sync Logs
                     </button>
                 </div>
@@ -257,7 +260,10 @@
         };
 
         function logoutToda() {
+            // 🟢 Wipe both session and local storage so user is not automatically re-authenticated
             sessionStorage.removeItem("active_toda_admin");
+            localStorage.removeItem("toda_name");
+
             document.getElementById('toda-main-section').classList.add('hidden');
             
             const overlay = document.getElementById('todaLockOverlay');
@@ -283,19 +289,31 @@
             if(!activeTodaName) return;
 
             try {
+                // 1. Fetch Drivers Roster
                 const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
                 if(driverRes.ok) {
                     allDrivers = await driverRes.json();
                     renderDrivers();
                 }
 
+                // 2. Fetch Chapter Finances
                 const financeRes = await fetch(`/api/toda/finances?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
                 if(financeRes.ok) {
                     const finances = await financeRes.json();
-                    document.getElementById('fin-today').innerText = `₱${finances.today.toFixed(2)}`;
-                    document.getElementById('fin-week').innerText = `₱${finances.week.toFixed(2)}`;
-                    document.getElementById('fin-month').innerText = `₱${finances.month.toFixed(2)}`;
-                    document.getElementById('fin-ytd').innerText = `₱${finances.ytd.toFixed(2)}`;
+                    document.getElementById('fin-today').innerText = `₱${(finances.today || 0).toFixed(2)}`;
+                    document.getElementById('fin-week').innerText = `₱${(finances.week || 0).toFixed(2)}`;
+                    document.getElementById('fin-month').innerText = `₱${(finances.month || 0).toFixed(2)}`;
+                    document.getElementById('fin-ytd').innerText = `₱${(finances.ytd || 0).toFixed(2)}`;
+                }
+
+                // 3. Fetch Config to show active negotiated share % in header
+                const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(activeTodaName)}?t=${new Date().getTime()}`);
+                if(configRes.ok) {
+                    const conf = await configRes.json();
+                    const badge = document.getElementById('active-share-badge');
+                    if (badge && conf.katoda_share !== undefined) {
+                        badge.innerText = `${conf.katoda_share.toFixed(1)}% Share`;
+                    }
                 }
             } catch (error) {
                 console.error("Error loading live TODA data:", error);
@@ -319,7 +337,7 @@
                 const flaggedDrivers = data.flagged_drivers || [];
                 const flaggedPassengers = data.flagged_passengers || [];
 
-                // 1. Alert Banner for 3+ cancellations
+                // Alert Banner for 3+ cancellations
                 if (flaggedDrivers.length > 0 || flaggedPassengers.length > 0) {
                     let notices = [];
                     if (flaggedDrivers.length > 0) {
@@ -334,7 +352,6 @@
                     flaggedBanner.classList.add('hidden');
                 }
 
-                // 2. Populate Incident Rows
                 if (logs.length === 0) {
                     tbody.innerHTML = `
                         <tr>
@@ -444,7 +461,7 @@
                 let actionButtons = '';
                 if (isSuspended) {
                     actionButtons = `
-                        <button onclick="disciplineAction(${driver.id}, 'reinstate')" class="bg-green-700 hover:bg-green-800 text-white px-3 h-7 rounded flex items-center justify-center transition shadow-sm text-[10px] font-bold" title="Reinstate Account">
+                        <button onclick="disciplineAction(${driver.id}, 'reinstate')" class="bg-green-700 hover:bg-green-800 text-white px-3 h-7 rounded flex items-center justify-center transition shadow-sm text-[10px] font-bold cursor-pointer" title="Reinstate Account">
                             <i class="fa-solid fa-rotate-left mr-1"></i> Reinstate
                         </button>
                     `;
@@ -452,10 +469,10 @@
                     actionButtons = `
                         <div class="flex items-center gap-1.5">
                             <span class="text-[9px] font-bold text-amber-800 mr-1" title="Warnings">${driver.warnings}/3 <i class="fa-solid fa-triangle-exclamation"></i></span>
-                            <button onclick="disciplineAction(${driver.id}, 'warn')" class="bg-amber-500 hover:bg-amber-600 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm" title="Issue Warning">
+                            <button onclick="disciplineAction(${driver.id}, 'warn')" class="bg-amber-500 hover:bg-amber-600 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm cursor-pointer" title="Issue Warning">
                                 <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
                             </button>
-                            <button onclick="disciplineAction(${driver.id}, 'suspend')" class="bg-red-700 hover:bg-red-800 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm" title="Suspend Account">
+                            <button onclick="disciplineAction(${driver.id}, 'suspend')" class="bg-red-700 hover:bg-red-800 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm cursor-pointer" title="Suspend Account">
                                 <i class="fa-solid fa-ban text-[10px]"></i>
                             </button>
                         </div>
