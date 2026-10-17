@@ -46,10 +46,8 @@
     <!-- ==================== TODA DASHBOARD ==================== -->
     <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <!-- 🟢 SECURE TODA LOGIN OVERLAY (BULLETPROOF FORM) -->
+        <!-- SECURE TODA LOGIN OVERLAY -->
         <div id="todaLockOverlay" class="fixed inset-0 bg-[#C87F37] z-[100] flex items-center justify-center p-4">
-            
-            <!-- 🟢 LIGHTER SHADOWED CARD WRAPPER -->
             <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-8 max-w-[420px] w-full flex flex-col items-center text-center shadow-2xl relative">
                 
                 <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
@@ -67,11 +65,10 @@
                     </button>
                     <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
                 </form>
-
             </div>
         </div>
 
-        <!-- 🟢 TODA MAIN DASHBOARD -->
+        <!-- TODA MAIN DASHBOARD -->
         <div id="toda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-4">
             
             <!-- Header -->
@@ -158,6 +155,48 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ==================== CANCELLATION & DISCIPLINE AUDIT ==================== -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-xl mt-6">
+                <div class="p-4 bg-[#e8cda8] border-b border-[#d4aa7c] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-700"></i> Cancellation & Incident Logs
+                        </h2>
+                        <p class="text-[11px] text-amber-900 font-semibold mt-0.5">Audit releases, passenger cancel reasons, and habitual offenders.</p>
+                    </div>
+                    <button onclick="loadCancellations()" class="text-xs font-bold bg-amber-900/10 hover:bg-amber-900/20 text-[#78350f] px-3.5 py-1.5 rounded-xl border border-[#78350f]/20 transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sync Logs
+                    </button>
+                </div>
+
+                <!-- Flagged Accounts Alert Banner -->
+                <div id="flagged-banner" class="hidden p-3.5 bg-rose-100 border-b border-rose-300 text-rose-900 text-xs font-bold space-y-1">
+                    <p><i class="fa-solid fa-circle-exclamation mr-1.5 text-rose-700"></i> <strong>Discipline Warning:</strong> High cancellation rates detected (3+ cancellations).</p>
+                    <div id="flagged-details" class="text-[11px] font-medium text-rose-800"></div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[360px] overflow-y-auto driver-scroll bg-[#F5E6D3]">
+                    <table class="w-full text-sm text-left text-slate-800">
+                        <thead class="text-[11px] text-[#78350f] uppercase bg-[#e8cda8]/70 sticky top-0 border-b border-[#d4aa7c] z-10 backdrop-blur-sm">
+                            <tr>
+                                <th class="px-4 py-3">Time / Ref</th>
+                                <th class="px-3 py-3">Cancelled By</th>
+                                <th class="px-4 py-3">Reason Given</th>
+                                <th class="px-4 py-3">Route & Fare</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cancellation-table-body" class="divide-y divide-[#d4aa7c]/50 font-medium">
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center italic text-xs text-[#78350f]/70">
+                                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading incident records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -168,7 +207,6 @@
         let currentSearchQuery = '';
         let activeTodaName = '';
 
-        // 🟢 BULLETPROOF LOGIN FUNCTION
         async function unlockTodaDashboard() {
             const u = document.getElementById('todaUser').value.trim();
             const p = document.getElementById('todaPass').value;
@@ -177,13 +215,11 @@
             
             if (!u || !p) return;
 
-            // Show loading state
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
             errorMsg.classList.add('hidden');
 
             try {
-                // Send credentials to the Python Backend for secure verification
                 const response = await fetch('/api/toda/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -195,6 +231,7 @@
                     const verifiedTodaName = data.toda_name; 
                     
                     sessionStorage.setItem("active_toda_admin", verifiedTodaName);
+                    localStorage.setItem("toda_name", verifiedTodaName);
                     document.getElementById('todaLockOverlay').style.display = 'none';
                     document.getElementById('toda-main-section').classList.remove('hidden');
                     
@@ -211,7 +248,7 @@
         }
 
         window.onload = function() {
-            const savedToda = sessionStorage.getItem('active_toda_admin');
+            const savedToda = sessionStorage.getItem('active_toda_admin') || localStorage.getItem('toda_name');
             if (savedToda) {
                 document.getElementById('todaLockOverlay').style.display = 'none';
                 document.getElementById('toda-main-section').classList.remove('hidden');
@@ -226,18 +263,19 @@
             const overlay = document.getElementById('todaLockOverlay');
             overlay.style.display = 'flex';
             
-            // Clear passwords so they have to type again
             document.getElementById('todaUser').value = "";
             document.getElementById('todaPass').value = "";
         }
 
         function initializeDashboard(todaName) {
-            activeTodaName = todaName;
-            document.getElementById('cmd-center-title').innerText = `${todaName} Command Center`;
-            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${todaName} drivers.`;
+            activeTodaName = todaName.toUpperCase();
+            document.getElementById('cmd-center-title').innerText = `${activeTodaName} Command Center`;
+            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${activeTodaName} drivers.`;
             
             loadLiveTodaData();
+            loadCancellations();
             setInterval(loadLiveTodaData, 10000); 
+            setInterval(loadCancellations, 8000);
         }
 
         // --- Live Backend Fetching ---
@@ -261,6 +299,89 @@
                 }
             } catch (error) {
                 console.error("Error loading live TODA data:", error);
+            }
+        }
+
+        // --- Cancellation & Incident Feed ---
+        async function loadCancellations() {
+            if(!activeTodaName) return;
+
+            const tbody = document.getElementById('cancellation-table-body');
+            const flaggedBanner = document.getElementById('flagged-banner');
+            const flaggedDetails = document.getElementById('flagged-details');
+
+            try {
+                const response = await fetch(`/api/toda/cancellations/${encodeURIComponent(activeTodaName)}?t=${new Date().getTime()}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const logs = data.incident_logs || [];
+                const flaggedDrivers = data.flagged_drivers || [];
+                const flaggedPassengers = data.flagged_passengers || [];
+
+                // 1. Alert Banner for 3+ cancellations
+                if (flaggedDrivers.length > 0 || flaggedPassengers.length > 0) {
+                    let notices = [];
+                    if (flaggedDrivers.length > 0) {
+                        notices.push(`⚠️ Frequent Driver Releases: ${flaggedDrivers.join(', ')}`);
+                    }
+                    if (flaggedPassengers.length > 0) {
+                        notices.push(`⚠️ Frequent Passenger Cancels: ${flaggedPassengers.join(', ')}`);
+                    }
+                    flaggedDetails.innerText = notices.join(" | ");
+                    flaggedBanner.classList.remove('hidden');
+                } else {
+                    flaggedBanner.classList.add('hidden');
+                }
+
+                // 2. Populate Incident Rows
+                if (logs.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-4 py-6 text-center italic text-xs text-[#78350f]/70">
+                                <i class="fa-solid fa-circle-check text-green-700 mr-1"></i> No cancellations recorded for ${activeTodaName}.
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                logs.forEach(log => {
+                    const isDriver = log.cancelled_by && log.cancelled_by.startsWith('driver:');
+                    const actorName = isDriver ? log.cancelled_by.replace('driver:', '').trim() : log.passenger_name;
+                    const badgeClass = isDriver 
+                        ? 'bg-amber-100 text-amber-900 border-amber-300' 
+                        : 'bg-blue-100 text-blue-900 border-blue-300';
+                    const actorRole = isDriver ? 'Driver' : 'Passenger';
+
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-[#e8cda8]/40 transition text-xs';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-mono">
+                            <span class="font-extrabold text-[#0f172a] block">${log.local_ref}</span>
+                            <span class="text-[10px] text-[#78350f]/80">${log.timestamp}</span>
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="font-bold text-[#0f172a] block capitalize">${actorName}</span>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${badgeClass} inline-block mt-0.5">
+                                ${actorRole}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-rose-800">
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-1.5 text-rose-600"></i>${log.reason}
+                        </td>
+                        <td class="px-4 py-3 text-[11px] text-slate-700">
+                            <div><strong class="text-[#78350f]">From:</strong> ${log.pickup}</div>
+                            <div><strong class="text-[#78350f]">To:</strong> ${log.dropoff}</div>
+                            <span class="text-[10px] font-extrabold text-green-800">${log.fare}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error("Error loading cancellation incident logs:", error);
             }
         }
 
