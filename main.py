@@ -1098,15 +1098,25 @@ def get_pending_rides(db: Session = Depends(get_db)):
                 if drv_user.toda_number: drv_toda_num = drv_user.toda_number 
 
         results.append({
-            "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
-            "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-            "status": r.status, "driver_name": sanitize_name(r.driver_name), "rating": r.rating,
-            "passenger_phone": pass_phone, "driver_phone": drv_phone, 
+            "id": r.id, 
+            "passenger_name": r.passenger_name, 
+            "pickup_location": r.pickup_location,
+            "dropoff_location": r.dropoff_location, 
+            "service_type": r.service_type, 
+            "fare": r.fare,
+            "status": r.status, 
+            "driver_name": sanitize_name(r.driver_name), 
+            "rating": r.rating,
+            "passenger_phone": pass_phone, 
+            "driver_phone": drv_phone, 
             "driver_toda_number": drv_toda_num, 
             "branch": r.branch,
             "local_ref": r.local_ref if r.local_ref else "N/A",
             "pabili_list": getattr(r, 'pabili_list', "") or "",
-            "item_description": getattr(r, 'item_description', "") or ""
+            "item_description": getattr(r, 'item_description', "") or "",
+            # 🟢 Send cancellation details to the dashboard
+            "cancelled_by": r.cancelled_by or "",
+            "cancel_reason": r.cancel_reason or ""
         })
     return results
 
