@@ -31,7 +31,6 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
 
-    <!-- ==================== QUICK NAV MENU ==================== -->
     <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
         <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
             <i class="fa-solid fa-bars mr-1"></i> Menu
@@ -52,7 +51,6 @@
         </div>
     </div>
 
-    <!-- MAIN CARD -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative mt-8">
         
         <div class="text-center mb-8">
@@ -99,30 +97,25 @@
 
         <!-- ==================== REGISTRATION FORM ==================== -->
         <form id="form-register" class="hidden flex flex-col gap-3" onsubmit="handleRegister(event)">
-            
             <div class="text-center mb-2">
                 <h2 class="text-lg font-extrabold text-[#78350f] uppercase tracking-wider">Create Account</h2>
             </div>
 
-            <!-- Name, Mobile & Username -->
             <input type="text" id="reg-name" required placeholder="Full Name (e.g. Randy G. Ramos)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
             <input type="text" id="reg-mobile" required placeholder="Mobile Number (e.g. 0917...)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             <input type="text" id="reg-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             
-            <!-- Passwords (Side-by-Side) -->
             <div class="grid grid-cols-2 gap-3">
                 <input type="password" id="reg-pass" required placeholder="Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
                 <input type="password" id="reg-confirm-pass" required placeholder="Confirm Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
             </div>
 
-            <!-- Role Selector -->
             <select id="reg-role" onchange="toggleTodaField()" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
                 <option value="passenger">Passenger</option>
                 <option value="driver">Driver</option>
                 <option value="toda_admin">TODA Admin</option>
             </select>
 
-            <!-- LOCATION & TODA -->
             <div class="mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Local Community</label>
                 <div class="grid grid-cols-2 gap-3 mb-3">
@@ -132,7 +125,6 @@
                 <input type="text" id="reg-toda" required placeholder="Preferred TODA (e.g. KATODA)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
             </div>
 
-            <!-- DRIVER VEHICLE FIELDS (Only visible if Driver) -->
             <div id="driver-fields-container" class="hidden flex-col gap-3 mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Vehicle Details</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -141,7 +133,6 @@
                 </div>
             </div>
 
-            <!-- PAYOUT ACCOUNT (Driver & TODA Admin) -->
             <div id="payout-container" class="hidden space-y-3 mt-1 border-t border-[#c99c6b] pt-3">
                 <label id="payout-label" class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Payout Account Details</label>
                 <div class="grid grid-cols-2 gap-3">
@@ -154,7 +145,6 @@
                 </div>
             </div>
 
-            <!-- Security Questions -->
             <div class="mt-1 border-t border-[#c99c6b] pt-3">
                 <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Account Recovery Setup</label>
                 <select id="reg-sec-q" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f] mb-3">
@@ -182,7 +172,6 @@
     <!-- ==================== FORGOT PASSWORD MODAL ==================== -->
     <div id="forgot-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
-            
             <div class="text-center mb-4">
                 <div class="inline-flex items-center justify-center w-12 h-12 bg-[#78350f] text-white rounded-2xl mb-3 shadow-md">
                     <i class="fa-solid fa-lock-open text-xl"></i>
@@ -225,7 +214,7 @@
         </div>
     </div>
 
-    <!-- ==================== LOGIC SCRIPT ==================== -->
+    <!-- ==================== SCRIPT LOGIC ==================== -->
     <script>
         function toggleQuickMenu() {
             const menu = document.getElementById('quickMenu');
@@ -299,10 +288,6 @@
 
         document.addEventListener("DOMContentLoaded", toggleTodaField);
 
-        // ==========================================
-        // API FETCH CALLS WITH PERSISTENCE
-        // ==========================================
-
         async function handleLogin(event) {
             event.preventDefault(); 
             
@@ -332,27 +317,30 @@
                     redirect: 'follow' 
                 });
 
-                if (response.redirected) {
+                if (response.redirected || response.ok) {
                     try {
                         const profRes = await fetch(`/api/profile/${encodeURIComponent(user)}`);
                         if (profRes.ok) {
                             const prof = await profRes.json();
-                            const resolvedName = (prof.full_name && prof.full_name.trim()) ? prof.full_name.trim() : user;
-                            const resolvedToda = (prof.toda_name && prof.toda_name.trim()) ? prof.toda_name.trim().toUpperCase() : "";
+                            const realName = (prof.full_name && prof.full_name.trim()) ? prof.full_name.trim() : user;
+                            const realToda = (prof.toda_name && prof.toda_name.trim()) ? prof.toda_name.trim().toUpperCase() : "";
 
-                            localStorage.setItem('driver_name', resolvedName);
-                            localStorage.setItem('passenger_name', resolvedName);
-                            localStorage.setItem('driver_toda', resolvedToda);
+                            localStorage.setItem('driver_name', realName);
+                            localStorage.setItem('passenger_name', realName);
+                            localStorage.setItem('driver_toda', realToda);
 
-                            document.cookie = `driver_name=${encodeURIComponent(resolvedName)}; path=/; max-age=86400`;
-                            document.cookie = `passenger_name=${encodeURIComponent(resolvedName)}; path=/; max-age=86400`;
+                            document.cookie = `driver_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
+                            document.cookie = `passenger_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
+                        } else {
+                            localStorage.setItem('driver_name', user);
+                            document.cookie = `driver_name=${encodeURIComponent(user)}; path=/; max-age=86400`;
                         }
                     } catch (e) {
                         localStorage.setItem('driver_name', user);
-                        localStorage.setItem('passenger_name', user);
+                        document.cookie = `driver_name=${encodeURIComponent(user)}; path=/; max-age=86400`;
                     }
 
-                    window.location.href = response.url; 
+                    window.location.href = response.url || "driver_dashboard.html"; 
                 } else {
                     const errData = await response.json().catch(() => ({}));
                     alertBox.textContent = errData.detail || "⚠️ Invalid username or password.";
@@ -408,18 +396,16 @@
                 });
 
                 if (response.ok) {
-                    const resolvedName = payload.full_name || payload.username;
-                    const resolvedToda = payload.toda_name || "";
+                    const realName = payload.full_name || payload.username;
+                    const realToda = payload.toda_name || "";
 
-                    // Auto-login: Persist identity to localStorage & cookies
-                    localStorage.setItem('driver_name', resolvedName);
-                    localStorage.setItem('passenger_name', resolvedName);
-                    localStorage.setItem('driver_toda', resolvedToda);
+                    localStorage.setItem('driver_name', realName);
+                    localStorage.setItem('passenger_name', realName);
+                    localStorage.setItem('driver_toda', realToda);
 
-                    document.cookie = `driver_name=${encodeURIComponent(resolvedName)}; path=/; max-age=86400`;
-                    document.cookie = `passenger_name=${encodeURIComponent(resolvedName)}; path=/; max-age=86400`;
+                    document.cookie = `driver_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
+                    document.cookie = `passenger_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
 
-                    // Auto-redirect directly into the respective dashboard
                     if (payload.role === 'driver') {
                         window.location.href = "driver_dashboard.html";
                     } else if (payload.role === 'toda_admin') {
