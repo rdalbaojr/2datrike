@@ -478,34 +478,31 @@
         }
 
         document.getElementById('booking-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
-            
-            setTimeout(() => {
-                let baseFare = allServicePrices[currentService] || 50; 
-                const nightBadge = document.getElementById('night-diff-badge');
-                const currentHour = new Date().getHours();
-                
-                if (currentHour >= 22 || currentHour < 6) {
-                    baseFare = baseFare + (baseFare * 0.10); 
-                    nightBadge.innerHTML = '<i class="fa-solid fa-moon"></i> +10% Night Rate';
-                    nightBadge.classList.remove('hidden'); 
-                    isNightRateApplied = true; 
-                } else {
-                    nightBadge.classList.add('hidden');
-                    isNightRateApplied = false; 
-                }
+    event.preventDefault();
+    document.getElementById('submit-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Calculating...';
+    
+    setTimeout(() => {
+        let baseFare = allServicePrices[currentService] || 50; 
+        const nightBadge = document.getElementById('night-diff-badge');
+        const currentHour = new Date().getHours();
+        
+        if (currentHour >= 22 || currentHour < 6) {
+            baseFare = baseFare + (baseFare * 0.10); 
+            nightBadge.innerHTML = '<i class="fa-solid fa-moon"></i> +10% Night Rate';
+            nightBadge.classList.remove('hidden'); 
+            isNightRateApplied = true; 
+        } else {
+            nightBadge.classList.add('hidden');
+            isNightRateApplied = false; 
+        }
 
-                let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
-                let total = baseFare + pabiliBudget;
+        let pabiliBudget = parseFloat(document.getElementById('pabili-budget').value) || 0;
+        let total = baseFare + pabiliBudget;
 
-                document.getElementById('fare-amount').innerText = `₱${total.toFixed(2)}`;
-                document.getElementById('fare-estimate').classList.remove('hidden');
-                document.getElementById('submit-btn').classList.add('hidden');
-                document.getElementById('confirm-btn').classList.remove('hidden');
-                document.getElementById('submit-btn').innerHTML = 'Calculate Fare <i class="fa-solid fa-calculator ml-2"></i>';
-            }, 400);
-        });
+        document.getElementById('fare-amount').innerText = `₱${total.toFixed(2)}`;
+        ...
+    }, 400);
+});
 
         document.getElementById('confirm-btn').addEventListener('click', async function(event) {
             event.preventDefault();
