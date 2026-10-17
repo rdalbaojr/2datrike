@@ -19,7 +19,7 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
 
-    <!-- 🟢 THE UNIFIED SINGLE CARD WRAPPER -->
+    <!-- THE UNIFIED SINGLE CARD WRAPPER -->
     <div class="w-full max-w-[1100px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-10 shadow-2xl relative overflow-hidden">
         
         <!-- SECURE LOCK OVERLAY -->
@@ -58,7 +58,7 @@
         <!-- ================= UNIFIED CONTENT CONTAINER ================= -->
         <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-10">
             
-            <!-- 🟢 SECTION 1: BRANCH CONFIGURATOR -->
+            <!-- SECTION 1: BRANCH CONFIGURATOR -->
             <form onsubmit="saveBranchConfig(event)" class="w-full">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#c99c6b]/50">
                     <div class="w-10 h-10 bg-[#78350f] rounded-xl flex items-center justify-center shadow-md">
@@ -66,12 +66,12 @@
                     </div>
                     <div>
                         <h2 class="text-xl font-extrabold text-[#0f172a] leading-none">Branch Configurator</h2>
-                        <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Manage rules & pricing per TODA</p>
+                        <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Manage Base Fares & Revenue Split (20% Pool)</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left: Select & Rev Rules -->
+                    <!-- Left: Select & Revenue Split Rules -->
                     <div class="flex flex-col gap-6">
                         <div>
                             <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">1. Select Branch to Edit</label>
@@ -81,15 +81,18 @@
                         </div>
                         
                         <div>
-                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">3. Branch Revenue Rules</label>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest block">3. Top-Up Revenue Split (Totals 20%)</label>
+                                <span class="text-[9px] font-extrabold text-green-800 bg-green-100 px-2 py-0.5 rounded border border-green-300">Driver receives 100% of Base</span>
+                            </div>
                             <div class="bg-white p-4 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-4">
                                 <div class="flex justify-between items-center bg-[#F5E6D3] px-3 py-2 rounded-xl">
-                                    <label class="text-xs font-extrabold text-[#0f172a]">Platform %</label>
-                                    <input type="number" id="cfg-plat" step="0.1" placeholder="17" class="w-20 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
+                                    <label class="text-xs font-extrabold text-[#0f172a]">Platform Share (%)</label>
+                                    <input type="number" id="cfg-plat" step="0.1" placeholder="17.0" oninput="autoBalanceTodaShare(this.value)" class="w-24 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
                                 </div>
                                 <div class="flex justify-between items-center bg-[#F5E6D3] px-3 py-2 rounded-xl">
-                                    <label class="text-xs font-extrabold text-[#0f172a]">TODA %</label>
-                                    <input type="number" id="cfg-toda" step="0.1" placeholder="3" class="w-20 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
+                                    <label class="text-xs font-extrabold text-[#0f172a]">TODA Share (%)</label>
+                                    <input type="number" id="cfg-toda" step="0.1" placeholder="3.0" oninput="autoBalancePlatformShare(this.value)" class="w-24 bg-white border border-[#d4aa7c] rounded-lg py-1 px-2 text-sm font-extrabold text-right outline-none">
                                 </div>
                                 <div class="pt-2 border-t border-[#d4aa7c]/50">
                                     <label class="text-[9px] font-extrabold uppercase text-[#78350f] block mb-2">TODA Payout Account</label>
@@ -97,37 +100,41 @@
                                         <select id="cfg-bank" class="w-1/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2 text-xs font-bold outline-none cursor-pointer">
                                             <option value="GCash">GCash</option>
                                             <option value="Maya">Maya</option>
+                                            <option value="BPI">BPI</option>
                                         </select>
-                                        <input type="text" id="cfg-acct" placeholder="Account #" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2 text-xs font-bold outline-none">
+                                        <input type="text" id="cfg-acct" placeholder="Account Number" class="w-2/3 bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-3 py-2 text-xs font-bold outline-none">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Right: Custom Services -->
+                    <!-- Right: Base Fares (Input Baseline Only) -->
                     <div>
-                        <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">2. Custom Services & Fares</label>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest block">2. Driver Base Fares</label>
+                            <span class="text-[9px] font-bold text-amber-800">+20% auto-added for riders</span>
+                        </div>
                         <div class="bg-white p-4 rounded-2xl border border-[#c99c6b] shadow-sm flex flex-col gap-3">
                             <div class="flex gap-2">
-                                <input type="text" id="s1-name" placeholder="Service 1" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
-                                <input type="number" id="s1-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                                <input type="text" id="s1-name" placeholder="Service 1 (e.g., Pasundo)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s1-price" placeholder="₱ Base" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
                             </div>
                             <div class="flex gap-2">
-                                <input type="text" id="s2-name" placeholder="Service 2" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
-                                <input type="number" id="s2-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                                <input type="text" id="s2-name" placeholder="Service 2 (e.g., Pabili)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s2-price" placeholder="₱ Base" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
                             </div>
                             <div class="flex gap-2">
-                                <input type="text" id="s3-name" placeholder="Service 3" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
-                                <input type="number" id="s3-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                                <input type="text" id="s3-name" placeholder="Service 3 (e.g., Papickup)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
+                                <input type="number" id="s3-price" placeholder="₱ Base" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="s4-name" placeholder="Service 4 (Optional)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
-                                <input type="number" id="s4-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                                <input type="number" id="s4-price" placeholder="₱ Base" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
                             </div>
                             <div class="flex gap-2">
                                 <input type="text" id="s5-name" placeholder="Service 5 (Optional)" class="w-[65%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-xs font-bold text-[#0f172a] outline-none">
-                                <input type="number" id="s5-price" placeholder="₱0" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
+                                <input type="number" id="s5-price" placeholder="₱ Base" class="w-[35%] bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl py-2.5 px-4 text-sm font-extrabold text-[#0f172a] text-right outline-none">
                             </div>
                         </div>
                     </div>
@@ -140,7 +147,7 @@
 
             <hr class="border-[#c99c6b]">
 
-            <!-- 🟢 SECTION 2: PAYOUT TABLE -->
+            <!-- SECTION 2: PAYOUT TABLE -->
             <div class="w-full">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div class="flex items-center gap-3">
@@ -175,7 +182,7 @@
                                 <th class="py-4 px-4">Account Number</th>
                                 <th class="py-4 px-4 text-center">Rides</th>
                                 <th class="py-4 px-4 text-right">Gross</th>
-                                <th class="py-4 px-4 text-right text-[#175d33]">Net (80%)</th>
+                                <th class="py-4 px-4 text-right text-[#175d33]">Driver Net (Base)</th>
                                 <th id="toda-label-3" class="py-4 px-4 text-right">LOCAL TODA</th>
                                 <th class="py-4 px-4 text-right">Platform</th>
                             </tr>
@@ -192,7 +199,7 @@
         </div>
     </div>
 
-    <!-- 🟢 BULLETPROOF STANDALONE LOGIN SCRIPT -->
+    <!-- SCRIPT LOGIC -->
     <script>
         function getCookie(name) {
             let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -223,7 +230,7 @@
                     overlay.style.opacity = "0";
                     setTimeout(() => { overlay.style.display = 'none'; }, 300);
                 } else {
-                    alert(`❌ Invalid credentials.\nDetected Username: "${u}"\nDetected Password: "${p}"`);
+                    alert(`❌ Invalid credentials.`);
                 }
                 btn.innerHTML = originalText;
             }, 400);
@@ -237,6 +244,23 @@
             
             document.getElementById('masterUser').value = "";
             document.getElementById('masterPass').value = "";
+        }
+
+        function logout() {
+            lockDashboard();
+            window.location.href = "login.html";
+        }
+
+        function autoBalanceTodaShare(platVal) {
+            const p = parseFloat(platVal) || 0;
+            const t = Math.max(0, 20.0 - p);
+            document.getElementById('cfg-toda').value = t.toFixed(1);
+        }
+
+        function autoBalancePlatformShare(todaVal) {
+            const t = parseFloat(todaVal) || 0;
+            const p = Math.max(0, 20.0 - t);
+            document.getElementById('cfg-plat').value = p.toFixed(1);
         }
 
         window.onload = async function() {
@@ -282,22 +306,6 @@
                 console.error("Could not load dynamic locations", e);
             }
 
-            try {
-                const response = await fetch(`/api/admin/config?t=${new Date().getTime()}`);
-                if (response.ok) {
-                    const config = await response.json();
-                    document.getElementById('cfg-pasundo').value = config.pasundo_price;
-                    document.getElementById('cfg-pabili').value = config.pabili_price;
-                    document.getElementById('cfg-deliver').value = config.deliver_price;
-                    document.getElementById('platformShareInput').value = config.platform_share;
-                    document.getElementById('katodaShareInput').value = config.katoda_share || 3;
-                    document.getElementById('katodaBankInput').value = config.katoda_bank || "GCash";
-                    document.getElementById('katodaAccountInput').value = config.katoda_account || "";
-                }
-            } catch (error) {
-                console.error("Error loading config from server:", error);
-            }
-
             loadPayoutSummary();
         };
 
@@ -322,8 +330,8 @@
                         document.getElementById(`s${i}-name`).value = config[`s${i}_name`] || '';
                         document.getElementById(`s${i}-price`).value = config[`s${i}_price`] || '';
                     }
-                    document.getElementById('cfg-plat').value = config.platform_share || 17;
-                    document.getElementById('cfg-toda').value = config.katoda_share || 3;
+                    document.getElementById('cfg-plat').value = config.platform_share !== undefined ? config.platform_share : 17.0;
+                    document.getElementById('cfg-toda').value = config.katoda_share !== undefined ? config.katoda_share : 3.0;
                     document.getElementById('cfg-bank').value = config.katoda_bank || 'GCash';
                     document.getElementById('cfg-acct').value = config.katoda_account || '';
                 }
@@ -352,8 +360,8 @@
                 s4_price: parseInt(document.getElementById('s4-price').value) || 0,
                 s5_name: document.getElementById('s5-name').value,
                 s5_price: parseInt(document.getElementById('s5-price').value) || 0,
-                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17,
-                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3,
+                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17.0,
+                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3.0,
                 katoda_bank: document.getElementById('cfg-bank').value,
                 katoda_account: document.getElementById('cfg-acct').value.trim()
             };
@@ -380,7 +388,6 @@
 
         async function loadPayoutSummary() {
             const selectedBranch = document.getElementById('branchSelector').value;
-            
             const displayTodaName = selectedBranch === "All" ? "LOCAL TODA" : selectedBranch.toUpperCase();
             document.getElementById('toda-label-3').innerText = displayTodaName;
 
@@ -394,12 +401,20 @@
                 const tbody = document.getElementById('payout-table-body');
                 tbody.innerHTML = '';
 
-                if (data.drivers.length === 0) {
+                if (!data.drivers || data.drivers.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
                     return;
                 }
 
+                let totalRidesCount = 0;
+                let totalGrossAmount = 0.0;
+                let totalDriverNetAmount = 0.0;
+
                 data.drivers.forEach(driver => {
+                    totalRidesCount += driver.ride_count || 0;
+                    totalGrossAmount += driver.total_gross || 0.0;
+                    totalDriverNetAmount += driver.driver_share || 0.0;
+
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
@@ -414,17 +429,18 @@
                     tbody.appendChild(row);
                 });
                 
+                // Summary Total Row with Aggregates
                 const totalRow = document.createElement('tr');
-                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b]";
+                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b] font-black";
                 totalRow.innerHTML = `
-                    <td class="py-4 px-4 font-black text-[#0f172a] uppercase">${displayTodaName} TOTAL</td>
-                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank}</td>
-                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account}</td>
-                    <td class="py-4 px-4 text-center">--</td>
-                    <td class="py-4 px-4 text-right">--</td>
-                    <td class="py-4 px-4 text-right">--</td>
-                    <td class="py-4 px-4 text-right font-black text-amber-800">₱${data.total_katoda.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right font-black text-slate-700">₱${data.total_platform.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-[#0f172a] uppercase">${displayTodaName} TOTAL</td>
+                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
+                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account || 'N/A'}</td>
+                    <td class="py-4 px-4 text-center">${totalRidesCount}</td>
+                    <td class="py-4 px-4 text-right text-slate-800">₱${totalGrossAmount.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right text-[#175d33]">₱${totalDriverNetAmount.toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right text-amber-800">₱${(data.total_katoda || 0.0).toFixed(2)}</td>
+                    <td class="py-4 px-4 text-right text-slate-700">₱${(data.total_platform || 0.0).toFixed(2)}</td>
                 `;
                 tbody.appendChild(totalRow);
 
