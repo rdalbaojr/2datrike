@@ -1,481 +1,576 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-[#C87F37]">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2DA - Login & Registration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2DA TODA Command Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        ::-webkit-scrollbar { display: none; }
-        .input-field {
-            background-color: #F5E6D3;
-            border-color: #d4aa7c;
-            color: #0f172a; 
+        .glass-card {
+            background: #E3BC90;
+            border: 1px solid #c99c6b;
+            box-shadow: 0 25px 50px -12px rgba(100, 50, 0, 0.4);
         }
-        .input-field:focus { border-color: #78350f; }
-        .input-field::placeholder { color: #92400e; opacity: 0.6; }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus, 
-        input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 30px #F5E6D3 inset !important;
-            -webkit-text-fill-color: #0f172a !important;
-            transition: background-color 5000s ease-in-out 0s;
+        .driver-scroll::-webkit-scrollbar { width: 6px; }
+        .driver-scroll::-webkit-scrollbar-track { background: transparent; }
+        .driver-scroll::-webkit-scrollbar-thumb { background-color: #c99c6b; border-radius: 20px; }
+        
+        .filter-btn.active {
+            background-color: #78350f !important;
+            color: white !important;
+            border-color: #78350f !important;
         }
     </style>
 </head>
-<body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
+<body class="min-h-full text-slate-900 antialiased relative bg-[#C87F37]">
 
-    <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
-        <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
-            <i class="fa-solid fa-bars mr-1"></i> Menu
-        </button>
-        <div id="quickMenu" style="display: none; position: absolute; top: 45px; left: 0; background: #C87F37; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; width: 180px; border: 1px solid #a35c27;">
-            <a href="login.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px; font-weight: bold; background: rgba(0,0,0,0.1);">
-                🔑 Login / Register
-            </a>
-            <a href="booking.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
-                📱 Passenger Dash
-            </a>
-            <a href="driver_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; border-bottom: 1px solid #a35c27; font-size: 14px;">
-                🏍️ Driver Dash
-            </a>
-            <a href="toda_dashboard.html" style="display: block; padding: 12px 15px; color: white; text-decoration: none; font-size: 14px;">
-                🏍️ TODA Dash
-            </a>
+    <!-- ==================== NAV MENU ==================== -->
+    <nav class="bg-amber-950 p-4 shadow-xl sticky top-0 z-50 border-b border-amber-700">
+        <div class="max-w-5xl mx-auto flex flex-wrap justify-center items-center gap-3">
+            <button class="bg-[#E3BC90] text-amber-950 hover:bg-[#d4aa7c] px-5 py-2 rounded-xl font-extrabold transition shadow-md flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-shield-halved"></i> TODA Portal
+            </button>
+            <button onclick="window.location.href='driver_dashboard.html'" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+                <i class="fa-solid fa-motorcycle"></i> Driver App
+            </button>
+            <button onclick="window.location.href='booking.html'" class="text-amber-100 hover:bg-amber-900 px-5 py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm border border-transparent hover:border-amber-700">
+                <i class="fa-solid fa-mobile-screen"></i> Passenger App
+            </button>
         </div>
-    </div>
+    </nav>
 
-    <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative mt-8">
+    <!-- ==================== TODA DASHBOARD ==================== -->
+    <div id="toda-dashboard" class="dashboard-view py-10 px-4">
         
-        <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-[#78350f] rounded-2xl mb-4 shadow-lg border border-[#5a270b]/20">
-                <i class="fa-solid fa-motorcycle text-3xl text-white"></i>
+        <!-- SECURE TODA LOGIN OVERLAY -->
+        <div id="todaLockOverlay" class="fixed inset-0 bg-[#C87F37] z-[100] flex items-center justify-center p-4">
+            <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-8 max-w-[420px] w-full flex flex-col items-center text-center shadow-2xl relative">
+                
+                <div class="w-16 h-16 bg-[#78350f] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                    <i class="fa-solid fa-users-gear text-3xl text-white"></i>
+                </div>
+                <h3 class="text-3xl font-extrabold text-[#0f172a] mb-2 tracking-tight">TODA Admin Portal</h3>
+                <p class="text-sm font-semibold text-[#78350f] mb-8 leading-relaxed max-w-sm">Secure login required to access your chapter's command center.</p>
+                
+                <form onsubmit="event.preventDefault(); unlockTodaDashboard();" class="w-full max-w-[320px] flex flex-col gap-3">
+                    <input type="text" id="todaUser" required placeholder="Admin Username (e.g., KATODA)" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center uppercase tracking-widest">
+                    <input type="password" id="todaPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
+                    
+                    <button type="submit" id="toda-login-btn" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                        <i class="fa-solid fa-lock"></i> Secure Login
+                    </button>
+                    <p id="toda-login-error" class="text-red-600 text-xs font-bold text-center mt-1 hidden">Invalid Username or Password.</p>
+                </form>
             </div>
-            <h1 class="text-3xl font-extrabold text-[#0f172a] tracking-tight">2DA App</h1>
-            <p class="text-sm text-[#78350f] font-bold mt-1">Local Ride & Delivery</p>
         </div>
 
-        <!-- ==================== LOGIN FORM ==================== -->
-        <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4 block">
-            <div id="signup-success-alert" class="hidden p-3 rounded-xl text-xs font-bold border bg-green-100 border-green-800/30 text-green-900 text-center">
-                ✅ Account created successfully! Please enter your password to log in.
-            </div>
-
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fa-solid fa-user text-[#78350f] opacity-70"></i>
-                </div>
-                <input type="text" id="login-username" required placeholder="Username" class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
+        <!-- TODA MAIN DASHBOARD -->
+        <div id="toda-main-section" class="w-full max-w-4xl hidden relative z-10 space-y-6 mx-auto mt-4">
             
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <i class="fa-solid fa-lock text-[#78350f] opacity-70"></i>
+            <!-- Header -->
+            <div class="glass-card rounded-3xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="bg-amber-900 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg shrink-0">
+                        <i class="fa-solid fa-users-gear text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 id="cmd-center-title" class="text-2xl font-extrabold text-slate-900">Command Center</h1>
+                        <p class="text-sm text-amber-900 font-medium">
+                            Monitoring & Fleet Management 
+                            <span id="active-share-badge" class="ml-2 bg-amber-950 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm">3.0% Share</span>
+                        </p>
+                    </div>
                 </div>
-                <input type="password" id="login-password" required placeholder="Password" class="input-field w-full border rounded-xl pl-11 pr-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-            
-            <div class="flex justify-end mt-2">
-                <a href="#" onclick="openForgotModal()" class="text-[11px] font-bold text-[#78350f] hover:text-[#5a270b] transition underline">Forgot Password?</a>
-            </div>
-
-            <div id="login-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
-
-            <button type="submit" id="btn-login" class="w-full py-4 mt-2 bg-[#78350f] hover:bg-[#5a270b] text-white font-bold rounded-xl shadow-lg transition-all duration-300 flex justify-center items-center gap-2 cursor-pointer">
-                Log In <i class="fa-solid fa-arrow-right-to-bracket"></i>
-            </button>
-            
-            <div class="text-center mt-6">
-                <span class="text-sm text-[#78350f] font-medium">Don't have an account yet?</span>
-                <a href="#" onclick="switchTab('register')" class="text-sm text-[#78350f] font-bold underline hover:text-[#5a270b] transition ml-1 cursor-pointer">
-                    Please Signup here.
-                </a>
-            </div>
-        </form>
-
-        <!-- ==================== REGISTRATION FORM ==================== -->
-        <form id="form-register" class="hidden flex flex-col gap-3" onsubmit="handleRegister(event)">
-            <div class="text-center mb-2">
-                <h2 class="text-lg font-extrabold text-[#78350f] uppercase tracking-wider">Create Account</h2>
-            </div>
-
-            <input type="text" id="reg-name" required placeholder="Full Name (e.g. Randy G. Ramos)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
-            <input type="text" id="reg-mobile" required placeholder="Mobile Number (e.g. 0917...)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            <input type="text" id="reg-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            
-            <div class="grid grid-cols-2 gap-3">
-                <input type="password" id="reg-pass" required placeholder="Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-                <input type="password" id="reg-confirm-pass" required placeholder="Confirm Password" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-
-            <select id="reg-role" onchange="toggleTodaField()" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
-                <option value="passenger">Passenger</option>
-                <option value="driver">Driver</option>
-                <option value="toda_admin">TODA Admin</option>
-            </select>
-
-            <div class="mt-1 border-t border-[#c99c6b] pt-3">
-                <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Local Community</label>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="reg-city" required placeholder="City" value="Pasig City" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-                    <input type="text" id="reg-barangay" required placeholder="Barangay" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-                </div>
-                <input type="text" id="reg-toda" required placeholder="Preferred TODA (e.g. KATODA)" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
-            </div>
-
-            <div id="driver-fields-container" class="hidden flex-col gap-3 mt-1 border-t border-[#c99c6b] pt-3">
-                <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Vehicle Details</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="reg-toda-number" placeholder="Body Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-                    <input type="text" id="reg-plate-number" placeholder="Plate Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold uppercase">
-                </div>
-            </div>
-
-            <div id="payout-container" class="hidden space-y-3 mt-1 border-t border-[#c99c6b] pt-3">
-                <label id="payout-label" class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest">Payout Account Details</label>
-                <div class="grid grid-cols-2 gap-3">
-                    <select id="reg-bank" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
-                        <option value="GCash">GCash</option>
-                        <option value="Maya">Maya</option>
-                        <option value="BPI">BPI</option>
-                    </select>
-                    <input type="text" id="reg-account" placeholder="Account Number" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-                </div>
-            </div>
-
-            <div class="mt-1 border-t border-[#c99c6b] pt-3">
-                <label class="block text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2">Account Recovery Setup</label>
-                <select id="reg-sec-q" required class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f] mb-3">
-                    <option value="" disabled selected>Select a Security Question</option>
-                    <option value="mother">What is your mother's maiden name?</option>
-                    <option value="pet">What was the name of your first pet?</option>
-                    <option value="teacher">Who was your first primary school teacher?</option>
-                    <option value="crush">Who was your first crush?</option>
-                </select>
-                <input type="text" id="reg-sec-a" required placeholder="Your Secret Answer" class="input-field w-full border rounded-xl px-4 py-3.5 text-sm outline-none transition-all font-bold">
-            </div>
-            
-            <div id="reg-alert" class="hidden mt-2 p-3 rounded-xl text-sm font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
-
-            <button type="submit" id="btn-register" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 transition text-sm flex items-center justify-center gap-2 cursor-pointer">
-                <i class="fa-solid fa-user-plus"></i> Create Account
-            </button>
-
-            <div class="text-center mt-3">
-                <a href="#" onclick="switchTab('login')" class="text-sm font-bold text-[#78350f] hover:text-[#5a270b] transition underline cursor-pointer">Already have an account? Login here.</a>
-            </div>
-        </form>
-    </div>
-
-    <!-- ==================== FORGOT PASSWORD MODAL ==================== -->
-    <div id="forgot-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
-            <div class="text-center mb-4">
-                <div class="inline-flex items-center justify-center w-12 h-12 bg-[#78350f] text-white rounded-2xl mb-3 shadow-md">
-                    <i class="fa-solid fa-lock-open text-xl"></i>
-                </div>
-                <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Reset Password</h3>
-                <p class="text-[11px] font-semibold text-[#78350f] leading-relaxed">
-                    Verify your identity using your security question to create a new password.
-                </p>
-            </div>
-
-            <form onsubmit="handleForgotPassword(event)" class="space-y-3">
-                <input type="text" id="forgot-user" required placeholder="Username" class="input-field w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all font-bold">
-                
-                <select id="forgot-sec-q" required class="input-field w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all font-bold cursor-pointer text-[#78350f]">
-                    <option value="" disabled selected>Select your Security Question</option>
-                    <option value="mother">What is your mother's maiden name?</option>
-                    <option value="pet">What was the name of your first pet?</option>
-                    <option value="teacher">Who was your first primary school teacher?</option>
-                    <option value="crush">Who was your first crush?</option>
-                </select>
-
-                <input type="text" id="forgot-sec-a" required placeholder="Security Answer" class="input-field w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all font-bold">
-                
-                <div class="border-t border-[#c99c6b] pt-3 mt-1">
-                    <input type="password" id="forgot-pass" required placeholder="New Password" class="input-field w-full border rounded-xl px-4 py-3 text-sm outline-none transition-all font-bold">
-                </div>
-                
-                <div id="forgot-alert" class="hidden mt-2 p-2 rounded-lg text-xs font-bold border bg-red-100 border-red-800/30 text-red-800 text-center"></div>
-
-                <button type="submit" id="btn-forgot" class="w-full py-3.5 mt-2 bg-[#175d33] hover:bg-[#114626] text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer">
-                    Reset & Update Password
-                </button>
-            </form>
-            
-            <div class="text-center mt-4">
-                <button onclick="closeForgotModal()" class="text-xs font-bold text-[#78350f] hover:text-[#5a270b] transition underline cursor-pointer">
-                    Cancel & Return to Login
+                <button onclick="logoutToda()" class="bg-red-900/10 hover:bg-red-900/20 text-red-800 border border-red-800/20 px-5 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2 shrink-0 cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sign Out
                 </button>
             </div>
+
+            <!-- Financial Growth Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-day"></i></div>
+                    <p class="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1">Today's Share</p>
+                    <h3 id="fin-today" class="text-xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-week"></i></div>
+                    <p class="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1">This Week</p>
+                    <h3 id="fin-week" class="text-xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-amber-900/10 text-6xl"><i class="fa-solid fa-calendar-days"></i></div>
+                    <p class="text-[10px] font-bold text-amber-900 uppercase tracking-wider mb-1">This Month</p>
+                    <h3 id="fin-month" class="text-xl font-extrabold text-slate-900">₱0.00</h3>
+                </div>
+                <div class="bg-amber-900 border border-amber-800 rounded-2xl p-4 shadow-sm text-white relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-white/10 text-6xl"><i class="fa-solid fa-vault"></i></div>
+                    <p class="text-[10px] font-bold text-amber-200 uppercase tracking-wider mb-1">YTD Earnings</p>
+                    <h3 id="fin-ytd" class="text-xl font-extrabold">₱0.00</h3>
+                </div>
+            </div>
+
+            <!-- Moderation Tools -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Broadcast Card -->
+                <div class="glass-card rounded-3xl p-6 md:col-span-1 h-fit">
+                    <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-bullhorn text-amber-800"></i> Broadcast
+                    </h2>
+                    <p id="broadcast-subtitle" class="text-xs text-amber-900 mb-3 font-medium">Send a real-time notification to all drivers.</p>
+                    <textarea id="broadcast-msg" rows="4" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3 outline-none focus:border-amber-700 text-sm font-medium resize-none mb-3" placeholder="Type your message here..."></textarea>
+                    <button onclick="sendBroadcast()" class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-bold transition text-sm flex justify-center items-center gap-2 shadow-md cursor-pointer">
+                        <i class="fa-regular fa-paper-plane"></i> Send to Fleet
+                    </button>
+                </div>
+
+                <!-- Driver Roster with Filters & Search -->
+                <div class="glass-card rounded-3xl p-0 md:col-span-2 overflow-hidden flex flex-col h-[500px]">
+                    <div class="p-4 border-b border-[#d4aa7c] bg-[#e8cda8] flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
+                                <i class="fa-solid fa-id-card-clip text-amber-800"></i> Driver Roster
+                            </h2>
+                            <span id="roster-count" class="text-[10px] font-bold bg-amber-900 text-white px-2 py-1 rounded-md">0 Drivers</span>
+                        </div>
+                        
+                        <!-- Search & Filter Controls -->
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-amber-800/50 text-xs"></i>
+                                <input type="text" id="driver-search" onkeyup="handleDriverSearch(event)" placeholder="Search Name or ID..." class="w-full bg-white border border-[#d4aa7c] rounded-lg pl-8 pr-3 py-1.5 text-xs outline-none focus:border-amber-700 shadow-sm font-medium">
+                            </div>
+                            <div class="flex gap-1 overflow-x-auto" style="scrollbar-width: none;">
+                                <button onclick="setFilter('all')" id="flt-all" class="filter-btn active whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">All</button>
+                                <button onclick="setFilter('online')" id="flt-online" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Online</button>
+                                <button onclick="setFilter('offline')" id="flt-offline" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Offline</button>
+                                <button onclick="setFilter('suspended')" id="flt-suspended" class="filter-btn whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-bold transition bg-white text-amber-900 border border-[#d4aa7c] shadow-sm">Suspended</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-y-auto driver-scroll p-3 flex-1 bg-[#F5E6D3]" id="driver-list">
+                        <!-- Drivers dynamically injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== CANCELLATION & DISCIPLINE AUDIT ==================== -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-xl mt-6">
+                <div class="p-4 bg-[#e8cda8] border-b border-[#d4aa7c] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-950 flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-700"></i> Cancellation & Incident Logs
+                        </h2>
+                        <p class="text-[11px] text-amber-900 font-semibold mt-0.5">Audit releases, passenger cancel reasons, and habitual offenders.</p>
+                    </div>
+                    <button onclick="loadCancellations()" class="text-xs font-bold bg-amber-900/10 hover:bg-amber-900/20 text-[#78350f] px-3.5 py-1.5 rounded-xl border border-[#78350f]/20 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                        <i class="fa-solid fa-arrows-rotate"></i> Sync Logs
+                    </button>
+                </div>
+
+                <!-- Flagged Accounts Alert Banner -->
+                <div id="flagged-banner" class="hidden p-3.5 bg-rose-100 border-b border-rose-300 text-rose-900 text-xs font-bold space-y-1">
+                    <p><i class="fa-solid fa-circle-exclamation mr-1.5 text-rose-700"></i> <strong>Discipline Warning:</strong> High cancellation rates detected (3+ cancellations).</p>
+                    <div id="flagged-details" class="text-[11px] font-medium text-rose-800"></div>
+                </div>
+
+                <div class="overflow-x-auto max-h-[360px] overflow-y-auto driver-scroll bg-[#F5E6D3]">
+                    <table class="w-full text-sm text-left text-slate-800">
+                        <thead class="text-[11px] text-[#78350f] uppercase bg-[#e8cda8]/70 sticky top-0 border-b border-[#d4aa7c] z-10 backdrop-blur-sm">
+                            <tr>
+                                <th class="px-4 py-3">Time / Ref</th>
+                                <th class="px-3 py-3">Cancelled By</th>
+                                <th class="px-4 py-3">Reason Given</th>
+                                <th class="px-4 py-3">Route & Fare</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cancellation-table-body" class="divide-y divide-[#d4aa7c]/50 font-medium">
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center italic text-xs text-[#78350f]/70">
+                                    <i class="fa-solid fa-spinner fa-spin mr-1"></i> Loading incident records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- ==================== SCRIPT LOGIC ==================== -->
+    <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        function toggleQuickMenu() {
-            const menu = document.getElementById('quickMenu');
-            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
-        }
+        let allDrivers = [];
+        let currentFilter = 'all';
+        let currentSearchQuery = '';
+        let activeTodaName = '';
 
-        document.addEventListener('click', function(event) {
-            const menu = document.getElementById('quickMenu');
-            const button = menu ? menu.previousElementSibling : null;
-            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
-
-        function openForgotModal() {
-            document.getElementById('forgot-modal').classList.remove('hidden');
-        }
-
-        function closeForgotModal() {
-            document.getElementById('forgot-modal').classList.add('hidden');
-        }
-
-        function switchTab(tab) {
-            const loginForm = document.getElementById('form-login');
-            const regForm = document.getElementById('form-register');
-            const successAlert = document.getElementById('signup-success-alert');
-
-            if (tab === 'login') {
-                loginForm.classList.remove('hidden');
-                regForm.classList.add('hidden');
-            } else {
-                loginForm.classList.add('hidden');
-                regForm.classList.remove('hidden');
-                if (successAlert) successAlert.classList.add('hidden');
-                toggleTodaField();
-            }
-        }
-
-        function toggleTodaField() {
-            const role = document.getElementById('reg-role').value;
-            const driverFieldsContainer = document.getElementById('driver-fields-container');
-            const payoutField = document.getElementById('payout-container'); 
-            const payoutLabel = document.getElementById('payout-label');
-
-            if (!driverFieldsContainer || !payoutField) return;
-
-            if (role === 'driver') {
-                driverFieldsContainer.classList.remove('hidden');
-                driverFieldsContainer.classList.add('flex');
-                document.getElementById('reg-toda-number').required = true;
-                document.getElementById('reg-plate-number').required = true;
-            } else {
-                driverFieldsContainer.classList.add('hidden');
-                driverFieldsContainer.classList.remove('flex');
-                document.getElementById('reg-toda-number').required = false;
-                document.getElementById('reg-plate-number').required = false;
-            }
-
-            if (role === 'driver' || role === 'toda_admin') {
-                payoutField.classList.remove('hidden');
-                document.getElementById('reg-account').required = true;
-                
-                if (role === 'driver') {
-                    payoutLabel.innerText = "Driver Payout Account";
-                } else {
-                    payoutLabel.innerText = "TODA Organization Payout Account (3% Share)";
-                }
-            } else {
-                payoutField.classList.add('hidden');
-                document.getElementById('reg-account').required = false;
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", toggleTodaField);
-
-        async function handleLogin(event) {
-            event.preventDefault(); 
+        async function unlockTodaDashboard() {
+            const u = document.getElementById('todaUser').value.trim();
+            const p = document.getElementById('todaPass').value;
+            const btn = document.getElementById('toda-login-btn');
+            const errorMsg = document.getElementById('toda-login-error');
             
-            const user = document.getElementById('login-username').value.trim();
-            const pass = document.getElementById('login-password').value;
-            const alertBox = document.getElementById('login-alert');
-            const btn = document.getElementById('btn-login');
-            
-            alertBox.classList.add('hidden'); 
+            if (!u || !p) return;
+
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
+            errorMsg.classList.add('hidden');
 
             try {
-                if (user.toLowerCase() === "masterom" && (pass === "12345" || pass === "qZ82118@@")) {
-                    document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
-                    window.location.href = "admin_dashboard.html"; 
+                const response = await fetch('/api/toda/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const verifiedTodaName = data.toda_name; 
+                    
+                    sessionStorage.setItem("active_toda_admin", verifiedTodaName);
+                    localStorage.setItem("toda_name", verifiedTodaName);
+                    document.getElementById('todaLockOverlay').style.display = 'none';
+                    document.getElementById('toda-main-section').classList.remove('hidden');
+                    
+                    initializeDashboard(verifiedTodaName);
+                } else {
+                    errorMsg.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Network error. Could not reach server.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        window.onload = function() {
+            const savedToda = sessionStorage.getItem('active_toda_admin') || localStorage.getItem('toda_name');
+            if (savedToda) {
+                document.getElementById('todaLockOverlay').style.display = 'none';
+                document.getElementById('toda-main-section').classList.remove('hidden');
+                initializeDashboard(savedToda);
+            }
+        };
+
+        function logoutToda() {
+            // 🟢 Wipe both session and local storage so user is not automatically re-authenticated
+            sessionStorage.removeItem("active_toda_admin");
+            localStorage.removeItem("toda_name");
+
+            document.getElementById('toda-main-section').classList.add('hidden');
+            
+            const overlay = document.getElementById('todaLockOverlay');
+            overlay.style.display = 'flex';
+            
+            document.getElementById('todaUser').value = "";
+            document.getElementById('todaPass').value = "";
+        }
+
+        function initializeDashboard(todaName) {
+            activeTodaName = todaName.toUpperCase();
+            document.getElementById('cmd-center-title').innerText = `${activeTodaName} Command Center`;
+            document.getElementById('broadcast-subtitle').innerText = `Send a real-time notification to all ${activeTodaName} drivers.`;
+            
+            loadLiveTodaData();
+            loadCancellations();
+            setInterval(loadLiveTodaData, 10000); 
+            setInterval(loadCancellations, 8000);
+        }
+
+        // --- Live Backend Fetching ---
+        async function loadLiveTodaData() {
+            if(!activeTodaName) return;
+
+            try {
+                // 1. Fetch Drivers Roster
+                const driverRes = await fetch(`/api/toda/drivers?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
+                if(driverRes.ok) {
+                    allDrivers = await driverRes.json();
+                    renderDrivers();
+                }
+
+                // 2. Fetch Chapter Finances
+                const financeRes = await fetch(`/api/toda/finances?toda_name=${encodeURIComponent(activeTodaName)}&t=${new Date().getTime()}`);
+                if(financeRes.ok) {
+                    const finances = await financeRes.json();
+                    document.getElementById('fin-today').innerText = `₱${(finances.today || 0).toFixed(2)}`;
+                    document.getElementById('fin-week').innerText = `₱${(finances.week || 0).toFixed(2)}`;
+                    document.getElementById('fin-month').innerText = `₱${(finances.month || 0).toFixed(2)}`;
+                    document.getElementById('fin-ytd').innerText = `₱${(finances.ytd || 0).toFixed(2)}`;
+                }
+
+                // 3. Fetch Config to show active negotiated share % in header
+                const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(activeTodaName)}?t=${new Date().getTime()}`);
+                if(configRes.ok) {
+                    const conf = await configRes.json();
+                    const badge = document.getElementById('active-share-badge');
+                    if (badge && conf.katoda_share !== undefined) {
+                        badge.innerText = `${conf.katoda_share.toFixed(1)}% Share`;
+                    }
+                }
+            } catch (error) {
+                console.error("Error loading live TODA data:", error);
+            }
+        }
+
+        // --- Cancellation & Incident Feed ---
+        async function loadCancellations() {
+            if(!activeTodaName) return;
+
+            const tbody = document.getElementById('cancellation-table-body');
+            const flaggedBanner = document.getElementById('flagged-banner');
+            const flaggedDetails = document.getElementById('flagged-details');
+
+            try {
+                const response = await fetch(`/api/toda/cancellations/${encodeURIComponent(activeTodaName)}?t=${new Date().getTime()}`);
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const logs = data.incident_logs || [];
+                const flaggedDrivers = data.flagged_drivers || [];
+                const flaggedPassengers = data.flagged_passengers || [];
+
+                // Alert Banner for 3+ cancellations
+                if (flaggedDrivers.length > 0 || flaggedPassengers.length > 0) {
+                    let notices = [];
+                    if (flaggedDrivers.length > 0) {
+                        notices.push(`⚠️ Frequent Driver Releases: ${flaggedDrivers.join(', ')}`);
+                    }
+                    if (flaggedPassengers.length > 0) {
+                        notices.push(`⚠️ Frequent Passenger Cancels: ${flaggedPassengers.join(', ')}`);
+                    }
+                    flaggedDetails.innerText = notices.join(" | ");
+                    flaggedBanner.classList.remove('hidden');
+                } else {
+                    flaggedBanner.classList.add('hidden');
+                }
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="px-4 py-6 text-center italic text-xs text-[#78350f]/70">
+                                <i class="fa-solid fa-circle-check text-green-700 mr-1"></i> No cancellations recorded for ${activeTodaName}.
+                            </td>
+                        </tr>
+                    `;
                     return;
                 }
 
-                const formData = new FormData();
-                formData.append('username', user);
-                formData.append('password', pass);
+                tbody.innerHTML = '';
+                logs.forEach(log => {
+                    const isDriver = log.cancelled_by && log.cancelled_by.startsWith('driver:');
+                    const actorName = isDriver ? log.cancelled_by.replace('driver:', '').trim() : log.passenger_name;
+                    const badgeClass = isDriver 
+                        ? 'bg-amber-100 text-amber-900 border-amber-300' 
+                        : 'bg-blue-100 text-blue-900 border-blue-300';
+                    const actorRole = isDriver ? 'Driver' : 'Passenger';
 
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    body: formData,
-                    redirect: 'follow' 
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-[#e8cda8]/40 transition text-xs';
+                    row.innerHTML = `
+                        <td class="px-4 py-3 font-mono">
+                            <span class="font-extrabold text-[#0f172a] block">${log.local_ref}</span>
+                            <span class="text-[10px] text-[#78350f]/80">${log.timestamp}</span>
+                        </td>
+                        <td class="px-3 py-3">
+                            <span class="font-bold text-[#0f172a] block capitalize">${actorName}</span>
+                            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase border ${badgeClass} inline-block mt-0.5">
+                                ${actorRole}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-rose-800">
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-1.5 text-rose-600"></i>${log.reason}
+                        </td>
+                        <td class="px-4 py-3 text-[11px] text-slate-700">
+                            <div><strong class="text-[#78350f]">From:</strong> ${log.pickup}</div>
+                            <div><strong class="text-[#78350f]">To:</strong> ${log.dropoff}</div>
+                            <span class="text-[10px] font-extrabold text-green-800">${log.fare}</span>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
                 });
 
-                if (response.redirected || response.ok) {
-                    try {
-                        const profRes = await fetch(`/api/profile/${encodeURIComponent(user)}`);
-                        if (profRes.ok) {
-                            const prof = await profRes.json();
-                            const realName = (prof.full_name && prof.full_name.trim()) ? prof.full_name.trim() : user;
-                            const realToda = (prof.toda_name && prof.toda_name.trim()) ? prof.toda_name.trim().toUpperCase() : "";
-
-                            localStorage.setItem('driver_name', realName);
-                            localStorage.setItem('passenger_name', realName);
-                            localStorage.setItem('driver_toda', realToda);
-
-                            document.cookie = `driver_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
-                            document.cookie = `passenger_name=${encodeURIComponent(realName)}; path=/; max-age=86400`;
-                        } else {
-                            localStorage.setItem('driver_name', user);
-                            document.cookie = `driver_name=${encodeURIComponent(user)}; path=/; max-age=86400`;
-                        }
-                    } catch (e) {
-                        localStorage.setItem('driver_name', user);
-                        document.cookie = `driver_name=${encodeURIComponent(user)}; path=/; max-age=86400`;
-                    }
-
-                    window.location.href = response.url || "booking.html"; 
-                } else {
-                    const errData = await response.json().catch(() => ({}));
-                    alertBox.textContent = errData.detail || "⚠️ Invalid username or password.";
-                    alertBox.classList.remove('hidden');
-                }
             } catch (error) {
-                alertBox.textContent = "⚠️ Server error. Please try again.";
-                alertBox.classList.remove('hidden');
-            } finally {
-                btn.innerHTML = originalText;
+                console.error("Error loading cancellation incident logs:", error);
             }
         }
 
-        // ==========================================
-        // 🟢 REGISTRATION: SAVES TO DATABASE, THEN FORCES LOGIN
-        // ==========================================
-        async function handleRegister(event) {
-            event.preventDefault();
-            const alertBox = document.getElementById('reg-alert');
-            const btn = document.getElementById('btn-register');
-            
-            const pass = document.getElementById('reg-pass').value;
-            const confirmPass = document.getElementById('reg-confirm-pass').value;
-            if (pass !== confirmPass) {
-                alertBox.textContent = "⚠️ Passwords do not match!";
-                alertBox.classList.remove('hidden');
+        // --- Filter Logic ---
+        function setFilter(filterType) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`flt-${filterType}`).classList.add('active');
+            renderDrivers();
+        }
+
+        function handleDriverSearch(event) {
+            currentSearchQuery = event.target.value.toLowerCase();
+            renderDrivers();
+        }
+
+        // --- Render the Driver Fleet List ---
+        function renderDrivers() {
+            const container = document.getElementById('driver-list');
+            container.innerHTML = '';
+
+            if (!allDrivers || allDrivers.length === 0) {
+                container.innerHTML = '<p class="text-center text-amber-900/70 text-sm font-medium italic py-6">No registered drivers found for this TODA.</p>';
+                document.getElementById('roster-count').innerText = "0 Drivers";
                 return;
             }
 
-            alertBox.classList.add('hidden');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Account...';
+            let filteredDrivers = allDrivers.filter(driver => {
+                const searchStr = `${driver.name} ${driver.whatsapp_number} ${driver.toda_number} ${driver.id}`.toLowerCase();
+                const matchesSearch = searchStr.includes(currentSearchQuery);
+                if (!matchesSearch) return false;
 
-            const payload = {
-                full_name: document.getElementById('reg-name').value.trim(),
-                username: document.getElementById('reg-user').value.trim(),
-                password: pass,
-                role: document.getElementById('reg-role').value,
-                whatsapp_number: document.getElementById('reg-mobile').value.trim(),
-                city: document.getElementById('reg-city').value.trim(),
-                barangay: document.getElementById('reg-barangay').value.trim(),
-                toda_name: document.getElementById('reg-toda') ? document.getElementById('reg-toda').value.trim().toUpperCase() : "",
-                toda_number: document.getElementById('reg-toda-number') ? document.getElementById('reg-toda-number').value.trim().toUpperCase() : "",
-                plate_number: document.getElementById('reg-plate-number') ? document.getElementById('reg-plate-number').value.trim().toUpperCase() : "",
-                security_q: document.getElementById('reg-sec-q').value,
-                security_a: document.getElementById('reg-sec-a').value.trim().toLowerCase(),
-                bank_name: document.getElementById('reg-bank') ? document.getElementById('reg-bank').value : "GCash",
-                gcash_account: document.getElementById('reg-account') ? document.getElementById('reg-account').value.trim() : ""
-            };
+                if (currentFilter === 'online') return driver.status === 'online' && driver.is_suspended !== 1;
+                if (currentFilter === 'offline') return driver.status === 'offline' && driver.is_suspended !== 1;
+                if (currentFilter === 'suspended') return driver.is_suspended === 1;
+                return true;
+            });
+
+            document.getElementById('roster-count').innerText = `${filteredDrivers.length} Drivers`;
+
+            if (filteredDrivers.length === 0) {
+                container.innerHTML = '<p class="text-center text-amber-900/70 text-xs font-medium italic py-6">No drivers match this filter.</p>';
+                return;
+            }
+
+            filteredDrivers.sort((a, b) => (a.status === 'online' ? -1 : 1));
+
+            filteredDrivers.forEach(driver => {
+                const isOnline = driver.status === 'online';
+                const statusDot = isOnline ? 'text-green-600 animate-pulse' : 'text-slate-400';
+                const statusText = isOnline ? 'Online' : 'Offline';
+                const isLowRating = driver.rating < 4.0;
+                const starColor = isLowRating ? 'text-red-600' : 'text-yellow-500';
+                const ratingClass = isLowRating ? 'bg-red-100 text-red-800 border-red-300' : 'bg-white text-slate-800 border-[#d4aa7c]';
+
+                const isSuspended = driver.is_suspended === 1;
+                const rowStyles = isSuspended ? 'bg-red-100/80 border-red-300 opacity-90' : 'bg-white/80 border-[#d4aa7c] hover:bg-white';
+                const suspendBadge = isSuspended ? `<span class="text-[9px] text-red-800 bg-red-200 px-1.5 py-0.5 rounded ml-1 font-extrabold uppercase"><i class="fa-solid fa-ban"></i> Suspended</span>` : '';
+
+                let actionButtons = '';
+                if (isSuspended) {
+                    actionButtons = `
+                        <button onclick="disciplineAction(${driver.id}, 'reinstate')" class="bg-green-700 hover:bg-green-800 text-white px-3 h-7 rounded flex items-center justify-center transition shadow-sm text-[10px] font-bold cursor-pointer" title="Reinstate Account">
+                            <i class="fa-solid fa-rotate-left mr-1"></i> Reinstate
+                        </button>
+                    `;
+                } else {
+                    actionButtons = `
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[9px] font-bold text-amber-800 mr-1" title="Warnings">${driver.warnings}/3 <i class="fa-solid fa-triangle-exclamation"></i></span>
+                            <button onclick="disciplineAction(${driver.id}, 'warn')" class="bg-amber-500 hover:bg-amber-600 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm cursor-pointer" title="Issue Warning">
+                                <i class="fa-solid fa-triangle-exclamation text-[10px]"></i>
+                            </button>
+                            <button onclick="disciplineAction(${driver.id}, 'suspend')" class="bg-red-700 hover:bg-red-800 text-white w-7 h-7 rounded flex items-center justify-center transition shadow-sm cursor-pointer" title="Suspend Account">
+                                <i class="fa-solid fa-ban text-[10px]"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+
+                const card = document.createElement('div');
+                card.className = `border rounded-xl p-2.5 mb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 transition shadow-sm ${rowStyles}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-amber-900/10 border border-amber-900/20 flex items-center justify-center text-amber-900 font-bold uppercase text-sm shrink-0">
+                            ${driver.name.charAt(0)}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 text-sm capitalize flex items-center flex-wrap gap-1 leading-tight">
+                                ${driver.name} 
+                                <span class="text-[9px] text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">ID: ${driver.toda_number || 'N/A'}</span>
+                                ${suspendBadge}
+                            </h4>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                <p class="text-[10px] font-bold text-slate-600 flex items-center gap-1">
+                                    <i class="fa-solid fa-circle text-[6px] ${statusDot}"></i> ${statusText}
+                                </p>
+                                <span class="text-[10px] text-slate-300">|</span>
+                                <p class="text-[10px] font-medium text-slate-600">${driver.totalRides || 0} Rides</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div class="flex flex-col items-center justify-center px-2 py-0.5 border rounded ${ratingClass}">
+                            <div class="flex items-center gap-1 text-xs font-extrabold">
+                                ${(driver.rating || 5.0).toFixed(1)} <i class="fa-solid fa-star text-[9px] ${starColor}"></i>
+                            </div>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function disciplineAction(driverId, action) {
+            let msg = "";
+            if (action === "warn") msg = "Are you sure you want to issue a warning to this driver? (3 warnings = Auto-Suspend)";
+            if (action === "suspend") msg = "Are you sure you want to immediately SUSPEND this driver? They will not be able to log in.";
+            if (action === "reinstate") msg = "Are you sure you want to REINSTATE this driver? Their warnings will be reset to 0.";
+
+            if (!confirm(msg)) return;
 
             try {
-                // 1. Save new user account to SQLite database
-                const response = await fetch('/register', {
+                const response = await fetch('/api/admin/discipline', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ driver_id: driverId, action: action })
                 });
 
                 if (response.ok) {
-                    // 2. Clear registration form
-                    document.getElementById('form-register').reset();
-
-                    // 3. Switch to Login tab and show success message
-                    switchTab('login');
-                    const successAlert = document.getElementById('signup-success-alert');
-                    if (successAlert) {
-                        successAlert.innerText = `✅ Account created for "${payload.username}"! Please enter your password to log in.`;
-                        successAlert.classList.remove('hidden');
+                    const data = await response.json();
+                    if(action !== 'reinstate') {
+                        alert(`Action successful. Driver currently has ${data.warnings}/3 warnings.`);
+                    } else {
+                        alert(`Driver has been successfully reinstated.`);
                     }
-
-                    // 4. Pre-fill username into login field and focus password
-                    const loginUserInput = document.getElementById('login-username');
-                    const loginPassInput = document.getElementById('login-password');
-                    if (loginUserInput) loginUserInput.value = payload.username;
-                    if (loginPassInput) {
-                        loginPassInput.value = '';
-                        loginPassInput.focus();
-                    }
+                    loadLiveTodaData(); 
                 } else {
-                    const data = await response.json().catch(() => ({}));
-                    alertBox.textContent = data.detail || "⚠️ Could not create account.";
-                    alertBox.classList.remove('hidden');
+                    alert("Failed to update driver status. Check server logs.");
                 }
             } catch (error) {
-                alertBox.textContent = "⚠️ Network error. Please try again.";
-                alertBox.classList.remove('hidden');
-            } finally {
-                btn.innerHTML = originalText;
+                alert("Network error while trying to update driver.");
             }
         }
 
-        async function handleForgotPassword(event) {
-            event.preventDefault();
-            const alertBox = document.getElementById('forgot-alert');
-            const btn = document.getElementById('btn-forgot');
-            
-            alertBox.classList.add('hidden');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resetting...';
-
-            const payload = {
-                username: document.getElementById('forgot-user').value.trim(),
-                security_q: document.getElementById('forgot-sec-q').value,
-                security_a: document.getElementById('forgot-sec-a').value.trim().toLowerCase(),
-                new_password: document.getElementById('forgot-pass').value
-            };
+        async function sendBroadcast() {
+            const msg = document.getElementById('broadcast-msg').value;
+            if(!msg.trim()) return alert("Please type a message first.");
 
             try {
-                const response = await fetch('/api/reset-password-security', {
+                const payload = { 
+                    toda_name: activeTodaName, 
+                    message: msg 
+                };
+                
+                const response = await fetch('/api/toda/broadcast', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    alert("✅ Password successfully reset! You can now log in.");
-                    closeForgotModal();
-                    document.getElementById('login-username').value = payload.username;
-                    document.getElementById('login-password').value = '';
+                    alert(`✅ BROADCAST SENT TO ALL ${activeTodaName} DRIVERS:\n\n"${msg}"`);
+                    document.getElementById('broadcast-msg').value = '';
                 } else {
-                    const data = await response.json().catch(() => ({}));
-                    alertBox.textContent = data.detail || "⚠️ Security answer is incorrect.";
-                    alertBox.classList.remove('hidden');
+                    const errorDetails = await response.text();
+                    alert(`❌ Server rejected broadcast.\n\nReason: ${errorDetails}`);
                 }
             } catch (error) {
-                alertBox.textContent = "⚠️ Network error. Please try again.";
-                alertBox.classList.remove('hidden');
-            } finally {
-                btn.innerHTML = originalText;
+                alert("Network error while sending broadcast. Is the server offline?");
             }
         }
     </script>
