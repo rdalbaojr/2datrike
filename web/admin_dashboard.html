@@ -19,7 +19,6 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center py-10 px-4 antialiased relative">
 
-    <!-- THE UNIFIED SINGLE CARD WRAPPER -->
     <div class="w-full max-w-[1100px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-10 shadow-2xl relative overflow-hidden">
         
         <!-- SECURE LOCK OVERLAY -->
@@ -31,23 +30,21 @@
             <form onsubmit="handleMasterLogin(event)" class="w-full max-w-[320px] flex flex-col gap-3">
                 <input type="text" id="masterUser" required placeholder="Username" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
                 <input type="password" id="masterPass" required placeholder="Password" class="w-full bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl px-4 py-3 text-sm font-bold text-[#0f172a] outline-none text-center">
-                <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm">
+                <button type="submit" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white font-bold py-3.5 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2 transition text-sm cursor-pointer">
                     <i class="fa-solid fa-key"></i> Unlock Dashboard
                 </button>
             </form>
         </div>
 
-        <!-- ================= HEADER SECTION ================= -->
+        <!-- HEADER SECTION -->
         <div class="relative flex flex-col items-center mb-10">
-            <!-- Corner Action Buttons -->
-            <button onclick="lockDashboard()" class="absolute left-0 top-0 text-white bg-red-800 px-4 py-2.5 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-xs sm:text-sm">
+            <button onclick="lockDashboard()" class="absolute left-0 top-0 text-white bg-red-800 px-4 py-2.5 rounded-xl font-bold shadow-md hover:bg-red-700 hover:scale-105 transition flex items-center gap-2 text-xs sm:text-sm cursor-pointer">
                 <i class="fa-solid fa-power-off"></i> <span class="hidden sm:inline">Lock System</span>
             </button>
-            <button onclick="logout()" class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] hover:bg-[#d4aa7c] transition shadow-sm" title="Logout">
+            <button onclick="logout()" class="absolute right-0 top-0 w-10 h-10 bg-[#F5E6D3] rounded-full flex items-center justify-center border border-[#d4aa7c] hover:bg-[#d4aa7c] transition shadow-sm cursor-pointer" title="Logout">
                 <i class="fa-solid fa-right-from-bracket text-[#78350f] text-sm"></i>
             </button>
 
-            <!-- Centered Circular Logo -->
             <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-3 shadow-xl border-4 border-[#78350f] overflow-hidden p-2">
                 <img src="2da.png" alt="2DA Logo" class="w-full h-full object-contain">
             </div>
@@ -55,7 +52,7 @@
             <p class="text-xs font-bold text-[#78350f] uppercase tracking-widest">Master Command Center</p>
         </div>
 
-        <!-- ================= UNIFIED CONTENT CONTAINER ================= -->
+        <!-- UNIFIED CONTENT CONTAINER -->
         <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-10">
             
             <!-- SECTION 1: BRANCH CONFIGURATOR -->
@@ -71,7 +68,7 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- Left: Select & Revenue Split Rules -->
+                    <!-- Left: Select & Split -->
                     <div class="flex flex-col gap-6">
                         <div>
                             <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest mb-2 block">1. Select Branch to Edit</label>
@@ -109,7 +106,7 @@
                         </div>
                     </div>
 
-                    <!-- Right: Base Fares (Input Baseline Only) -->
+                    <!-- Right: Base Fares -->
                     <div>
                         <div class="flex justify-between items-center mb-2">
                             <label class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-widest block">2. Driver Base Fares</label>
@@ -140,34 +137,47 @@
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-4 rounded-xl shadow-md transition text-sm mt-6 flex items-center justify-center gap-2">
+                <button type="submit" class="w-full bg-[#175d33] hover:bg-[#114626] text-white font-bold py-4 rounded-xl shadow-md transition text-sm mt-6 flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-floppy-disk"></i> Save Branch Config
                 </button>
             </form>
 
             <hr class="border-[#c99c6b]">
 
-            <!-- SECTION 2: PAYOUT TABLE -->
+            <!-- SECTION 2: PAYOUT TABLE WITH CUTOFF DATE & EXCLUSION -->
             <div class="w-full">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-[#78350f] rounded-xl flex items-center justify-center shadow-md">
                             <i class="fa-solid fa-file-invoice-dollar text-white"></i>
                         </div>
                         <div>
-                            <h2 class="text-xl font-extrabold text-[#0f172a] leading-none">Daily Payouts</h2>
-                            <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Real-time collective settlement</p>
+                            <h2 class="text-xl font-extrabold text-[#0f172a] leading-none">Daily Disbursements</h2>
+                            <p class="text-[10px] text-[#78350f] font-bold uppercase tracking-wider mt-1">Reconciliation & BizLink Export</p>
                         </div>
                     </div>
                     
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                        <div class="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl border border-[#c99c6b] shadow-sm">
-                            <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider"><i class="fa-solid fa-location-dot"></i> View:</label>
-                            <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer w-full">
-                                <option value="All">🌐 All Branches (Master)</option>
+                    <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+                        <!-- Cutoff Date Selector -->
+                        <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="cutoffDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+                                <i class="fa-solid fa-calendar-day mr-1"></i> Cutoff:
+                            </label>
+                            <input type="date" id="cutoffDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+                        </div>
+
+                        <!-- Branch Selector -->
+                        <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+                                <i class="fa-solid fa-location-dot mr-1"></i> Branch:
+                            </label>
+                            <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+                                <option value="All">🌐 All Branches</option>
                             </select>
                         </div>
-                        <a id="exportBizLinkBtn" href="/api/admin/generate-bizlink-payout?branch=All" class="bg-[#175d33] hover:bg-[#114626] text-white px-5 py-3 rounded-xl font-bold text-xs shadow-md transition flex items-center justify-center gap-2 shrink-0">
+
+                        <!-- Export BizLink Button -->
+                        <a id="exportBizLinkBtn" href="#" class="bg-[#175d33] hover:bg-[#114626] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer">
                             <i class="fa-solid fa-download"></i> Export for BizLink
                         </a>
                     </div>
@@ -177,14 +187,14 @@
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-[#F5E6D3]">
                             <tr class="border-b border-[#c99c6b] text-[#78350f] text-[10px] uppercase tracking-wider font-extrabold">
-                                <th class="py-4 px-4">Entity / Driver</th>
+                                <th class="py-4 px-4">Beneficiary / Entity</th>
                                 <th class="py-4 px-4">Provider</th>
                                 <th class="py-4 px-4">Account Number</th>
                                 <th class="py-4 px-4 text-center">Rides</th>
-                                <th class="py-4 px-4 text-right">Gross</th>
-                                <th class="py-4 px-4 text-right text-[#175d33]">Driver Net (Base)</th>
-                                <th id="toda-label-3" class="py-4 px-4 text-right">LOCAL TODA</th>
-                                <th class="py-4 px-4 text-right">Platform</th>
+                                <th class="py-4 px-4 text-right">Gross Total</th>
+                                <th class="py-4 px-4 text-right text-[#175d33]">Driver Net Payout</th>
+                                <th id="toda-col-header" class="py-4 px-4 text-right">TODA Remittance</th>
+                                <th class="py-4 px-4 text-right text-slate-500">Platform Cut</th>
                             </tr>
                         </thead>
                         <tbody id="payout-table-body" class="divide-y divide-[#c99c6b]/40 font-medium text-[#0f172a]">
@@ -209,31 +219,19 @@
 
         async function handleMasterLogin(event) {
             event.preventDefault();
-            
-            const rawU = document.getElementById('masterUser').value || "";
-            const rawP = document.getElementById('masterPass').value || "";
-            
-            const u = rawU.trim().toLowerCase();
-            const p = rawP.trim();
-
+            const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
+            const p = (document.getElementById('masterPass').value || "").trim();
             const btn = event.target.querySelector('button[type="submit"]');
-            if (!u || !p) return;
 
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
-
-            setTimeout(() => {
-                if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
-                    document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
-                    const overlay = document.getElementById('lockOverlay');
-                    overlay.style.transition = "opacity 0.3s ease";
-                    overlay.style.opacity = "0";
-                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
-                } else {
-                    alert(`❌ Invalid credentials.`);
-                }
-                btn.innerHTML = originalText;
-            }, 400);
+            if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
+                document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
+                const overlay = document.getElementById('lockOverlay');
+                overlay.style.transition = "opacity 0.3s ease";
+                overlay.style.opacity = "0";
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            } else {
+                alert("❌ Invalid credentials.");
+            }
         }
 
         function lockDashboard() {
@@ -241,7 +239,6 @@
             const overlay = document.getElementById('lockOverlay');
             overlay.style.display = 'flex';
             setTimeout(() => { overlay.style.opacity = "1"; }, 10);
-            
             document.getElementById('masterUser').value = "";
             document.getElementById('masterPass').value = "";
         }
@@ -268,6 +265,10 @@
                 document.getElementById('lockOverlay').style.display = 'none';
             }
 
+            // Default Cutoff Date to Today
+            const todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('cutoffDateInput').value = todayStr;
+
             try {
                 const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
                 if (locRes.ok) {
@@ -275,10 +276,10 @@
                     const selector = document.getElementById('branchSelector');
                     const configSelector = document.getElementById('config-branch-select');
                     
-                    selector.innerHTML = '<option value="All">🌐 All Branches (Master)</option>';
+                    selector.innerHTML = '<option value="All">🌐 All Branches</option>';
                     configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
                     
-                    let uniqueTodasForConfig = new Set(); 
+                    let uniqueTodas = new Set(); 
 
                     for (const [brgy, todas] of Object.entries(data)) {
                         const group = document.createElement('optgroup');
@@ -289,13 +290,12 @@
                             opt.value = toda; 
                             opt.textContent = toda; 
                             group.appendChild(opt);
-
-                            if(toda && toda !== "No TODA") uniqueTodasForConfig.add(toda);
+                            if(toda && toda !== "No TODA") uniqueTodas.add(toda);
                         });
                         selector.appendChild(group);
                     }
 
-                    uniqueTodasForConfig.forEach(toda => {
+                    uniqueTodas.forEach(toda => {
                         const opt = document.createElement('option');
                         opt.value = toda;
                         opt.textContent = toda;
@@ -380,7 +380,7 @@
                     alert("❌ Failed to save configuration.");
                 }
             } catch (error) {
-                alert("Network error. Make sure the server is online.");
+                alert("Network error.");
             } finally {
                 btn.innerHTML = originalText;
             }
@@ -388,13 +388,17 @@
 
         async function loadPayoutSummary() {
             const selectedBranch = document.getElementById('branchSelector').value;
-            const displayTodaName = selectedBranch === "All" ? "LOCAL TODA" : selectedBranch.toUpperCase();
-            document.getElementById('toda-label-3').innerText = displayTodaName;
+            const cutoffDate = document.getElementById('cutoffDateInput').value;
+            const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
+            
+            document.getElementById('toda-col-header').innerText = todaLabel;
 
-            document.getElementById('exportBizLinkBtn').href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}`;
+            // Reflect Branch and Cutoff Date on BizLink Download Link
+            document.getElementById('exportBizLinkBtn').href = 
+                `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}&cutoff_date=${encodeURIComponent(cutoffDate)}`;
 
             try {
-                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}`);
+                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&cutoff_date=${encodeURIComponent(cutoffDate)}`);
                 if (!response.ok) return;
                 
                 const data = await response.json();
@@ -402,45 +406,80 @@
                 tbody.innerHTML = '';
 
                 if (!data.drivers || data.drivers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No pending payouts for this branch.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No completed rides recorded up to this cutoff date.</td></tr>';
                     return;
                 }
 
-                let totalRidesCount = 0;
-                let totalGrossAmount = 0.0;
-                let totalDriverNetAmount = 0.0;
-
+                // 🟢 1. RENDER INDIVIDUAL DRIVER ROWS
                 data.drivers.forEach(driver => {
-                    totalRidesCount += driver.ride_count || 0;
-                    totalGrossAmount += driver.total_gross || 0.0;
-                    totalDriverNetAmount += driver.driver_share || 0.0;
-
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="py-4 px-4 font-bold">${driver.driver_name}</td>
-                        <td class="py-4 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
-                        <td class="py-4 px-4 text-xs font-mono text-[#78350f] opacity-80">${driver.account_number}</td>
-                        <td class="py-4 px-4 text-center font-bold">${driver.ride_count}</td>
-                        <td class="py-4 px-4 text-right">₱${driver.total_gross.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
-                        <td class="py-4 px-4 text-right font-bold text-slate-500">₱${driver.platform_share.toFixed(2)}</td>
+                        <td class="py-3 px-4 font-bold text-[#0f172a]">
+                            <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
+                        </td>
+                        <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
+                        <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
+                        <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
+                        <td class="py-3 px-4 text-right text-slate-600">₱${driver.total_gross.toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-medium text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
                     `;
                     tbody.appendChild(row);
                 });
-                
-                // Summary Total Row with Aggregates
+
+                // 🟢 2. DEDICATED TODA CHAPTER ROW (Included in BizLink Disbursement)
+                const todaRow = document.createElement('tr');
+                todaRow.className = "bg-amber-100/50 border-t-2 border-[#d4aa7c] font-bold";
+                todaRow.innerHTML = `
+                    <td class="py-3.5 px-4 font-black text-amber-950 uppercase">
+                        <i class="fa-solid fa-users-gear mr-1.5 text-amber-800"></i>${selectedBranch === "All" ? "TODA Chapters Total" : selectedBranch.toUpperCase() + " TODA Org"}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
+                    <td class="py-3.5 px-4 text-xs font-mono font-bold text-[#78350f]">${data.katoda_account || 'Not Configured'}</td>
+                    <td class="py-3.5 px-4 text-center">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right font-black text-amber-900 text-base">₱${data.total_katoda.toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                `;
+                tbody.appendChild(todaRow);
+
+                // 🟢 3. DEDICATED ADMIN / PLATFORM ROW (STRICTLY EXCLUDED FROM BIZLINK)
+                const platformRow = document.createElement('tr');
+                platformRow.className = "bg-slate-100 border-t border-slate-300 font-bold";
+                platformRow.innerHTML = `
+                    <td class="py-3.5 px-4 font-black text-slate-800 uppercase flex items-center gap-1.5">
+                        <i class="fa-solid fa-building-columns text-slate-600"></i> 2DA Platform Revenue (Admin)
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-bold text-slate-600">BPI Corporate</td>
+                    <td class="py-3.5 px-4 text-xs font-mono text-slate-500">RETAINED IN 2DA ACCT</td>
+                    <td class="py-3.5 px-4 text-center">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
+                        ₱${data.total_platform.toFixed(2)}
+                        <span class="block text-[8px] font-black text-rose-700 uppercase tracking-tighter">EXCLUDED FROM BIZLINK</span>
+                    </td>
+                `;
+                tbody.appendChild(platformRow);
+
+                // 🟢 4. BIZLINK DISBURSEMENT BATCH TOTAL (Driver Net + TODA Share)
                 const totalRow = document.createElement('tr');
-                totalRow.className = "bg-[#c99c6b]/20 border-t-2 border-[#c99c6b] font-black";
+                totalRow.className = "bg-[#78350f] text-white font-extrabold border-t-2 border-amber-950";
                 totalRow.innerHTML = `
-                    <td class="py-4 px-4 text-[#0f172a] uppercase">${displayTodaName} TOTAL</td>
-                    <td class="py-4 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
-                    <td class="py-4 px-4 text-xs font-mono text-[#78350f] font-bold">${data.katoda_account || 'N/A'}</td>
-                    <td class="py-4 px-4 text-center">${totalRidesCount}</td>
-                    <td class="py-4 px-4 text-right text-slate-800">₱${totalGrossAmount.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right text-[#175d33]">₱${totalDriverNetAmount.toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right text-amber-800">₱${(data.total_katoda || 0.0).toFixed(2)}</td>
-                    <td class="py-4 px-4 text-right text-slate-700">₱${(data.total_platform || 0.0).toFixed(2)}</td>
+                    <td colspan="3" class="py-4 px-4 uppercase text-xs tracking-wider">
+                        <i class="fa-solid fa-file-export mr-1.5 text-amber-300"></i> BIZLINK BATCH DEBIT TOTAL (Drivers + TODA):
+                    </td>
+                    <td class="py-4 px-4 text-center font-black">${data.total_rides}</td>
+                    <td class="py-4 px-4 text-right font-medium text-amber-200">₱${data.total_gross.toFixed(2)}</td>
+                    <td colspan="2" class="py-4 px-4 text-right font-black text-lg text-green-300">
+                        ₱${data.total_bizlink_disbursement.toFixed(2)}
+                    </td>
+                    <td class="py-4 px-4 text-right text-[10px] uppercase font-bold text-amber-200">
+                        Cutoff: ${cutoffDate}
+                    </td>
                 `;
                 tbody.appendChild(totalRow);
 
