@@ -489,7 +489,11 @@
         let activeChatRideId = null;
 
         let pendingCancelRideId = null;
-
+        let currentActiveRideId = null;
+        let currentActiveRideRef = "";
+        function dismissPassengerCancelAlert() {
+    document.getElementById('passenger-cancelled-alert-modal').classList.add('hidden');
+}
         function openCancelReasonModal(rideId) {
             pendingCancelRideId = rideId;
             document.getElementById('cancel-reason-modal').classList.remove('hidden');
@@ -611,11 +615,34 @@
                     });
                 }
 
-                const activeRides = allRides.filter(ride => 
-                    (ride.status === 'accepted' || ride.status === 'completed') && 
-                    ride.driver_name &&
-                    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
-                );
+                // 2. Active Rides (Accepted/Completed)
+const activeRides = allRides.filter(ride => 
+    (ride.status === 'accepted' || ride.status === 'completed') && 
+    ride.driver_name &&
+    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
+);
+
+// 🟢 PASSENGER CANCELLATION WATCHER
+if (currentActiveRideId && activeRides.length === 0) {
+    // Check if the ride the driver was handling was cancelled by the passenger
+    const droppedRide = allRides.find(r => r.id === currentActiveRideId);
+    if (droppedRide && droppedRide.status === 'cancelled') {
+        playAlert('chat');
+        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+
+        document.getElementById('cancelled-modal-ref').innerText = droppedRide.local_ref || currentActiveRideRef || "N/A";
+        document.getElementById('cancelled-modal-reason').innerText = droppedRide.cancel_reason || "Passenger cancelled without providing a reason.";
+        document.getElementById('passenger-cancelled-alert-modal').classList.remove('hidden');
+    }
+    currentActiveRideId = null;
+    currentActiveRideRef = "";
+}
+
+if (activeRides.length > 0) {
+    // Keep track of the trip in progress
+    currentActiveRideId = activeRides[0].id;
+    currentActiveRideRef = activeRides[0].local_ref || "";
+}
 
                 if (activeRides.length === 0) {
                     activeContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>';
