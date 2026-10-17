@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        <!-- 🟢 DEFAULT BUTTONS IN HTML (Prevents empty UI) -->
+        <!-- Service Selection -->
         <div id="service-selection-box">
             <label class="block text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Select Transaction</label>
             <div id="service-buttons-container" class="grid grid-cols-3 gap-3 mb-6">
@@ -174,7 +174,7 @@
         </div>
     </div>
 
-    <!-- ==================== PASSENGER PROFILE & LOCATION MODAL ==================== -->
+    <!-- ==================== PASSENGER PROFILE MODAL ==================== -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[420px] rounded-[24px] overflow-hidden shadow-2xl relative">
             <div class="bg-[#78350f] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -231,7 +231,7 @@
         </div>
     </div>
 
-    <!-- IN-APP CHAT MODAL -->
+    <!-- ==================== IN-APP CHAT MODAL ==================== -->
     <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
             <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -256,7 +256,7 @@
         </div>
     </div>
 
-    <!-- 5-STAR RATING MODAL -->
+    <!-- ==================== 5-STAR RATING MODAL ==================== -->
     <div id="rating-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[110] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] rounded-[32px] p-6 max-w-[360px] w-full text-center shadow-2xl relative">
             <h2 class="text-2xl font-extrabold text-[#0f172a] mb-1">Rate your Ride</h2>
@@ -279,7 +279,47 @@
         </div>
     </div>
 
-    <!-- LOGIC SCRIPTS -->
+    <!-- ==================== PASSENGER CANCELLATION REASON MODAL ==================== -->
+    <div id="passenger-cancel-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[150] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
+            <div class="text-center mb-4">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-rose-700 text-white rounded-2xl mb-2 shadow-md">
+                    <i class="fa-solid fa-ban text-xl"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Cancel Booking</h3>
+                <p class="text-xs font-semibold text-[#78350f]">Select reason for cancelling:</p>
+            </div>
+
+            <div class="space-y-2 mb-4">
+                <button type="button" onclick="submitPassengerCancel('Driver taking too long / not moving')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between cursor-pointer">
+                    <span><i class="fa-solid fa-clock text-amber-800 mr-2"></i> Driver taking too long / not moving</span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+                <button type="button" onclick="submitPassengerCancel('Found alternative tricycle')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between cursor-pointer">
+                    <span><i class="fa-solid fa-motorcycle text-amber-800 mr-2"></i> Found another tricycle</span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+                <button type="button" onclick="submitPassengerCancel('Driver asked me to cancel')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between cursor-pointer">
+                    <span><i class="fa-solid fa-user-xmark text-rose-800 mr-2"></i> Driver asked me to cancel</span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+                <button type="button" onclick="submitPassengerCancel('Booked by mistake / Change of plans')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between cursor-pointer">
+                    <span><i class="fa-solid fa-circle-xmark text-amber-800 mr-2"></i> Change of plans / Booked by mistake</span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+                <button type="button" onclick="submitPassengerCancel('Wrong pickup location')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between cursor-pointer">
+                    <span><i class="fa-solid fa-location-dot text-amber-800 mr-2"></i> Wrong pickup location</span>
+                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
+                </button>
+            </div>
+
+            <button type="button" onclick="closePassengerCancelModal()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold rounded-xl text-xs transition cursor-pointer">
+                Keep Booking
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPT LOGIC ==================== -->
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         document.body.addEventListener('click', () => { if (audioCtx.state === 'suspended') audioCtx.resume(); }, { once: true });
@@ -330,15 +370,16 @@
                 let val = decodeURIComponent(match[2]);
                 return val.replace(/^"|"$/g, '').trim(); 
             }
-            return "Guest"; 
+            return ""; 
         }
 
-        const currentPassenger = getCookie("passenger_name");
+        const currentPassenger = localStorage.getItem('passenger_name') || getCookie("passenger_name") || "Guest";
 
         let allServicePrices = { "Pasundo": 50, "Pabili": 50, "Papickup": 50 };
         let currentService = 'Pasundo';
         let isNightRateApplied = false; 
         let currentPendingRideId = null;
+        let activeCancelRideId = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
             const welcomeHeader = document.getElementById('welcome-name');
@@ -515,35 +556,65 @@
             }
         });
 
-        async function cancelSearch() {
+        function cancelSearch() {
             if (currentPendingRideId) {
-                try {
-                    await fetch(`/api/passenger-cancel-ride/${currentPendingRideId}`, { method: 'POST' });
-                } catch (e) {}
-                currentPendingRideId = null;
+                openPassengerCancelModal(currentPendingRideId);
+            } else {
+                document.getElementById('searching-state').classList.add('hidden');
+                document.getElementById('booking-form').classList.remove('hidden');
+                document.getElementById('service-selection-box').classList.remove('hidden');
+                fetchMyRides();
             }
-            document.getElementById('searching-state').classList.add('hidden');
-            document.getElementById('booking-form').classList.remove('hidden');
-            document.getElementById('service-selection-box').classList.remove('hidden');
-            fetchMyRides();
         }
 
-        async function passengerCancelTrip(rideId) {
-            if (!confirm("Are you sure you want to cancel this ride?")) return;
+        // ==========================================
+        // CANCELLATION MODAL LOGIC
+        // ==========================================
+        function openPassengerCancelModal(rideId = null) {
+            activeCancelRideId = rideId || currentPendingRideId;
+            const modal = document.getElementById('passenger-cancel-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closePassengerCancelModal() {
+            activeCancelRideId = null;
+            const modal = document.getElementById('passenger-cancel-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        async function submitPassengerCancel(reason) {
+            if (!activeCancelRideId) return;
+            const rideId = activeCancelRideId;
+            closePassengerCancelModal();
+
             try {
-                const res = await fetch(`/api/passenger-cancel-ride/${rideId}`, { method: 'POST' });
-                if (res.ok) {
+                const response = await fetch(`/api/passenger-cancel-ride/${rideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason })
+                });
+
+                if (response.ok) {
+                    currentPendingRideId = null;
+                    document.getElementById('searching-state').classList.add('hidden');
+                    document.getElementById('booking-form').classList.remove('hidden');
+                    document.getElementById('service-selection-box').classList.remove('hidden');
                     fetchMyRides();
                 } else {
-                    const data = await res.json().catch(() => ({}));
-                    alert(data.detail || "Could not cancel ride.");
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || "Error cancelling ride.");
                 }
             } catch (e) {
-                alert("Network error.");
+                alert("Network error. Please try again.");
             }
         }
 
         function logout() {
+            localStorage.clear();
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = "/login.html";
         }
@@ -603,7 +674,12 @@
                     
                     let statusHtml = "";
                     if (ride.status === 'pending' || !ride.status) {
-                        statusHtml = `<p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>`;
+                        statusHtml = `
+                            <p class="text-amber-700 text-sm mt-3 font-bold"><i class="fa-solid fa-hourglass-half mr-1"></i> Looking for a driver... ⏳</p>
+                            <button type="button" onclick="openPassengerCancelModal(${ride.id})" class="mt-3 w-full bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold py-2 rounded-lg text-xs transition border border-rose-300 flex items-center justify-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-xmark"></i> Cancel Booking
+                            </button>
+                        `;
                     } else if (ride.status === 'accepted') {
                         statusHtml = `
                             <div class="bg-green-900/10 border border-green-800/30 rounded-lg p-3 mt-4">
@@ -612,13 +688,12 @@
                                     <a href="tel:${ride.driver_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
                                         <i class="fa-solid fa-phone"></i> Call
                                     </a>
-                                    <button onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs">
+                                    <button type="button" onclick="openChat(${ride.id})" class="flex-1 bg-[#175d33] text-white py-2 rounded-lg font-bold flex justify-center items-center gap-1 shadow-sm text-xs cursor-pointer">
                                         <i class="fa-regular fa-comment-dots"></i> Chat
                                     </button>
-                                    <!-- Example: Pass the active ride ID to the modal trigger -->
-<button onclick="openPassengerCancelModal(currentRideId)" class="...">
-    Cancel Ride
-</button>
+                                    <button type="button" onclick="openPassengerCancelModal(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-lg text-xs transition border border-rose-300 flex items-center justify-center gap-1 cursor-pointer">
+                                        <i class="fa-solid fa-xmark"></i> Cancel
+                                    </button>
                                 </div>
                             </div>
                         `;
@@ -632,7 +707,7 @@
                         statusHtml = `
                             <div class="bg-yellow-900/10 border border-yellow-800/30 rounded-lg p-3 mt-4 text-center">
                                 <p class="text-yellow-800 text-sm font-bold m-0 mb-3">🎉 Payment Confirmed!</p>
-                                <button onclick="openRatingModal(${ride.id}, '${ride.driver_name}')" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center">
+                                <button type="button" onclick="openRatingModal(${ride.id}, '${ride.driver_name}')" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-bold text-sm shadow-md transition flex items-center justify-center cursor-pointer">
                                     <i class="fa-solid fa-star mr-2"></i> Rate your Driver
                                 </button>
                             </div>
@@ -731,7 +806,7 @@
         // WEBSOCKET CHAT LOGIC
         // ==========================================
         let chatSocket = null;
-        let currentChatUser = getCookie('passenger_name') !== "Guest" ? getCookie('passenger_name') : 'Passenger';
+        let currentChatUser = currentPassenger;
         
         async function openChat(rideId) {
             document.getElementById('chat-modal').classList.remove('hidden');
@@ -896,84 +971,6 @@
                 console.warn("Could not load dynamic TODA suggestions:", e);
             }
         }
-    let activeCancelRideId = null;
-
-function openPassengerCancelModal(rideId) {
-    activeCancelRideId = rideId;
-    document.getElementById('passenger-cancel-modal').classList.remove('hidden');
-}
-
-function closePassengerCancelModal() {
-    activeCancelRideId = null;
-    document.getElementById('passenger-cancel-modal').classList.add('hidden');
-}
-
-async function submitPassengerCancel(reason) {
-    if (!activeCancelRideId) return;
-    const rideId = activeCancelRideId;
-    closePassengerCancelModal();
-
-    try {
-        const response = await fetch(`/api/passenger-cancel-ride/${rideId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: reason })
-        });
-
-        if (response.ok) {
-            // Reset passenger view back to booking form
-            if (typeof resetBookingUI === "function") {
-                resetBookingUI();
-            } else {
-                location.reload();
-            }
-        } else {
-            const err = await response.json().catch(() => ({}));
-            alert(err.detail || "Error cancelling ride.");
-        }
-    } catch (e) {
-        alert("Network error. Please try again.");
-    }
-}
     </script>
-<!-- ==================== PASSENGER CANCELLATION MODAL ==================== -->
-<div id="passenger-cancel-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[120] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-    <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
-        <div class="text-center mb-4">
-            <div class="inline-flex items-center justify-center w-12 h-12 bg-rose-700 text-white rounded-2xl mb-2 shadow-md">
-                <i class="fa-solid fa-ban text-xl"></i>
-            </div>
-            <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Cancel Booking</h3>
-            <p class="text-xs font-semibold text-[#78350f]">Please select why you are cancelling:</p>
-        </div>
-
-        <div class="space-y-2 mb-4">
-            <button onclick="submitPassengerCancel('Driver taking too long / not moving')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                <span><i class="fa-solid fa-clock text-amber-800 mr-2"></i> Driver taking too long / not moving</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-            </button>
-            <button onclick="submitPassengerCancel('Found alternative tricycle')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                <span><i class="fa-solid fa-motorcycle text-amber-800 mr-2"></i> Found another tricycle</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-            </button>
-            <button onclick="submitPassengerCancel('Driver asked me to cancel')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                <span><i class="fa-solid fa-user-xmark text-rose-800 mr-2"></i> Driver asked me to cancel</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-            </button>
-            <button onclick="submitPassengerCancel('Booked by mistake / Change of plans')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                <span><i class="fa-solid fa-circle-xmark text-amber-800 mr-2"></i> Change of plans / Booked by mistake</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-            </button>
-            <button onclick="submitPassengerCancel('Wrong pickup location')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                <span><i class="fa-solid fa-location-dot text-amber-800 mr-2"></i> Wrong pickup location</span>
-                <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-            </button>
-        </div>
-
-        <button onclick="closePassengerCancelModal()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold rounded-xl text-xs transition">
-            Keep Booking
-        </button>
-    </div>
-</div>
 </body>
 </html>
