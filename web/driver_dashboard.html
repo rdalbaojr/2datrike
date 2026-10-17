@@ -263,3 +263,683 @@
         }, { once: true });
 
         function playAlert(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'radar') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+            } 
+            else if (type === 'success') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.8);
+                if (navigator.vibrate) navigator.vibrate([200]);
+            } 
+            else if (type === 'chat') {
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+                if (navigator.vibrate) navigator.vibrate([50]);
+            }
+        }
+
+        function toggleQuickMenu() {
+            const menu = document.getElementById('quickMenu');
+            menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
+        }
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('quickMenu');
+            const button = menu ? menu.previousElementSibling : null;
+            if (menu && button && !menu.contains(event.target) && !button.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        function getCookie(name) {
+            let match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            if (match) {
+                let val = decodeURIComponent(match[2]);
+                return val.replace(/^"|"$/g, '').trim();
+            }
+            if (name === 'driver_name') {
+                let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
+                if (pMatch) {
+                    let pVal = decodeURIComponent(pMatch[2]);
+                    return pVal.replace(/^"|"$/g, '').trim();
+                }
+            }
+            return ""; 
+        }
+
+        function logout() {
+            localStorage.removeItem('driver_name');
+            localStorage.removeItem('passenger_name');
+            localStorage.removeItem('driver_toda');
+            document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = "login.html";
+        }
+
+        // 🟢 Robust Identity Resolution: LocalStorage first, Cookie second
+        let currentDriverName = localStorage.getItem('driver_name') || getCookie('driver_name') || localStorage.getItem('passenger_name') || getCookie('passenger_name');
+
+        if (!currentDriverName || currentDriverName.trim() === "" || currentDriverName.toLowerCase() === "unknown") {
+            window.location.href = "login.html";
+        }
+
+        let currentDriverToda = localStorage.getItem('driver_toda') || "";
+
+        // Immediately write the driver name to UI
+        const nameDisplay = document.getElementById("driver-welcome-name");
+        if (nameDisplay) nameDisplay.innerText = currentDriverName;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (nameDisplay) nameDisplay.innerText = currentDriverName;
+            checkDriverBroadcasts();
+            
+            try {
+                const response = await fetch(`/api/profile/${encodeURIComponent(currentDriverName)}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.full_name && data.full_name.trim() !== "") {
+                        currentDriverName = data.full_name.trim();
+                        localStorage.setItem('driver_name', currentDriverName);
+                        if (nameDisplay) nameDisplay.innerText = currentDriverName;
+                    }
+
+                    if (data.toda_name && data.toda_name.trim() !== "") {
+                        currentDriverToda = data.toda_name.trim().toUpperCase();
+                        localStorage.setItem('driver_toda', currentDriverToda);
+                        const badge = document.getElementById('driver-toda-badge');
+                        if (badge) badge.innerText = `${currentDriverToda}`;
+                    }
+                    
+                    if (data.rating) {
+                        document.getElementById('driver-star-val').innerText = data.rating.toFixed(1);
+                        document.getElementById('driver-rating-display').classList.remove('hidden');
+                    }
+                }
+            } catch (e) { console.error("Could not load rating/profile"); }
+        });
+
+        async function openProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            
+            try {
+                const response = await fetch(`/api/profile/${encodeURIComponent(currentDriverName)}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('prof-whatsapp').value = data.whatsapp_number || "";
+                    document.getElementById('prof-bank').value = data.bank_name || "GCash";
+                    document.getElementById('prof-address').value = data.address || "";
+                    
+                    let acctNum = data.gcash_account || "";
+                    if (acctNum.toLowerCase() === "gcash" || acctNum.toLowerCase() === "maya") {
+                        acctNum = "";
+                    }
+                    document.getElementById('prof-account').value = acctNum;
+                }
+            } catch (error) {
+                console.error("Error fetching profile", error);
+            }
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        async function saveProfile(event) {
+            event.preventDefault();
+            const btn = document.getElementById('prof-submit-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...';
+            
+            const payload = {
+                display_name: currentDriverName,
+                whatsapp_number: document.getElementById('prof-whatsapp').value,
+                bank_name: document.getElementById('prof-bank').value,
+                gcash_account: document.getElementById('prof-account').value,
+                address: document.getElementById('prof-address').value
+            };
+
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    alert("✅ Profile successfully updated!");
+                    closeProfileModal();
+                } else {
+                    alert("⚠️ Failed to update profile. Please try again.");
+                }
+            } catch (error) {
+                alert("⚠️ Network error.");
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> Save Changes';
+            }
+        }
+
+        async function checkDriverBroadcasts() {
+            if (!currentDriverName) return;
+            try {
+                const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
+                const data = await response.json();
+                
+                const container = document.getElementById('driver-broadcast-container');
+                const textElement = document.getElementById('driver-broadcast-text');
+                const titleElement = document.getElementById('driver-broadcast-title');
+
+                if (data && data.message && data.message.trim() !== "") {
+                    textElement.innerText = data.message;
+                    titleElement.innerText = `${data.toda_name || 'TODA'} Official Broadcast`;
+                    container.classList.remove('hidden');
+                } else {
+                    container.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Error fetching broadcast:", error);
+            }
+        }
+
+        let previousPendingCount = 0; 
+        let backgroundSockets = {}; 
+        let unreadCounts = {}; 
+        let activeChatRideId = null;
+
+        let pendingCancelRideId = null;
+
+        function openCancelReasonModal(rideId) {
+            pendingCancelRideId = rideId;
+            document.getElementById('cancel-reason-modal').classList.remove('hidden');
+        }
+
+        function closeCancelReasonModal() {
+            pendingCancelRideId = null;
+            document.getElementById('cancel-reason-modal').classList.add('hidden');
+        }
+
+        async function submitDriverCancel(reason) {
+            if (!pendingCancelRideId) return;
+            const rideId = pendingCancelRideId;
+            closeCancelReasonModal();
+
+            try {
+                const response = await fetch(`/driver-cancel-ride/${rideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason })
+                });
+
+                if (response.ok) {
+                    loadDashboardRides();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || "Error releasing ride.");
+                }
+            } catch (e) {
+                alert("Network error.");
+            }
+        }
+
+        async function loadDashboardRides() {
+            try {
+                const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
+                const allRides = await response.json();
+                
+                if (!Array.isArray(allRides)) return;
+                
+                updateEarningsTable(allRides, currentDriverName);
+
+                const pendingContainer = document.getElementById('rides-container');
+                const activeContainer = document.getElementById('active-rides-container');
+                if (!pendingContainer || !activeContainer) return;
+
+                // 1. Pending Rides (Radar Filter)
+                const pendingRides = allRides.filter(ride => {
+                    if (ride.status !== 'pending') return false;
+                    if (!currentDriverToda || currentDriverToda.trim() === "") return false;
+
+                    const targetToda = currentDriverToda.trim().toUpperCase();
+                    const rideBranch = (ride.branch || "").toUpperCase();
+                    const rideRef = (ride.local_ref || "").toUpperCase();
+
+                    return rideBranch.includes(targetToda) || rideRef.includes(targetToda);
+                });
+                
+                if (pendingRides.length > previousPendingCount) playAlert('radar');
+                previousPendingCount = pendingRides.length; 
+
+                if (pendingRides.length === 0) {
+                    const todaNotice = currentDriverToda ? `in ${currentDriverToda}` : 'right now';
+                    pendingContainer.innerHTML = `<p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-radar mr-1"></i> No pending orders ${todaNotice}.</p>`;
+                } else {
+                    pendingContainer.innerHTML = ''; 
+                    pendingRides.reverse().forEach(ride => {
+                        const passFullName = ride.passenger_name || "Passenger";
+                        const passengerFirstName = passFullName.split(' ')[0];
+                        
+                        let extraDetailsHtml = "";
+                        if (ride.pabili_list && ride.pabili_list.trim() !== "") {
+                            extraDetailsHtml = `
+                                <div class="mt-3 pt-3 border-t border-dashed border-[#d4aa7c]">
+                                    <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1.5"><i class="fa-solid fa-clipboard-list mr-1"></i> Shopping List:</p>
+                                    <p class="text-[#0f172a] text-xs font-bold bg-white p-2.5 rounded-lg border border-[#c99c6b] shadow-inner whitespace-pre-wrap">${ride.pabili_list}</p>
+                                </div>
+                            `;
+                        } else if (ride.item_description && ride.item_description.trim() !== "") {
+                            extraDetailsHtml = `
+                                <div class="mt-3 pt-3 border-t border-dashed border-[#d4aa7c]">
+                                    <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1.5"><i class="fa-solid fa-box-open mr-1"></i> Item to Pick-up:</p>
+                                    <p class="text-[#0f172a] text-xs font-bold bg-white p-2.5 rounded-lg border border-[#c99c6b] shadow-inner whitespace-pre-wrap">${ride.item_description}</p>
+                                </div>
+                            `;
+                        }
+                        
+                        const rideBox = document.createElement('div');
+                        rideBox.className = "bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-4 shadow-md";
+                            
+                        rideBox.innerHTML = `
+                            <div class="flex justify-between items-center mb-3">
+                                <strong class="text-amber-800 text-xs tracking-widest uppercase font-extrabold"><i class="fa-solid fa-bolt mr-1"></i> ${ride.service_type || 'PASSENGER'}</strong>
+                                <span class="text-green-800 font-extrabold text-lg">${ride.fare || '₱0.00'}</span>
+                            </div>
+                            <div class="bg-white/50 rounded-lg p-3 mb-4 border border-[#d4aa7c]">
+                                <div class="flex justify-between items-center mb-3">
+                                    <p class="text-[#0f172a] text-sm font-bold"><i class="fa-solid fa-user text-amber-700 mr-2 w-4"></i> ${passengerFirstName}</p>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
+                                </div>
+                                <div class="space-y-2">
+                                    <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                        <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                        <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
+                                    </p>
+                                    <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                        <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                        <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
+                                    </p>
+                                </div>
+                                ${extraDetailsHtml}
+                            </div>
+                            <button onclick="acceptRide(${ride.id})" class="w-full bg-[#78350f] hover:bg-[#5a270b] text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-amber-900/20">
+                                Accept Order
+                            </button>
+                        `;
+                        pendingContainer.appendChild(rideBox);
+                    });
+                }
+
+                // 2. Active Rides (Accepted/Completed)
+                const activeRides = allRides.filter(ride => 
+                    (ride.status === 'accepted' || ride.status === 'completed') && 
+                    ride.driver_name &&
+                    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
+                );
+
+                if (activeRides.length === 0) {
+                    activeContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>';
+                } else {
+                    activeContainer.innerHTML = '';
+                    activeRides.reverse().forEach(ride => {
+                        setupBackgroundChat(ride.id);
+
+                        let activeExtraDetailsHtml = "";
+                        if (ride.pabili_list && ride.pabili_list.trim() !== "") {
+                            activeExtraDetailsHtml = `
+                                <div class="bg-white/60 border border-[#d4aa7c] rounded-xl p-3 mb-3 shadow-inner">
+                                    <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1"><i class="fa-solid fa-clipboard-list mr-1"></i> Items to Buy:</p>
+                                    <p class="text-[#0f172a] text-xs font-bold whitespace-pre-wrap">${ride.pabili_list}</p>
+                                </div>
+                            `;
+                        } else if (ride.item_description && ride.item_description.trim() !== "") {
+                            activeExtraDetailsHtml = `
+                                <div class="bg-white/60 border border-[#d4aa7c] rounded-xl p-3 mb-3 shadow-inner">
+                                    <p class="text-[#78350f] text-[10px] font-extrabold uppercase tracking-wider mb-1"><i class="fa-solid fa-box-open mr-1"></i> Item to Pick-up:</p>
+                                    <p class="text-[#0f172a] text-xs font-bold whitespace-pre-wrap">${ride.item_description}</p>
+                                </div>
+                            `;
+                        }
+
+                        let actionButtonHtml = "";
+                        if (ride.status === 'accepted') {
+                            actionButtonHtml = `
+                                <div class="flex gap-2 mt-2">
+                                    <button onclick="completeRide(${ride.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20">
+                                        <i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete
+                                    </button>
+                                    <button onclick="openCancelReasonModal(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
+                                        Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
+                                    </button>
+                                </div>
+                            `;
+                        } else if (ride.status === 'completed') {
+                            actionButtonHtml = `
+                                <div class="bg-white border-2 border-dashed border-green-700/50 rounded-xl p-4 mb-4 mt-2 text-center">
+                                    <p class="text-green-800 font-bold text-sm mb-3"><i class="fa-solid fa-qrcode mr-1"></i> Scan to Pay via BPI</p>
+                                    <img src="bpi_qr.png" alt="BPI QR Code" class="w-36 h-36 mx-auto rounded-lg shadow-sm border border-slate-200 object-cover" />
+                                </div>
+                                <button onclick="confirmPayment(${ride.id})" class="w-full bg-green-800 hover:bg-green-700 text-white py-3.5 rounded-xl text-sm font-bold transition shadow-md shadow-green-900/20">
+                                    <i class="fa-solid fa-check-double mr-1"></i> Confirm Payment
+                                </button>
+                            `;
+                        }
+
+                        const rideBox = document.createElement('div');
+                        rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
+                        
+                        rideBox.innerHTML = `
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <strong class="text-green-800 text-xs tracking-widest uppercase font-extrabold block mb-1.5"><i class="fa-solid fa-motorcycle mr-1"></i> ACTIVE: ${ride.service_type || 'PASSENGER'}</strong>
+                                    <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
+                                        ${ride.local_ref || 'N/A'}
+                                    </span>
+                                </div>
+                                <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
+                            </div>
+
+                            <div class="bg-white/50 rounded-lg p-3 mb-3 border border-[#d4aa7c] space-y-1.5">
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
+                                </p>
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
+                                </p>
+                            </div>
+                            
+                            ${activeExtraDetailsHtml}
+                            
+                            <div class="flex gap-3 mb-3 mt-3">
+                                <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                    <i class="fa-solid fa-phone"></i> Call
+                                </a>
+                                
+                                <button onclick="openChat(${ride.id})" class="relative flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                    <i class="fa-regular fa-comment-dots"></i> Chat
+                                    <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
+                                </button>
+                            </div>
+
+                            ${actionButtonHtml}
+                        `;
+                        activeContainer.appendChild(rideBox);
+                        
+                        updateChatBadge(ride.id);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard rides:", error);
+            }
+        }
+
+        loadDashboardRides();
+        setInterval(() => {
+            loadDashboardRides();
+            checkDriverBroadcasts();
+        }, 3000); 
+
+        async function acceptRide(rideId) {
+            try {
+                const response = await fetch(`/accept-ride/${rideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driver_name: currentDriverName || "Driver" })
+                });
+                
+                if (response.ok) {
+                    loadDashboardRides();
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    alert(errData.detail || "Error: Could not accept the ride.");
+                }
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function completeRide(rideId) {
+            try {
+                const response = await fetch(`/complete-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not complete the ride.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function confirmPayment(rideId) {
+            try {
+                const response = await fetch(`/pay-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not confirm the payment.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function updateEarningsTable(allRides, driverName) {
+            if (!Array.isArray(allRides)) return;
+
+            let platformPct = 17.0;
+            let katodaPct = 3.0;
+
+            try {
+                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.toda_name) {
+                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
+                        if (configRes.ok) {
+                            const config = await configRes.json();
+                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
+                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
+                        }
+                    }
+                }
+            } catch (error) { console.warn("Using default share rates."); }
+
+            const labelPlat = document.getElementById('label-platform');
+            const labelToda = document.getElementById('label-katoda');
+            if (labelPlat) labelPlat.innerText = "Platform Share:";
+            if (labelToda) labelToda.innerText = "TODA Share:";
+
+            const completedRides = allRides.filter(ride => 
+                (ride.status === 'paid' || ride.status === 'completed') && 
+                ride.driver_name && 
+                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
+            );
+
+            let serviceStats = {};
+            let totalGross = 0.0;
+            let totalNightDiff = 0.0;
+
+            completedRides.forEach(ride => {
+                let sType = ride.service_type || 'Pasundo';
+                let isNight = sType.includes('(Night Rate)');
+                sType = sType.replace(' (Night Rate)', '').trim();
+
+                let fareVal = 0.0;
+                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
+
+                if (isNight) {
+                    let originalFare = fareVal / 1.10;
+                    totalNightDiff += (fareVal - originalFare);
+                }
+
+                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
+                
+                serviceStats[sType].qty += 1;
+                serviceStats[sType].amount += fareVal;
+                totalGross += fareVal;
+            });
+
+            const platformCut = totalGross * (platformPct / 100.0);
+            const katodaCut = totalGross * (katodaPct / 100.0);
+            const netEarnings = totalGross - platformCut - katodaCut;
+
+            const tbody = document.getElementById('shift-report-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (Object.keys(serviceStats).length === 0) {
+                    tbody.innerHTML = `
+                        <tr class="hover:bg-[#e8cda8]/50 transition">
+                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
+                        </tr>
+                    `;
+                } else {
+                    for (const [sType, data] of Object.entries(serviceStats)) {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8cda8]/50 transition">
+                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+
+            const elGross = document.getElementById('amt-gross');
+            const elNight = document.getElementById('amt-night-diff');
+            const elPlat = document.getElementById('amt-platform');
+            const elToda = document.getElementById('amt-katoda');
+            const elNet = document.getElementById('amt-net');
+
+            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
+            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
+            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
+            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
+            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
+        }
+
+        function setupBackgroundChat(rideId) {
+            if (backgroundSockets[rideId]) return;
+
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const isMe = data.sender === currentDriverName;
+                const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
+
+                if (activeChatRideId === rideId && isModalOpen) {
+                    displayMessage(data.sender, data.text, false);
+                } 
+                else {
+                    if (!isMe) {
+                        unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
+                        playAlert('chat');
+                        updateChatBadge(rideId);
+                    }
+                }
+            };
+
+            ws.onclose = () => { delete backgroundSockets[rideId]; };
+            backgroundSockets[rideId] = ws;
+        }
+
+        function updateChatBadge(rideId) {
+            const badge = document.getElementById(`chat-badge-${rideId}`);
+            if (badge) {
+                const count = unreadCounts[rideId] || 0;
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        async function openChat(rideId) {
+            activeChatRideId = rideId;
+            unreadCounts[rideId] = 0; 
+            updateChatBadge(rideId); 
+
+            document.getElementById('chat-modal').classList.remove('hidden');
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            try {
+                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text, true); 
+                    });
+                }
+            } catch (error) {
+                console.error("Could not load chat history.");
+            }
+            
+            setupBackgroundChat(rideId);
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.add('hidden');
+            activeChatRideId = null; 
+        }
+
+        function handleEnter(event) {
+            if(event.key === 'Enter') sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            
+            if (messageText !== '' && activeChatRideId && backgroundSockets[activeChatRideId]) {
+                const payload = { sender: currentDriverName, text: messageText };
+                backgroundSockets[activeChatRideId].send(JSON.stringify(payload));
+                input.value = ''; 
+            }
+        }
+
+        function displayMessage(sender, text, isHistory = false) {
+            const messageContainer = document.getElementById('chat-messages');
+            const isMe = sender === currentDriverName;
+            
+            if (!isMe && !isHistory) playAlert('chat');
+            
+            const alignClass = isMe ? 'self-end' : 'self-start';
+            const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
+            
+            const messageHTML = `
+                <div class="flex flex-col ${alignClass} max-w-[80%]">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
+                </div>
+            `;
+            
+            messageContainer.innerHTML += messageHTML;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
