@@ -15,7 +15,6 @@
 </head>
 <body class="bg-[#C87F37] min-h-[100dvh] flex flex-col items-center justify-center p-4 antialiased relative">
 
-    <!-- ==================== QUICK NAV MENU ==================== -->
     <div style="position: fixed; top: 15px; left: 15px; z-index: 9999; font-family: 'Plus Jakarta Sans', sans-serif;">
         <button onclick="toggleQuickMenu()" style="background: #C87F37; color: white; border: 1px solid #a35c27; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2); outline: none; transition: 0.2s;">
             <i class="fa-solid fa-bars mr-1"></i> Menu
@@ -39,7 +38,7 @@
         </div>
     </div>
 
-    <!-- ==================== MAIN FLOATING APP CARD ==================== -->
+    <!-- MAIN FLOATING CARD -->
     <div class="w-full max-w-[420px] bg-[#E3BC90] rounded-[32px] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
         
         <!-- Header -->
@@ -56,7 +55,7 @@
             </div>
         </div>
 
-        <!-- Broadcast Feed Container -->
+        <!-- Broadcast Feed -->
         <div id="driver-broadcast-container" class="bg-[#F5E6D3] rounded-2xl p-4 mb-6 border border-[#78350f] shadow-sm hidden">
             <div class="flex items-start gap-3">
                 <div class="bg-[#78350f] text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
@@ -120,7 +119,6 @@
             </div>
         </div>
 
-        <!-- Active Rides Container -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3 mt-8">Active Rides</h3>
         <div id="active-rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>
@@ -128,13 +126,11 @@
 
         <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
 
-        <!-- Pending Orders Radar -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Radar (Orders)</h3>
         <div id="rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking for new orders...</p>
         </div>
 
-        <!-- Action Buttons -->
         <div class="space-y-3">
             <button onclick="openProfileModal()" class="w-full text-center bg-[#F5E6D3] hover:bg-[#e8cda8] border border-[#d4aa7c] text-[#78350f] py-3.5 rounded-xl text-sm font-bold transition shadow-sm">
                 <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile & Payouts
@@ -185,7 +181,7 @@
         </div>
     </div>
 
-    <!-- ==================== PASSENGER CANCELLED ALERT MODAL ==================== -->
+    <!-- ==================== PASSENGER CANCELLED ALERT MODAL (UN-NESTED) ==================== -->
     <div id="passenger-cancelled-alert-modal" class="hidden fixed inset-0 bg-slate-900/85 z-[130] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border-2 border-rose-500 w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6 text-center">
             <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-700 text-white rounded-2xl mb-3 shadow-lg">
@@ -208,7 +204,7 @@
         </div>
     </div>
 
-    <!-- ==================== PROFILE SETTINGS MODAL ==================== -->
+    <!-- ==================== PROFILE MODAL ==================== -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[420px] rounded-[24px] overflow-hidden shadow-2xl relative">
             <div class="bg-[#78350f] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -252,7 +248,7 @@
         </div>
     </div>
 
-    <!-- ==================== IN-APP CHAT MODAL ==================== -->
+    <!-- ==================== CHAT MODAL ==================== -->
     <div id="chat-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#F5E6D3] w-full max-w-[420px] h-[75vh] sm:h-[500px] sm:rounded-[24px] flex flex-col overflow-hidden shadow-2xl relative rounded-t-[32px] border border-[#c99c6b]">
             <div class="bg-[#175d33] px-5 py-4 flex justify-between items-center text-white shadow-md z-10">
@@ -277,7 +273,7 @@
         </div>
     </div>
 
-    <!-- ==================== COMPLETE SCRIPT LOGIC ==================== -->
+    <!-- ==================== COMPLETE SCRIPT ==================== -->
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
@@ -328,6 +324,7 @@
             const menu = document.getElementById('quickMenu');
             menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
         }
+
         document.addEventListener('click', function(event) {
             const menu = document.getElementById('quickMenu');
             const button = menu ? menu.previousElementSibling : null;
@@ -342,29 +339,20 @@
                 let val = decodeURIComponent(match[2]);
                 return val.replace(/^"|"$/g, '').trim();
             }
-            if (name === 'driver_name') {
-                let pMatch = document.cookie.match(new RegExp('(^| )passenger_name=([^;]+)'));
-                if (pMatch) {
-                    let pVal = decodeURIComponent(pMatch[2]);
-                    return pVal.replace(/^"|"$/g, '').trim();
-                }
-            }
             return ""; 
         }
 
         function logout() {
-            localStorage.removeItem('driver_name');
-            localStorage.removeItem('passenger_name');
-            localStorage.removeItem('driver_toda');
+            localStorage.clear();
             document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = "login.html";
         }
 
-        // Direct Resolution: LocalStorage first, then Cookie
+        // Resolve driver name; explicitly reject "Driver" and "Unknown"
         let currentDriverName = localStorage.getItem('driver_name') || getCookie('driver_name') || localStorage.getItem('passenger_name') || getCookie('passenger_name');
 
-        if (!currentDriverName || currentDriverName.trim() === "" || currentDriverName.toLowerCase() === "unknown") {
+        if (!currentDriverName || currentDriverName.trim() === "" || currentDriverName.toLowerCase() === "driver" || currentDriverName.toLowerCase() === "unknown") {
             window.location.href = "login.html";
         }
 
@@ -543,7 +531,6 @@
                 const activeContainer = document.getElementById('active-rides-container');
                 if (!pendingContainer || !activeContainer) return;
 
-                // 1. Pending Rides (Radar Filter)
                 const pendingRides = allRides.filter(ride => {
                     if (ride.status !== 'pending') return false;
                     if (!currentDriverToda || currentDriverToda.trim() === "") return false;
@@ -619,14 +606,12 @@
                     });
                 }
 
-                // 2. Active Rides (Accepted/Completed)
                 const activeRides = allRides.filter(ride => 
                     (ride.status === 'accepted' || ride.status === 'completed') && 
                     ride.driver_name &&
                     ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
                 );
 
-                // Passenger Cancellation Watcher
                 if (currentActiveRideId && activeRides.length === 0) {
                     const droppedRide = allRides.find(r => r.id === currentActiveRideId);
                     if (droppedRide && droppedRide.status === 'cancelled') {
@@ -704,3 +689,289 @@
                                     <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
                                         ${ride.local_ref || 'N/A'}
                                     </span>
+                                </div>
+                                <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
+                            </div>
+
+                            <div class="bg-white/50 rounded-lg p-3 mb-3 border border-[#d4aa7c] space-y-1.5">
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
+                                </p>
+                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
+                                    <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
+                                    <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
+                                </p>
+                            </div>
+                            
+                            ${activeExtraDetailsHtml}
+                            
+                            <div class="flex gap-3 mb-3 mt-3">
+                                <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
+                                    <i class="fa-solid fa-phone"></i> Call
+                                </a>
+                                
+                                <button onclick="openChat(${ride.id})" class="relative flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
+                                    <i class="fa-regular fa-comment-dots"></i> Chat
+                                    <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
+                                </button>
+                            </div>
+
+                            ${actionButtonHtml}
+                        `;
+                        activeContainer.appendChild(rideBox);
+                        updateChatBadge(ride.id);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching dashboard rides:", error);
+            }
+        }
+
+        loadDashboardRides();
+        setInterval(() => {
+            loadDashboardRides();
+            checkDriverBroadcasts();
+        }, 3000); 
+
+        async function acceptRide(rideId) {
+            try {
+                const response = await fetch(`/accept-ride/${rideId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ driver_name: currentDriverName || "Driver" })
+                });
+                
+                if (response.ok) {
+                    loadDashboardRides();
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    alert(errData.detail || "Error: Could not accept the ride.");
+                }
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function completeRide(rideId) {
+            try {
+                const response = await fetch(`/complete-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not complete the ride.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function confirmPayment(rideId) {
+            try {
+                const response = await fetch(`/pay-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) loadDashboardRides(); 
+                else alert("Error: Could not confirm the payment.");
+            } catch (error) {
+                alert("Network error. Please try again.");
+            }
+        }
+
+        async function updateEarningsTable(allRides, driverName) {
+            if (!Array.isArray(allRides)) return;
+
+            let platformPct = 17.0;
+            let katodaPct = 3.0;
+
+            try {
+                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.toda_name) {
+                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
+                        if (configRes.ok) {
+                            const config = await configRes.json();
+                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
+                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
+                        }
+                    }
+                }
+            } catch (error) { console.warn("Using default share rates."); }
+
+            const labelPlat = document.getElementById('label-platform');
+            const labelToda = document.getElementById('label-katoda');
+            if (labelPlat) labelPlat.innerText = "Platform Share:";
+            if (labelToda) labelToda.innerText = "TODA Share:";
+
+            const completedRides = allRides.filter(ride => 
+                (ride.status === 'paid' || ride.status === 'completed') && 
+                ride.driver_name && 
+                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
+            );
+
+            let serviceStats = {};
+            let totalGross = 0.0;
+            let totalNightDiff = 0.0;
+
+            completedRides.forEach(ride => {
+                let sType = ride.service_type || 'Pasundo';
+                let isNight = sType.includes('(Night Rate)');
+                sType = sType.replace(' (Night Rate)', '').trim();
+
+                let fareVal = 0.0;
+                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
+
+                if (isNight) {
+                    let originalFare = fareVal / 1.10;
+                    totalNightDiff += (fareVal - originalFare);
+                }
+
+                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
+                
+                serviceStats[sType].qty += 1;
+                serviceStats[sType].amount += fareVal;
+                totalGross += fareVal;
+            });
+
+            const platformCut = totalGross * (platformPct / 100.0);
+            const katodaCut = totalGross * (katodaPct / 100.0);
+            const netEarnings = totalGross - platformCut - katodaCut;
+
+            const tbody = document.getElementById('shift-report-body');
+            if (tbody) {
+                tbody.innerHTML = '';
+                if (Object.keys(serviceStats).length === 0) {
+                    tbody.innerHTML = `
+                        <tr class="hover:bg-[#e8cda8]/50 transition">
+                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
+                        </tr>
+                    `;
+                } else {
+                    for (const [sType, data] of Object.entries(serviceStats)) {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-[#e8cda8]/50 transition">
+                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
+                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
+                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
+                            </tr>
+                        `;
+                    }
+                }
+            }
+
+            const elGross = document.getElementById('amt-gross');
+            const elNight = document.getElementById('amt-night-diff');
+            const elPlat = document.getElementById('amt-platform');
+            const elToda = document.getElementById('amt-katoda');
+            const elNet = document.getElementById('amt-net');
+
+            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
+            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
+            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
+            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
+            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
+        }
+
+        function setupBackgroundChat(rideId) {
+            if (backgroundSockets[rideId]) return;
+
+            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
+            const ws = new WebSocket(wsUrl);
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                const isMe = data.sender === currentDriverName;
+                const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
+
+                if (activeChatRideId === rideId && isModalOpen) {
+                    displayMessage(data.sender, data.text, false);
+                } 
+                else {
+                    if (!isMe) {
+                        unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
+                        playAlert('chat');
+                        updateChatBadge(rideId);
+                    }
+                }
+            };
+
+            ws.onclose = () => { delete backgroundSockets[rideId]; };
+            backgroundSockets[rideId] = ws;
+        }
+
+        function updateChatBadge(rideId) {
+            const badge = document.getElementById(`chat-badge-${rideId}`);
+            if (badge) {
+                const count = unreadCounts[rideId] || 0;
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        async function openChat(rideId) {
+            activeChatRideId = rideId;
+            unreadCounts[rideId] = 0; 
+            updateChatBadge(rideId); 
+
+            document.getElementById('chat-modal').classList.remove('hidden');
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
+            
+            try {
+                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
+                    history.forEach(msg => {
+                        displayMessage(msg.sender, msg.text, true); 
+                    });
+                }
+            } catch (error) {
+                console.error("Could not load chat history.");
+            }
+            
+            setupBackgroundChat(rideId);
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.add('hidden');
+            activeChatRideId = null; 
+        }
+
+        function handleEnter(event) {
+            if(event.key === 'Enter') sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            
+            if (messageText !== '' && activeChatRideId && backgroundSockets[activeChatRideId]) {
+                const payload = { sender: currentDriverName, text: messageText };
+                backgroundSockets[activeChatRideId].send(JSON.stringify(payload));
+                input.value = ''; 
+            }
+        }
+
+        function displayMessage(sender, text, isHistory = false) {
+            const messageContainer = document.getElementById('chat-messages');
+            const isMe = sender === currentDriverName;
+            
+            if (!isMe && !isHistory) playAlert('chat');
+            
+            const alignClass = isMe ? 'self-end' : 'self-start';
+            const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
+            
+            const messageHTML = `
+                <div class="flex flex-col ${alignClass} max-w-[80%]">
+                    ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
+                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
+                </div>
+            `;
+            
+            messageContainer.innerHTML += messageHTML;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
