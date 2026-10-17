@@ -145,46 +145,6 @@
         </div>
     </div> 
 
-    <!-- ==================== CANCELLATION REASON MODAL ==================== -->
-    <div id="cancel-reason-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[120] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-        <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
-            <div class="text-center mb-4">
-                <div class="inline-flex items-center justify-center w-12 h-12 bg-rose-700 text-white rounded-2xl mb-2 shadow-md">
-                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
-                </div>
-                <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Release Order</h3>
-                <p class="text-xs font-semibold text-[#78350f]">Select reason to return ride to TODA radar:</p>
-            </div>
-
-            <div class="space-y-2 mb-4">
-                <button onclick="submitDriverCancel('Passenger no-show / Unreachable')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-user-slash text-amber-800 mr-2"></i> Passenger no-show / Unreachable</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-                </button>
-                <button onclick="submitDriverCancel('Mechanical trouble / Flat tire')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-wrench text-amber-800 mr-2"></i> Mechanical trouble / Flat tire</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-                </button>
-                <button onclick="submitDriverCancel('Road blocked / Inaccessible pickup')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-road-barrier text-amber-800 mr-2"></i> Road blocked / Inaccessible</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-                </button>
-                <button onclick="submitDriverCancel('Passenger requested cancellation')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-comment-dots text-amber-800 mr-2"></i> Passenger asked to cancel</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-                </button>
-                <button onclick="submitDriverCancel('Personal emergency')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
-                    <span><i class="fa-solid fa-heart-pulse text-amber-800 mr-2"></i> Personal emergency</span>
-                    <i class="fa-solid fa-chevron-right text-xs opacity-50"></i>
-                </button>
-            </div>
-
-            <button onclick="closeCancelReasonModal()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold rounded-xl text-xs transition">
-                Keep Ride (Return to Job)
-            </button>
-        </div>
-    </div>
-
     <!-- ==================== PROFILE SETTINGS MODAL ==================== -->
     <div id="profile-modal" class="hidden fixed inset-0 bg-slate-900/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[420px] rounded-[24px] overflow-hidden shadow-2xl relative">
@@ -326,33 +286,26 @@
                     return pVal.replace(/^"|"$/g, '').trim();
                 }
             }
-            return ""; 
+            return "Unknown"; 
         }
 
         function logout() {
-            localStorage.removeItem('driver_name');
-            localStorage.removeItem('passenger_name');
-            localStorage.removeItem('driver_toda');
             document.cookie = "driver_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             document.cookie = "passenger_name=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = "login.html";
         }
 
-        // 🟢 Robust Identity Resolution: LocalStorage first, Cookie second
-        let currentDriverName = localStorage.getItem('driver_name') || getCookie('driver_name') || localStorage.getItem('passenger_name') || getCookie('passenger_name');
-
-        if (!currentDriverName || currentDriverName.trim() === "" || currentDriverName.toLowerCase() === "unknown") {
+        const currentDriverName = getCookie("driver_name") !== "Unknown" ? getCookie("driver_name") : getCookie("passenger_name");
+        
+        // 🟢 AUTH GUARD: If not logged in, redirect directly to login
+        if (!currentDriverName || currentDriverName === "Unknown") {
             window.location.href = "login.html";
         }
 
-        let currentDriverToda = localStorage.getItem('driver_toda') || "";
-
-        // Immediately write the driver name to UI
-        const nameDisplay = document.getElementById("driver-welcome-name");
-        if (nameDisplay) nameDisplay.innerText = currentDriverName;
+        let currentDriverToda = "";
 
         document.addEventListener("DOMContentLoaded", async () => {
-            if (nameDisplay) nameDisplay.innerText = currentDriverName;
+            document.getElementById("driver-welcome-name").innerText = `${currentDriverName}`;
             checkDriverBroadcasts();
             
             try {
@@ -360,15 +313,8 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    if (data.full_name && data.full_name.trim() !== "") {
-                        currentDriverName = data.full_name.trim();
-                        localStorage.setItem('driver_name', currentDriverName);
-                        if (nameDisplay) nameDisplay.innerText = currentDriverName;
-                    }
-
                     if (data.toda_name && data.toda_name.trim() !== "") {
                         currentDriverToda = data.toda_name.trim().toUpperCase();
-                        localStorage.setItem('driver_toda', currentDriverToda);
                         const badge = document.getElementById('driver-toda-badge');
                         if (badge) badge.innerText = `${currentDriverToda}`;
                     }
@@ -441,7 +387,7 @@
         }
 
         async function checkDriverBroadcasts() {
-            if (!currentDriverName) return;
+            if (!currentDriverName || currentDriverName === "Unknown") return;
             try {
                 const response = await fetch(`/api/driver/broadcast?driver_name=${encodeURIComponent(currentDriverName)}&t=${new Date().getTime()}`);
                 const data = await response.json();
@@ -466,41 +412,6 @@
         let backgroundSockets = {}; 
         let unreadCounts = {}; 
         let activeChatRideId = null;
-
-        let pendingCancelRideId = null;
-
-        function openCancelReasonModal(rideId) {
-            pendingCancelRideId = rideId;
-            document.getElementById('cancel-reason-modal').classList.remove('hidden');
-        }
-
-        function closeCancelReasonModal() {
-            pendingCancelRideId = null;
-            document.getElementById('cancel-reason-modal').classList.add('hidden');
-        }
-
-        async function submitDriverCancel(reason) {
-            if (!pendingCancelRideId) return;
-            const rideId = pendingCancelRideId;
-            closeCancelReasonModal();
-
-            try {
-                const response = await fetch(`/driver-cancel-ride/${rideId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason: reason })
-                });
-
-                if (response.ok) {
-                    loadDashboardRides();
-                } else {
-                    const err = await response.json().catch(() => ({}));
-                    alert(err.detail || "Error releasing ride.");
-                }
-            } catch (e) {
-                alert("Network error.");
-            }
-        }
 
         async function loadDashboardRides() {
             try {
@@ -629,7 +540,7 @@
                                     <button onclick="completeRide(${ride.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20">
                                         <i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete
                                     </button>
-                                    <button onclick="openCancelReasonModal(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
+                                    <button onclick="driverCancelRide(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
                                         Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
                                     </button>
                                 </div>
@@ -728,6 +639,21 @@
                 else alert("Error: Could not complete the ride.");
             } catch (error) {
                 alert("Network error. Please try again.");
+            }
+        }
+
+        async function driverCancelRide(rideId) {
+            if (!confirm("Are you sure you want to release this ride back to the radar?")) return;
+            try {
+                const response = await fetch(`/driver-cancel-ride/${rideId}`, { method: 'POST' });
+                if (response.ok) {
+                    loadDashboardRides();
+                } else {
+                    const err = await response.json().catch(() => ({}));
+                    alert(err.detail || "Error releasing ride.");
+                }
+            } catch (e) {
+                alert("Network error.");
             }
         }
 
