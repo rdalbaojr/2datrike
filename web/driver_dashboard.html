@@ -51,12 +51,13 @@
             <div class="text-right">
                 <p class="text-xs text-[#78350f] font-medium">Welcome,</p>
                 <p id="driver-welcome-name" class="font-extrabold text-sm text-[#0f172a]">Driver</p>
+                <!-- 🟢 TODA ASSIGNMENT BADGE -->
                 <p id="driver-toda-badge" class="text-[10px] font-black uppercase text-[#78350f] bg-[#F5E6D3] px-2 py-0.5 rounded border border-[#d4aa7c] inline-block mt-0.5">TODA: Loading...</p>
                 <p id="driver-rating-display" class="text-xs font-bold text-yellow-600 mt-0.5 hidden"><i class="fa-solid fa-star"></i> <span id="driver-star-val">5.0</span></p>
             </div>
         </div>
 
-        <!-- Broadcast Feed Container -->
+        <!-- 🟢 DYNAMIC TODA Broadcast Feed Container -->
         <div id="driver-broadcast-container" class="bg-[#F5E6D3] rounded-2xl p-4 mb-6 border border-[#78350f] shadow-sm hidden">
             <div class="flex items-start gap-3">
                 <div class="bg-[#78350f] text-white w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
@@ -69,7 +70,7 @@
             </div>
         </div>
 
-        <!-- Shift Report -->
+        <!-- 🟢 FULLY DYNAMIC SHIFT REPORT -->
         <div class="mt-4 bg-[#F5E6D3] rounded-2xl border border-[#d4aa7c] overflow-hidden shadow-md">
             <div class="p-4 bg-[#e8cda8] border-b border-[#d4aa7c] flex justify-between items-center">
                 <h2 class="text-lg font-bold text-[#78350f] flex items-center gap-2">
@@ -120,7 +121,7 @@
             </div>
         </div>
 
-        <!-- Active Rides Container -->
+        <!-- ==================== ACTIVE RIDES ==================== -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3 mt-8">Active Rides</h3>
         <div id="active-rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>
@@ -128,13 +129,13 @@
 
         <div class="h-px bg-[#c99c6b] w-full mb-6"></div>
 
-        <!-- Pending Orders Radar -->
+        <!-- ==================== PENDING RADAR ==================== -->
         <h3 class="text-[11px] font-extrabold text-[#78350f] uppercase tracking-widest mb-3">Radar (Orders)</h3>
         <div id="rides-container" class="space-y-4 mb-8">
             <p class="text-center text-amber-800/70 text-sm font-medium italic py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Checking for new orders...</p>
         </div>
 
-        <!-- Action Buttons -->
+        <!-- ACTION BUTTONS -->
         <div class="space-y-3">
             <button onclick="openProfileModal()" class="w-full text-center bg-[#F5E6D3] hover:bg-[#e8cda8] border border-[#d4aa7c] text-[#78350f] py-3.5 rounded-xl text-sm font-bold transition shadow-sm">
                 <i class="fa-solid fa-user-pen mr-1"></i> Edit Profile & Payouts
@@ -216,6 +217,9 @@
 
     <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
     <script>
+        // ==========================================
+        // ALERTS & VIBRATION ENGINE
+        // ==========================================
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         document.body.addEventListener('click', () => {
@@ -297,11 +301,7 @@
 
         const currentDriverName = getCookie("driver_name") !== "Unknown" ? getCookie("driver_name") : getCookie("passenger_name");
         
-        // 🟢 AUTH GUARD: If not logged in, redirect directly to login
-        if (!currentDriverName || currentDriverName === "Unknown") {
-            window.location.href = "login.html";
-        }
-
+        // 🟢 GLOBAL DRIVER TODA STATE
         let currentDriverToda = "";
 
         document.addEventListener("DOMContentLoaded", async () => {
@@ -313,6 +313,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     
+                    // 🟢 CACHE & DISPLAY DRIVER TODA
                     if (data.toda_name && data.toda_name.trim() !== "") {
                         currentDriverToda = data.toda_name.trim().toUpperCase();
                         const badge = document.getElementById('driver-toda-badge');
@@ -327,6 +328,7 @@
             } catch (e) { console.error("Could not load rating/profile"); }
         });
 
+        // --- PROFILE MODAL LOGIC ---
         async function openProfileModal() {
             document.getElementById('profile-modal').classList.remove('hidden');
             
@@ -409,10 +411,15 @@
         }
 
         let previousPendingCount = 0; 
+        
+        // 🟢 BACKGROUND RADIO VARIABLES
         let backgroundSockets = {}; 
         let unreadCounts = {}; 
         let activeChatRideId = null;
 
+        // ==========================================
+        // MASTER FUNCTION: Fetch Pending & Active Rides
+        // ==========================================
         async function loadDashboardRides() {
             try {
                 const response = await fetch(`/pending-rides/?t=${new Date().getTime()}`);
@@ -426,10 +433,14 @@
                 const activeContainer = document.getElementById('active-rides-container');
                 if (!pendingContainer || !activeContainer) return;
 
-                // 1. Pending Rides (Radar Filter)
+                // --- 1. PENDING RIDES (RADAR - STRICT TODA FILTER) ---
                 const pendingRides = allRides.filter(ride => {
                     if (ride.status !== 'pending') return false;
-                    if (!currentDriverToda || currentDriverToda.trim() === "") return false;
+                    
+                    // 🟢 Guard: If driver TODA is still loading or empty, hide all orders
+                    if (!currentDriverToda || currentDriverToda.trim() === "") {
+                        return false;
+                    }
 
                     const targetToda = currentDriverToda.trim().toUpperCase();
                     const rideBranch = (ride.branch || "").toUpperCase();
@@ -502,7 +513,7 @@
                     });
                 }
 
-                // 2. Active Rides (Accepted/Completed)
+                // --- 2. ACTIVE RIDES (ACCEPTED/COMPLETED) ---
                 const activeRides = allRides.filter(ride => 
                     (ride.status === 'accepted' || ride.status === 'completed') && 
                     ride.driver_name &&
@@ -535,16 +546,17 @@
 
                         let actionButtonHtml = "";
                         if (ride.status === 'accepted') {
-                            actionButtonHtml = `
-                                <div class="flex gap-2 mt-2">
-                                    <button onclick="completeRide(${ride.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20">
-                                        <i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete
-                                    </button>
-                                    <button onclick="driverCancelRide(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
-                                        Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
-                                    </button>
-                                </div>
-                            `;
+    actionButtonHtml = `
+        <div class="flex gap-2 mt-2">
+            <button onclick="completeRide(${ride.id})" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition shadow-md shadow-blue-900/20">
+                <i class="fa-solid fa-location-dot mr-1"></i> Arrived & Complete
+            </button>
+            <button onclick="driverCancelRide(${ride.id})" class="px-3 bg-rose-100 hover:bg-rose-200 text-rose-800 font-bold rounded-xl text-xs transition border border-rose-300">
+                Release / Cancel <i class="fa-solid fa-xmark ml-1"></i>
+            </button>
+        </div>
+    `;
+}
                         } else if (ride.status === 'completed') {
                             actionButtonHtml = `
                                 <div class="bg-white border-2 border-dashed border-green-700/50 rounded-xl p-4 mb-4 mt-2 text-center">
@@ -556,7 +568,20 @@
                                 </button>
                             `;
                         }
-
+async function driverCancelRide(rideId) {
+    if (!confirm("Are you sure you want to release this ride back to the radar?")) return;
+    try {
+        const response = await fetch(`/driver-cancel-ride/${rideId}`, { method: 'POST' });
+        if (response.ok) {
+            loadDashboardRides();
+        } else {
+            const err = await response.json().catch(() => ({}));
+            alert(err.detail || "Error releasing ride.");
+        }
+    } catch (e) {
+        alert("Network error.");
+    }
+}
                         const rideBox = document.createElement('div');
                         rideBox.className = "bg-[#F5E6D3] border-2 border-amber-700/40 rounded-xl p-4 shadow-lg";
                         
@@ -613,6 +638,9 @@
             checkDriverBroadcasts();
         }, 3000); 
 
+        // ==========================================
+        // Action Functions
+        // ==========================================
         async function acceptRide(rideId) {
             try {
                 const response = await fetch(`/accept-ride/${rideId}`, {
@@ -642,12 +670,13 @@
             }
         }
 
+        // 🟢 DRIVER CANCEL / RELEASE: Proper global scope placement
         async function driverCancelRide(rideId) {
             if (!confirm("Are you sure you want to release this ride back to the radar?")) return;
             try {
                 const response = await fetch(`/driver-cancel-ride/${rideId}`, { method: 'POST' });
                 if (response.ok) {
-                    loadDashboardRides();
+                    loadDashboardRides(); // Instantly clears Active Rides and restores radar
                 } else {
                     const err = await response.json().catch(() => ({}));
                     alert(err.detail || "Error releasing ride.");
@@ -762,6 +791,9 @@
             if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
         }
 
+        // ==========================================
+        // BACKGROUND CHAT & NOTIFICATIONS
+        // ==========================================
         function setupBackgroundChat(rideId) {
             if (backgroundSockets[rideId]) return;
 
