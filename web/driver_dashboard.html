@@ -145,7 +145,7 @@
         </div>
     </div> 
 
-    <!-- ==================== CANCELLATION REASON MODAL ==================== -->
+    <!-- ==================== CANCELLATION REASON MODAL (DRIVER RELEASE) ==================== -->
     <div id="cancel-reason-modal" class="hidden fixed inset-0 bg-slate-900/80 z-[120] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
         <div class="bg-[#E3BC90] border border-[#c99c6b] w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6">
             <div class="text-center mb-4">
@@ -155,28 +155,7 @@
                 <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Release Order</h3>
                 <p class="text-xs font-semibold text-[#78350f]">Select reason to return ride to TODA radar:</p>
             </div>
-<!-- ==================== PASSENGER CANCELLED ALERT MODAL ==================== -->
-<div id="passenger-cancelled-alert-modal" class="hidden fixed inset-0 bg-slate-900/85 z-[130] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
-    <div class="bg-[#E3BC90] border-2 border-rose-500 w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6 text-center animate-bounce-short">
-        <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-700 text-white rounded-2xl mb-3 shadow-lg">
-            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-        </div>
-        <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Trip Cancelled</h3>
-        <p class="text-xs font-semibold text-[#78350f] mb-3">The passenger has cancelled this order.</p>
 
-        <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3.5 mb-4 text-left">
-            <p class="text-[10px] font-extrabold uppercase text-[#78350f] tracking-wider mb-1">Booking Ref:</p>
-            <p id="cancelled-modal-ref" class="font-mono text-sm font-black text-[#0f172a] mb-2"></p>
-            
-            <p class="text-[10px] font-extrabold uppercase text-[#78350f] tracking-wider mb-1">Reason Stated:</p>
-            <p id="cancelled-modal-reason" class="text-xs font-bold text-rose-800 bg-white p-2 rounded border border-rose-200"></p>
-        </div>
-
-        <button onclick="dismissPassengerCancelAlert()" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-md">
-            Understood (Back to Radar)
-        </button>
-    </div>
-</div>
             <div class="space-y-2 mb-4">
                 <button onclick="submitDriverCancel('Passenger no-show / Unreachable')" class="w-full text-left bg-[#F5E6D3] hover:bg-[#ebd2b5] border border-[#d4aa7c] p-3 rounded-xl text-xs font-bold text-[#0f172a] transition flex items-center justify-between">
                     <span><i class="fa-solid fa-user-slash text-amber-800 mr-2"></i> Passenger no-show / Unreachable</span>
@@ -202,6 +181,29 @@
 
             <button onclick="closeCancelReasonModal()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold rounded-xl text-xs transition">
                 Keep Ride (Return to Job)
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== PASSENGER CANCELLED ALERT MODAL ==================== -->
+    <div id="passenger-cancelled-alert-modal" class="hidden fixed inset-0 bg-slate-900/85 z-[130] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-[#E3BC90] border-2 border-rose-500 w-full max-w-[360px] rounded-[24px] overflow-hidden shadow-2xl relative p-6 text-center">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-700 text-white rounded-2xl mb-3 shadow-lg">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-extrabold text-[#0f172a] mb-1">Trip Cancelled</h3>
+            <p class="text-xs font-semibold text-[#78350f] mb-3">The passenger has cancelled this order.</p>
+
+            <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-xl p-3.5 mb-4 text-left">
+                <p class="text-[10px] font-extrabold uppercase text-[#78350f] tracking-wider mb-1">Booking Ref:</p>
+                <p id="cancelled-modal-ref" class="font-mono text-sm font-black text-[#0f172a] mb-2"></p>
+                
+                <p class="text-[10px] font-extrabold uppercase text-[#78350f] tracking-wider mb-1">Reason Stated:</p>
+                <p id="cancelled-modal-reason" class="text-xs font-bold text-rose-800 bg-white p-2 rounded border border-rose-200"></p>
+            </div>
+
+            <button onclick="dismissPassengerCancelAlert()" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition shadow-md">
+                Understood (Back to Radar)
             </button>
         </div>
     </div>
@@ -359,7 +361,7 @@
             window.location.href = "login.html";
         }
 
-        // 🟢 DIRECT RESOLUTION: LocalStorage first, then Cookie
+        // Direct Resolution: LocalStorage first, then Cookie
         let currentDriverName = localStorage.getItem('driver_name') || getCookie('driver_name') || localStorage.getItem('passenger_name') || getCookie('passenger_name');
 
         if (!currentDriverName || currentDriverName.trim() === "" || currentDriverName.toLowerCase() === "unknown") {
@@ -368,7 +370,6 @@
 
         let currentDriverToda = localStorage.getItem('driver_toda') || "";
 
-        // Immediately update UI name
         const welcomeLabel = document.getElementById("driver-welcome-name");
         if (welcomeLabel) welcomeLabel.innerText = currentDriverName;
 
@@ -491,9 +492,11 @@
         let pendingCancelRideId = null;
         let currentActiveRideId = null;
         let currentActiveRideRef = "";
+
         function dismissPassengerCancelAlert() {
-    document.getElementById('passenger-cancelled-alert-modal').classList.add('hidden');
-}
+            document.getElementById('passenger-cancelled-alert-modal').classList.add('hidden');
+        }
+
         function openCancelReasonModal(rideId) {
             pendingCancelRideId = rideId;
             document.getElementById('cancel-reason-modal').classList.remove('hidden');
@@ -540,6 +543,7 @@
                 const activeContainer = document.getElementById('active-rides-container');
                 if (!pendingContainer || !activeContainer) return;
 
+                // 1. Pending Rides (Radar Filter)
                 const pendingRides = allRides.filter(ride => {
                     if (ride.status !== 'pending') return false;
                     if (!currentDriverToda || currentDriverToda.trim() === "") return false;
@@ -616,33 +620,31 @@
                 }
 
                 // 2. Active Rides (Accepted/Completed)
-const activeRides = allRides.filter(ride => 
-    (ride.status === 'accepted' || ride.status === 'completed') && 
-    ride.driver_name &&
-    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
-);
+                const activeRides = allRides.filter(ride => 
+                    (ride.status === 'accepted' || ride.status === 'completed') && 
+                    ride.driver_name &&
+                    ride.driver_name.trim().toLowerCase() === currentDriverName.trim().toLowerCase()
+                );
 
-// 🟢 PASSENGER CANCELLATION WATCHER
-if (currentActiveRideId && activeRides.length === 0) {
-    // Check if the ride the driver was handling was cancelled by the passenger
-    const droppedRide = allRides.find(r => r.id === currentActiveRideId);
-    if (droppedRide && droppedRide.status === 'cancelled') {
-        playAlert('chat');
-        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+                // Passenger Cancellation Watcher
+                if (currentActiveRideId && activeRides.length === 0) {
+                    const droppedRide = allRides.find(r => r.id === currentActiveRideId);
+                    if (droppedRide && droppedRide.status === 'cancelled') {
+                        playAlert('chat');
+                        if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
 
-        document.getElementById('cancelled-modal-ref').innerText = droppedRide.local_ref || currentActiveRideRef || "N/A";
-        document.getElementById('cancelled-modal-reason').innerText = droppedRide.cancel_reason || "Passenger cancelled without providing a reason.";
-        document.getElementById('passenger-cancelled-alert-modal').classList.remove('hidden');
-    }
-    currentActiveRideId = null;
-    currentActiveRideRef = "";
-}
+                        document.getElementById('cancelled-modal-ref').innerText = droppedRide.local_ref || currentActiveRideRef || "N/A";
+                        document.getElementById('cancelled-modal-reason').innerText = droppedRide.cancel_reason || "Passenger cancelled without providing a reason.";
+                        document.getElementById('passenger-cancelled-alert-modal').classList.remove('hidden');
+                    }
+                    currentActiveRideId = null;
+                    currentActiveRideRef = "";
+                }
 
-if (activeRides.length > 0) {
-    // Keep track of the trip in progress
-    currentActiveRideId = activeRides[0].id;
-    currentActiveRideRef = activeRides[0].local_ref || "";
-}
+                if (activeRides.length > 0) {
+                    currentActiveRideId = activeRides[0].id;
+                    currentActiveRideRef = activeRides[0].local_ref || "";
+                }
 
                 if (activeRides.length === 0) {
                     activeContainer.innerHTML = '<p class="text-center text-amber-800/70 text-sm font-medium italic py-2">No active rides right now.</p>';
@@ -702,290 +704,3 @@ if (activeRides.length > 0) {
                                     <span class="font-mono text-sm font-black text-[#0f172a] tracking-widest bg-white border-2 border-dashed border-[#c99c6b] px-2 py-0.5 rounded shadow-sm">
                                         ${ride.local_ref || 'N/A'}
                                     </span>
-                                </div>
-                                <span class="text-[#0f172a] font-extrabold text-lg mt-1">${ride.fare || '₱0.00'}</span>
-                            </div>
-
-                            <div class="bg-white/50 rounded-lg p-3 mb-3 border border-[#d4aa7c] space-y-1.5">
-                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
-                                    <i class="fa-solid fa-location-dot text-amber-600 mr-2 mt-0.5 w-3 text-center"></i> 
-                                    <span><strong class="text-[#78350f]">Pick-up:</strong> ${ride.pickup_location || 'Not Provided'}</span>
-                                </p>
-                                <p class="text-[#0f172a] text-xs font-medium leading-tight flex items-start">
-                                    <i class="fa-solid fa-location-crosshairs text-rose-600 mr-2 mt-0.5 w-3 text-center"></i> 
-                                    <span><strong class="text-[#78350f]">Drop-off:</strong> ${ride.dropoff_location || 'Not Provided'}</span>
-                                </p>
-                            </div>
-                            
-                            ${activeExtraDetailsHtml}
-                            
-                            <div class="flex gap-3 mb-3 mt-3">
-                                <a href="tel:${ride.passenger_phone || '#'}" class="flex-1 bg-white border border-[#78350f] text-[#78350f] py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-amber-50 transition text-sm">
-                                    <i class="fa-solid fa-phone"></i> Call
-                                </a>
-                                
-                                <button onclick="openChat(${ride.id})" class="relative flex-1 bg-[#175d33] text-white py-2.5 rounded-xl font-bold flex justify-center items-center gap-2 shadow-sm hover:bg-[#114626] transition text-sm">
-                                    <i class="fa-regular fa-comment-dots"></i> Chat
-                                    <span id="chat-badge-${ride.id}" class="hidden absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-md border-2 border-[#F5E6D3]">0</span>
-                                </button>
-                            </div>
-
-                            ${actionButtonHtml}
-                        `;
-                        activeContainer.appendChild(rideBox);
-                        
-                        updateChatBadge(ride.id);
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching dashboard rides:", error);
-            }
-        }
-
-        loadDashboardRides();
-        setInterval(() => {
-            loadDashboardRides();
-            checkDriverBroadcasts();
-        }, 3000); 
-
-        async function acceptRide(rideId) {
-            try {
-                const response = await fetch(`/accept-ride/${rideId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ driver_name: currentDriverName || "Driver" })
-                });
-                
-                if (response.ok) {
-                    loadDashboardRides();
-                } else {
-                    const errData = await response.json().catch(() => ({}));
-                    alert(errData.detail || "Error: Could not accept the ride.");
-                }
-            } catch (error) {
-                alert("Network error. Please try again.");
-            }
-        }
-
-        async function completeRide(rideId) {
-            try {
-                const response = await fetch(`/complete-ride/${rideId}`, { method: 'POST' });
-                if (response.ok) loadDashboardRides(); 
-                else alert("Error: Could not complete the ride.");
-            } catch (error) {
-                alert("Network error. Please try again.");
-            }
-        }
-
-        async function confirmPayment(rideId) {
-            try {
-                const response = await fetch(`/pay-ride/${rideId}`, { method: 'POST' });
-                if (response.ok) loadDashboardRides(); 
-                else alert("Error: Could not confirm the payment.");
-            } catch (error) {
-                alert("Network error. Please try again.");
-            }
-        }
-
-        async function updateEarningsTable(allRides, driverName) {
-            if (!Array.isArray(allRides)) return;
-
-            let platformPct = 17.0;
-            let katodaPct = 3.0;
-
-            try {
-                const profileRes = await fetch(`/api/profile/${encodeURIComponent(driverName)}`);
-                if (profileRes.ok) {
-                    const profile = await profileRes.json();
-                    if (profile.toda_name) {
-                        const configRes = await fetch(`/api/admin/toda-config/${encodeURIComponent(profile.toda_name)}`);
-                        if (configRes.ok) {
-                            const config = await configRes.json();
-                            if (config.platform_share !== undefined) platformPct = parseFloat(config.platform_share);
-                            if (config.katoda_share !== undefined) katodaPct = parseFloat(config.katoda_share);
-                        }
-                    }
-                }
-            } catch (error) { console.warn("Using default share rates."); }
-
-            const labelPlat = document.getElementById('label-platform');
-            const labelToda = document.getElementById('label-katoda');
-            if (labelPlat) labelPlat.innerText = "Platform Share:";
-            if (labelToda) labelToda.innerText = "TODA Share:";
-
-            const completedRides = allRides.filter(ride => 
-                (ride.status === 'paid' || ride.status === 'completed') && 
-                ride.driver_name && 
-                ride.driver_name.trim().toLowerCase() === driverName.trim().toLowerCase()
-            );
-
-            let serviceStats = {};
-            let totalGross = 0.0;
-            let totalNightDiff = 0.0;
-
-            completedRides.forEach(ride => {
-                let sType = ride.service_type || 'Pasundo';
-                let isNight = sType.includes('(Night Rate)');
-                sType = sType.replace(' (Night Rate)', '').trim();
-
-                let fareVal = 0.0;
-                if (ride.fare) fareVal = parseFloat(String(ride.fare).replace(/[^0-9.]/g, '')) || 0.0;
-
-                if (isNight) {
-                    let originalFare = fareVal / 1.10;
-                    totalNightDiff += (fareVal - originalFare);
-                }
-
-                if (!serviceStats[sType]) serviceStats[sType] = { qty: 0, amount: 0.0 };
-                
-                serviceStats[sType].qty += 1;
-                serviceStats[sType].amount += fareVal;
-                totalGross += fareVal;
-            });
-
-            const platformCut = totalGross * (platformPct / 100.0);
-            const katodaCut = totalGross * (katodaPct / 100.0);
-            const netEarnings = totalGross - platformCut - katodaCut;
-
-            const tbody = document.getElementById('shift-report-body');
-            if (tbody) {
-                tbody.innerHTML = '';
-                if (Object.keys(serviceStats).length === 0) {
-                    tbody.innerHTML = `
-                        <tr class="hover:bg-[#e8cda8]/50 transition">
-                            <td class="px-4 py-3 italic text-[#78350f]/70" colspan="3">No completed rides today.</td>
-                        </tr>
-                    `;
-                } else {
-                    for (const [sType, data] of Object.entries(serviceStats)) {
-                        tbody.innerHTML += `
-                            <tr class="hover:bg-[#e8cda8]/50 transition">
-                                <td class="px-4 py-2.5 font-bold uppercase text-[10px] text-[#78350f]">${sType}</td>
-                                <td class="px-2 py-2.5 text-center font-bold">${data.qty}</td>
-                                <td class="px-4 py-2.5 text-right font-bold text-[#0f172a]">₱${data.amount.toFixed(2)}</td>
-                            </tr>
-                        `;
-                    }
-                }
-            }
-
-            const elGross = document.getElementById('amt-gross');
-            const elNight = document.getElementById('amt-night-diff');
-            const elPlat = document.getElementById('amt-platform');
-            const elToda = document.getElementById('amt-katoda');
-            const elNet = document.getElementById('amt-net');
-
-            if (elGross) elGross.innerText = "₱" + totalGross.toFixed(2);
-            if (elNight) elNight.innerText = "₱" + totalNightDiff.toFixed(2);
-            if (elPlat) elPlat.innerText = "- ₱" + platformCut.toFixed(2);
-            if (elToda) elToda.innerText = "- ₱" + katodaCut.toFixed(2);
-            if (elNet) elNet.innerText = "₱" + netEarnings.toFixed(2);
-        }
-
-        function setupBackgroundChat(rideId) {
-            if (backgroundSockets[rideId]) return;
-
-            const wsUrl = `wss://${window.location.host}/ws/chat/${rideId}`;
-            const ws = new WebSocket(wsUrl);
-
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                const isMe = data.sender === currentDriverName;
-                const isModalOpen = !document.getElementById('chat-modal').classList.contains('hidden');
-
-                if (activeChatRideId === rideId && isModalOpen) {
-                    displayMessage(data.sender, data.text, false);
-                } 
-                else {
-                    if (!isMe) {
-                        unreadCounts[rideId] = (unreadCounts[rideId] || 0) + 1;
-                        playAlert('chat');
-                        updateChatBadge(rideId);
-                    }
-                }
-            };
-
-            ws.onclose = () => { delete backgroundSockets[rideId]; };
-            backgroundSockets[rideId] = ws;
-        }
-
-        function updateChatBadge(rideId) {
-            const badge = document.getElementById(`chat-badge-${rideId}`);
-            if (badge) {
-                const count = unreadCounts[rideId] || 0;
-                if (count > 0) {
-                    badge.innerText = count;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            }
-        }
-
-        async function openChat(rideId) {
-            activeChatRideId = rideId;
-            unreadCounts[rideId] = 0; 
-            updateChatBadge(rideId); 
-
-            document.getElementById('chat-modal').classList.remove('hidden');
-            const messagesContainer = document.getElementById('chat-messages');
-            messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading chat history...</div>';
-            
-            try {
-                const response = await fetch(`/api/chat/${rideId}?t=${new Date().getTime()}`);
-                if (response.ok) {
-                    const history = await response.json();
-                    messagesContainer.innerHTML = '<div class="text-center text-xs text-amber-900/50 font-bold mb-2">Chat started. Messages are strictly private.</div>';
-                    history.forEach(msg => {
-                        displayMessage(msg.sender, msg.text, true); 
-                    });
-                }
-            } catch (error) {
-                console.error("Could not load chat history.");
-            }
-            
-            setupBackgroundChat(rideId);
-        }
-
-        function closeChat() {
-            document.getElementById('chat-modal').classList.add('hidden');
-            activeChatRideId = null; 
-        }
-
-        function handleEnter(event) {
-            if(event.key === 'Enter') sendMessage();
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('chat-input');
-            const messageText = input.value.trim();
-            
-            if (messageText !== '' && activeChatRideId && backgroundSockets[activeChatRideId]) {
-                const payload = { sender: currentDriverName, text: messageText };
-                backgroundSockets[activeChatRideId].send(JSON.stringify(payload));
-                input.value = ''; 
-            }
-        }
-
-        function displayMessage(sender, text, isHistory = false) {
-            const messageContainer = document.getElementById('chat-messages');
-            const isMe = sender === currentDriverName;
-            
-            if (!isMe && !isHistory) playAlert('chat');
-            
-            const alignClass = isMe ? 'self-end' : 'self-start';
-            const bubbleStyle = isMe ? 'bg-[#175d33] text-white rounded-br-none' : 'bg-white border border-[#d4aa7c] text-[#0f172a] rounded-bl-none';
-            
-            const messageHTML = `
-                <div class="flex flex-col ${alignClass} max-w-[80%]">
-                    ${!isMe ? `<span class="text-[10px] font-bold text-[#78350f] mb-1 ml-1">${sender}</span>` : ''}
-                    <div class="px-4 py-2.5 rounded-2xl shadow-sm text-sm ${bubbleStyle}">${text}</div>
-                </div>
-            `;
-            
-            messageContainer.innerHTML += messageHTML;
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-    </script>
-</body>
-</html>
