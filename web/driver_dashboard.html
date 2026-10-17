@@ -246,4 +246,20 @@
             </div>
 
             <div class="bg-white p-3 border-t border-[#d4aa7c] flex gap-2 items-center">
-                <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus
+                <input type="text" id="chat-input" onkeypress="handleEnter(event)" class="flex-1 bg-gray-100 border-none rounded-full px-5 py-3 text-sm outline-none focus:ring-2 focus:ring-[#175d33] transition" placeholder="Type a message...">
+                <button onclick="sendMessage()" class="bg-[#175d33] text-white w-11 h-11 rounded-full flex justify-center items-center shadow-md hover:bg-[#114626] transition shrink-0 hover:scale-105">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECURITY, LOGIC & WEBSOCKET SCRIPT -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        document.body.addEventListener('click', () => {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+
+        function playAlert(type) {
