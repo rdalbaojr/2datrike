@@ -54,7 +54,31 @@
 
         <!-- UNIFIED CONTENT CONTAINER -->
         <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-10">
-            
+           <!-- ================= ADMIN PLATFORM REVENUE CARDS ================= -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">Today's Revenue</p>
+        <h3 id="adm-fin-today" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+    </div>
+    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Week</p>
+        <h3 id="adm-fin-week" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+    </div>
+    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Month</p>
+        <h3 id="adm-fin-month" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+    </div>
+    <div class="bg-[#78350f] border border-amber-950 rounded-2xl p-4 shadow-sm text-white relative overflow-hidden">
+        <p class="text-[10px] font-extrabold text-amber-200 uppercase tracking-wider mb-1">YTD Profit</p>
+        <h3 id="adm-fin-ytd" class="text-xl font-extrabold">₱0.00</h3>
+        <span class="text-[9px] font-bold text-amber-300">Total Retained</span>
+    </div>
+</div>
+
+<hr class="border-[#c99c6b]"> 
             <!-- SECTION 1: BRANCH CONFIGURATOR -->
             <form onsubmit="saveBranchConfig(event)" class="w-full">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#c99c6b]/50">
