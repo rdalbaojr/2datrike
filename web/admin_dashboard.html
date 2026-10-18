@@ -306,233 +306,165 @@ async function loadAdminPlatformFinances() {
         }
 
         window.onload = async function() {
-            if (getCookie('admin_session') === 'masterom_active') {
-                document.getElementById('lockOverlay').style.display = 'none';
-            loadAdminPlatformFinances();
-            }
+    if (getCookie('admin_session') === 'masterom_active') {
+        document.getElementById('lockOverlay').style.display = 'none';
+    }
 
-            // Default Cutoff Date to Today
-            const todayStr = new Date().toISOString().split('T')[0];
-            document.getElementById('cutoffDateInput').value = todayStr;
+    // Set Default Cutoff Range: (Today to Today in Manila Time)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
 
-            try {
-                const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
-                if (locRes.ok) {
-                    const data = await locRes.json();
-                    const selector = document.getElementById('branchSelector');
-                    const configSelector = document.getElementById('config-branch-select');
-                    
-                    selector.innerHTML = '<option value="All">🌐 All Branches</option>';
-                    configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
-                    
-                    let uniqueTodas = new Set(); 
+    // You can also default startDate to the 1st of the month or 7 days ago if preferred:
+    const startInput = document.getElementById('startDateInput');
+    const endInput = document.getElementById('endDateInput');
+    if (startInput) startInput.value = todayStr;
+    if (endInput) endInput.value = todayStr;
 
-                    for (const [brgy, todas] of Object.entries(data)) {
-                        const group = document.createElement('optgroup');
-                        group.label = `📍 Brgy. ${brgy}`;
-                        
-                        todas.forEach(toda => {
-                            const opt = document.createElement('option');
-                            opt.value = toda; 
-                            opt.textContent = toda; 
-                            group.appendChild(opt);
-                            if(toda && toda !== "No TODA") uniqueTodas.add(toda);
-                        });
-                        selector.appendChild(group);
-                    }
-
-                    uniqueTodas.forEach(toda => {
-                        const opt = document.createElement('option');
-                        opt.value = toda;
-                        opt.textContent = toda;
-                        configSelector.appendChild(opt);
-                    });
-                }
-            } catch (e) {
-                console.error("Could not load dynamic locations", e);
-            }
-
-            loadPayoutSummary();
-        };
-
-        async function loadBranchConfig() {
-            const selectedToda = document.getElementById('config-branch-select').value;
-            if (!selectedToda) {
-                for (let i = 1; i <= 5; i++) {
-                    document.getElementById(`s${i}-name`).value = '';
-                    document.getElementById(`s${i}-price`).value = '';
-                }
-                document.getElementById('cfg-plat').value = '';
-                document.getElementById('cfg-toda').value = '';
-                document.getElementById('cfg-acct').value = '';
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`);
-                if (response.ok) {
-                    const config = await response.json();
-                    for (let i = 1; i <= 5; i++) {
-                        document.getElementById(`s${i}-name`).value = config[`s${i}_name`] || '';
-                        document.getElementById(`s${i}-price`).value = config[`s${i}_price`] || '';
-                    }
-                    document.getElementById('cfg-plat').value = config.platform_share !== undefined ? config.platform_share : 17.0;
-                    document.getElementById('cfg-toda').value = config.katoda_share !== undefined ? config.katoda_share : 3.0;
-                    document.getElementById('cfg-bank').value = config.katoda_bank || 'GCash';
-                    document.getElementById('cfg-acct').value = config.katoda_account || '';
-                }
-            } catch (error) {
-                console.error("Failed to load specific TODA config");
-            }
-        }
-
-        async function saveBranchConfig(event) {
-            event.preventDefault();
-            const selectedToda = document.getElementById('config-branch-select').value;
-            if (!selectedToda) return alert("Please select a Branch to edit first!");
-
-            const btn = event.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
-
-            const payload = {
-                s1_name: document.getElementById('s1-name').value,
-                s1_price: parseInt(document.getElementById('s1-price').value) || 0,
-                s2_name: document.getElementById('s2-name').value,
-                s2_price: parseInt(document.getElementById('s2-price').value) || 0,
-                s3_name: document.getElementById('s3-name').value,
-                s3_price: parseInt(document.getElementById('s3-price').value) || 0,
-                s4_name: document.getElementById('s4-name').value,
-                s4_price: parseInt(document.getElementById('s4-price').value) || 0,
-                s5_name: document.getElementById('s5-name').value,
-                s5_price: parseInt(document.getElementById('s5-price').value) || 0,
-                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17.0,
-                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3.0,
-                katoda_bank: document.getElementById('cfg-bank').value,
-                katoda_account: document.getElementById('cfg-acct').value.trim()
-            };
-
-            try {
-                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    alert(`✅ Branch Configuration successfully saved for ${selectedToda}!`);
-                    loadPayoutSummary(); 
-                } else {
-                    alert("❌ Failed to save configuration.");
-                }
-            } catch (error) {
-                alert("Network error.");
-            } finally {
-                btn.innerHTML = originalText;
-            }
-        }
-
-        async function loadPayoutSummary() {
-            const selectedBranch = document.getElementById('branchSelector').value;
-            const cutoffDate = document.getElementById('cutoffDateInput').value;
-            const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
+    try {
+        const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
+        if (locRes.ok) {
+            const data = await locRes.json();
+            const selector = document.getElementById('branchSelector');
+            const configSelector = document.getElementById('config-branch-select');
             
-            document.getElementById('toda-col-header').innerText = todaLabel;
+            selector.innerHTML = '<option value="All">🌐 All Branches</option>';
+            configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
+            
+            let uniqueTodas = new Set(); 
 
-            // Reflect Branch and Cutoff Date on BizLink Download Link
-            document.getElementById('exportBizLinkBtn').href = 
-                `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}&cutoff_date=${encodeURIComponent(cutoffDate)}`;
-
-            try {
-                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&cutoff_date=${encodeURIComponent(cutoffDate)}`);
-                if (!response.ok) return;
+            for (const [brgy, todas] of Object.entries(data)) {
+                const group = document.createElement('optgroup');
+                group.label = `📍 Brgy. ${brgy}`;
                 
-                const data = await response.json();
-                const tbody = document.getElementById('payout-table-body');
-                tbody.innerHTML = '';
-
-                if (!data.drivers || data.drivers.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No completed rides recorded up to this cutoff date.</td></tr>';
-                    return;
-                }
-
-                // 🟢 1. RENDER INDIVIDUAL DRIVER ROWS
-                data.drivers.forEach(driver => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td class="py-3 px-4 font-bold text-[#0f172a]">
-                            <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
-                        </td>
-                        <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
-                        <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
-                        <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
-                        <td class="py-3 px-4 text-right text-slate-600">₱${driver.total_gross.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
-                        <td class="py-3 px-4 text-right font-medium text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
-                    `;
-                    tbody.appendChild(row);
+                todas.forEach(toda => {
+                    const opt = document.createElement('option');
+                    opt.value = toda; 
+                    opt.textContent = toda; 
+                    group.appendChild(opt);
+                    if(toda && toda !== "No TODA") uniqueTodas.add(toda);
                 });
-
-                // 🟢 2. DEDICATED TODA CHAPTER ROW (Included in BizLink Disbursement)
-                const todaRow = document.createElement('tr');
-                todaRow.className = "bg-amber-100/50 border-t-2 border-[#d4aa7c] font-bold";
-                todaRow.innerHTML = `
-                    <td class="py-3.5 px-4 font-black text-amber-950 uppercase">
-                        <i class="fa-solid fa-users-gear mr-1.5 text-amber-800"></i>${selectedBranch === "All" ? "TODA Chapters Total" : selectedBranch.toUpperCase() + " TODA Org"}
-                    </td>
-                    <td class="py-3.5 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
-                    <td class="py-3.5 px-4 text-xs font-mono font-bold text-[#78350f]">${data.katoda_account || 'Not Configured'}</td>
-                    <td class="py-3.5 px-4 text-center">--</td>
-                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
-                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-                    <td class="py-3.5 px-4 text-right font-black text-amber-900 text-base">₱${data.total_katoda.toFixed(2)}</td>
-                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-                `;
-                tbody.appendChild(todaRow);
-
-                // 🟢 3. DEDICATED ADMIN / PLATFORM ROW (STRICTLY EXCLUDED FROM BIZLINK)
-                const platformRow = document.createElement('tr');
-                platformRow.className = "bg-slate-100 border-t border-slate-300 font-bold";
-                platformRow.innerHTML = `
-                    <td class="py-3.5 px-4 font-black text-slate-800 uppercase flex items-center gap-1.5">
-                        <i class="fa-solid fa-building-columns text-slate-600"></i> 2DA Platform Revenue (Admin)
-                    </td>
-                    <td class="py-3.5 px-4 text-xs font-bold text-slate-600">BPI Corporate</td>
-                    <td class="py-3.5 px-4 text-xs font-mono text-slate-500">RETAINED IN 2DA ACCT</td>
-                    <td class="py-3.5 px-4 text-center">--</td>
-                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
-                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-                    <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
-                        ₱${data.total_platform.toFixed(2)}
-                        <span class="block text-[8px] font-black text-rose-700 uppercase tracking-tighter">EXCLUDED FROM BIZLINK</span>
-                    </td>
-                `;
-                tbody.appendChild(platformRow);
-
-                // 🟢 4. BIZLINK DISBURSEMENT BATCH TOTAL (Driver Net + TODA Share)
-                const totalRow = document.createElement('tr');
-                totalRow.className = "bg-[#78350f] text-white font-extrabold border-t-2 border-amber-950";
-                totalRow.innerHTML = `
-                    <td colspan="3" class="py-4 px-4 uppercase text-xs tracking-wider">
-                        <i class="fa-solid fa-file-export mr-1.5 text-amber-300"></i> BIZLINK BATCH DEBIT TOTAL (Drivers + TODA):
-                    </td>
-                    <td class="py-4 px-4 text-center font-black">${data.total_rides}</td>
-                    <td class="py-4 px-4 text-right font-medium text-amber-200">₱${data.total_gross.toFixed(2)}</td>
-                    <td colspan="2" class="py-4 px-4 text-right font-black text-lg text-green-300">
-                        ₱${data.total_bizlink_disbursement.toFixed(2)}
-                    </td>
-                    <td class="py-4 px-4 text-right text-[10px] uppercase font-bold text-amber-200">
-                        Cutoff: ${cutoffDate}
-                    </td>
-                `;
-                tbody.appendChild(totalRow);
-
-            } catch (error) {
-                console.error("Error loading payouts summary:", error);
+                selector.appendChild(group);
             }
-        } 
+
+            uniqueTodas.forEach(toda => {
+                const opt = document.createElement('option');
+                opt.value = toda;
+                opt.textContent = toda;
+                configSelector.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        console.error("Could not load dynamic locations", e);
+    }
+
+    loadPayoutSummary();
+};
+
+async function loadPayoutSummary() {
+    const selectedBranch = document.getElementById('branchSelector').value;
+    const startDate = document.getElementById('startDateInput').value;
+    const endDate = document.getElementById('endDateInput').value;
+    const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
+    
+    document.getElementById('toda-col-header').innerText = todaLabel;
+
+    // Update BizLink Export Link with both dates
+    document.getElementById('exportBizLinkBtn').href = 
+        `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+
+    try {
+        const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const tbody = document.getElementById('payout-table-body');
+        tbody.innerHTML = '';
+
+        if (!data.drivers || data.drivers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No completed rides recorded between selected dates.</td></tr>';
+            return;
+        }
+
+        // 1. Driver rows
+        data.drivers.forEach(driver => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="py-3 px-4 font-bold text-[#0f172a]">
+                    <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
+                </td>
+                <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
+                <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
+                <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
+                <td class="py-3 px-4 text-right text-slate-600">₱${driver.total_gross.toFixed(2)}</td>
+                <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
+                <td class="py-3 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
+                <td class="py-3 px-4 text-right font-medium text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        // 2. TODA Chapter Row
+        const todaRow = document.createElement('tr');
+        todaRow.className = "bg-amber-100/50 border-t-2 border-[#d4aa7c] font-bold";
+        todaRow.innerHTML = `
+            <td class="py-3.5 px-4 font-black text-amber-950 uppercase">
+                <i class="fa-solid fa-users-gear mr-1.5 text-amber-800"></i>${selectedBranch === "All" ? "TODA Chapters Total" : selectedBranch.toUpperCase() + " TODA Org"}
+            </td>
+            <td class="py-3.5 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
+            <td class="py-3.5 px-4 text-xs font-mono font-bold text-[#78350f]">${data.katoda_account || 'Not Configured'}</td>
+            <td class="py-3.5 px-4 text-center">--</td>
+            <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+            <td class="py-3.5 px-4 text-right font-black text-amber-900 text-base">₱${data.total_katoda.toFixed(2)}</td>
+            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+        `;
+        tbody.appendChild(todaRow);
+
+        // 3. Platform Revenue Row (Excluded from BizLink)
+        const platformRow = document.createElement('tr');
+        platformRow.className = "bg-slate-100 border-t border-slate-300 font-bold";
+        platformRow.innerHTML = `
+            <td class="py-3.5 px-4 font-black text-slate-800 uppercase flex items-center gap-1.5">
+                <i class="fa-solid fa-building-columns text-slate-600"></i> 2DA Platform Revenue (Admin)
+            </td>
+            <td class="py-3.5 px-4 text-xs font-bold text-slate-600">BPI Corporate</td>
+            <td class="py-3.5 px-4 text-xs font-mono text-slate-500">RETAINED IN 2DA ACCT</td>
+            <td class="py-3.5 px-4 text-center">--</td>
+            <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+            <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
+                ₱${data.total_platform.toFixed(2)}
+                <span class="block text-[8px] font-black text-rose-700 uppercase tracking-tighter">EXCLUDED FROM BIZLINK</span>
+            </td>
+        `;
+        tbody.appendChild(platformRow);
+
+        // 4. Batch Debit Total
+        const totalRow = document.createElement('tr');
+        totalRow.className = "bg-[#78350f] text-white font-extrabold border-t-2 border-amber-950";
+        totalRow.innerHTML = `
+            <td colspan="3" class="py-4 px-4 uppercase text-xs tracking-wider">
+                <i class="fa-solid fa-file-export mr-1.5 text-amber-300"></i> BIZLINK BATCH DEBIT TOTAL (Drivers + TODA):
+            </td>
+            <td class="py-4 px-4 text-center font-black">${data.total_rides}</td>
+            <td class="py-4 px-4 text-right font-medium text-amber-200">₱${data.total_gross.toFixed(2)}</td>
+            <td colspan="2" class="py-4 px-4 text-right font-black text-lg text-green-300">
+                ₱${data.total_bizlink_disbursement.toFixed(2)}
+            </td>
+            <td class="py-4 px-4 text-right text-[10px] uppercase font-bold text-amber-200">
+                Period: ${startDate} to ${endDate}
+            </td>
+        `;
+        tbody.appendChild(totalRow);
+
+    } catch (error) {
+        console.error("Error loading payouts summary:", error);
+    }
+} 
     </script>
 </body>
 </html>
