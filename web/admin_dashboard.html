@@ -182,29 +182,37 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-                        <!-- Cutoff Date Selector -->
-                        <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
-                            <label for="cutoffDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
-                                <i class="fa-solid fa-calendar-day mr-1"></i> Cutoff:
-                            </label>
-                            <input type="date" id="cutoffDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
-                        </div>
+    <!-- Cutoff Date Range: FROM -->
+    <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+        <label for="startDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+            <i class="fa-solid fa-calendar-day mr-1"></i> From:
+        </label>
+        <input type="date" id="startDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+    </div>
 
-                        <!-- Branch Selector -->
-                        <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
-                            <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
-                                <i class="fa-solid fa-location-dot mr-1"></i> Branch:
-                            </label>
-                            <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
-                                <option value="All">🌐 All Branches</option>
-                            </select>
-                        </div>
+    <!-- Cutoff Date Range: TO -->
+    <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+        <label for="endDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+            <i class="fa-solid fa-calendar-check mr-1"></i> To:
+        </label>
+        <input type="date" id="endDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+    </div>
 
-                        <!-- Export BizLink Button -->
-                        <a id="exportBizLinkBtn" href="#" class="bg-[#175d33] hover:bg-[#114626] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer">
-                            <i class="fa-solid fa-download"></i> Export for BizLink
-                        </a>
-                    </div>
+    <!-- Branch Selector -->
+    <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+        <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+            <i class="fa-solid fa-location-dot mr-1"></i> Branch:
+        </label>
+        <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+            <option value="All">🌐 All Branches</option>
+        </select>
+    </div>
+
+    <!-- Export BizLink Button -->
+    <a id="exportBizLinkBtn" href="#" class="bg-[#175d33] hover:bg-[#114626] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+        <i class="fa-solid fa-download"></i> Export for BizLink
+    </a>
+</div>
                 </div>
 
                 <div class="overflow-x-auto rounded-2xl border border-[#c99c6b] table-scroll bg-white shadow-sm">
