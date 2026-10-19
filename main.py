@@ -440,35 +440,34 @@ def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
 
 @app.get("/api/admin/locations")
 def get_registered_locations(db: Session = Depends(get_db)):
-    drivers = db.query(User).filter(User.role == 'driver').all()
     location_map = {}
-    for d in drivers:
-        brgy = d.barangay.strip() if d.barangay else "Unassigned"
-        toda = d.toda_name.strip() if d.toda_name else "No TODA"
-        if brgy not in location_map: location_map[brgy] = set()
-        location_map[brgy].add(toda)
-    return {b: sorted(list(t)) for b, t in location_map.items()}
-
-@app.get("/api/profile/{display_name}")
-def get_profile(display_name: str, db: Session = Depends(get_db)):
-    clean_name = sanitize_name(display_name)
-    user = db.query(User).filter(
-        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
-    ).first()
-    if not user: raise HTTPException(status_code=404, detail="User not found")
     
-    avg_rating = 5.0
-    if user.rating_count and user.rating_count > 0: avg_rating = round(user.rating_sum / user.rating_count, 1)
-        
-    return {
-        "full_name": user.full_name, "whatsapp_number": user.whatsapp_number,
-        "bank_name": user.bank_name if user.bank_name else "GCash",
-        "gcash_account": user.gcash_account if user.gcash_account else "",
-        "address": user.address if user.address else "", "rating": avg_rating,
-        "local_ref": user.local_ref if user.local_ref else "N/A",
-        "toda_name": user.toda_name if user.toda_name else "" 
-    }
+    # 1. From Registered Drivers
+    drivers = db.query(User).filter(User.role == 'driver').all()
+    for d in drivers:
+        brgy = d.barangay.strip().title() if d.barangay else "Kapitolyo"
+        toda = d.toda_name.strip().upper() if d.toda_name else ""
+        if toda and toda != "NO TODA":
+            if brgy not in location_map:
+                location_map[brgy] = set()
+            location_map[brgy].add(toda)
 
+    # 2. From TodaConfig (ensures configured chapters like KATODA always appear)
+    toda_configs = db.query(TodaConfig).all()
+    for tc in toda_configs:
+        t_name = tc.toda_name.strip().upper() if tc.toda_name else ""
+        if t_name and t_name != "NO TODA":
+            already_in_map = any(t_name in s for s in location_map.values())
+            if not already_in_map:
+                if "Registered TODAs" not in location_map:
+                    location_map["Registered TODAs"] = set()
+                location_map["Registered TODAs"].add(t_name)
+
+    # 3. Default fallback
+    if not location_map:
+        location_map["Kapitolyo"] = {"KATODA"}
+
+    return {b: sorted(list(t)) for b, t in location_map.items()}
 @app.post("/api/update-profile")
 def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     clean_name = sanitize_name(data.display_name)
