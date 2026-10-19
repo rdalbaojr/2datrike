@@ -77,8 +77,8 @@ class RideRequest(Base):
     rating = Column(Integer, nullable=True) 
     branch = Column(String, default="Main")
     local_ref = Column(String, nullable=True, default="") 
-    cancelled_by = Column(String, nullable=True, default="")  # "passenger" or "driver:<name>"
-    cancel_reason = Column(String, nullable=True, default="") # e.g. "Passenger no-show"
+    cancelled_by = Column(String, nullable=True, default="")
+    cancel_reason = Column(String, nullable=True, default="")
     
     pabili_list = Column(Text, nullable=True)
     item_description = Column(Text, nullable=True)
@@ -134,25 +134,42 @@ def get_db():
         db.close()
 
 # ==========================================
-# 4. SECURE 5-DIGIT LOCAL PREFIX GENERATOR
+# 4. HELPER UTILITIES
 # ==========================================
-def generate_local_ref(barangay: str, toda: str) -> str:
-    brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
-    toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
-    rand_5digit = random.randint(10000, 99999)
-    return f"{brgy_code}-{toda_code}-{rand_5digit}"
+def sanitize_name(name: str) -> str:
+    if not name: return ""
+    return str(name).replace('"', '').replace("'", "").strip()
 
 def parse_fare(fare_str: Optional[str]) -> float:
-    if not fare_str:
-        return 0.0
+    if not fare_str: return 0.0
     clean = re.sub(r'[^0-9.]', '', str(fare_str))
     try:
         return float(clean)
     except ValueError:
         return 0.0
 
+def safe_parse_datetime(dt_val):
+    if not dt_val:
+        return datetime.now()
+    if isinstance(dt_val, datetime):
+        return dt_val
+    try:
+        clean_str = str(dt_val).replace("Z", "").strip()
+        return datetime.fromisoformat(clean_str)
+    except Exception:
+        try:
+            return datetime.strptime(str(dt_val)[:19], "%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return datetime.now()
+
+def generate_local_ref(barangay: str, toda: str) -> str:
+    brgy_code = "".join([w[0] for w in barangay.split() if w]).upper()[:3]
+    toda_code = "".join([w[0] for w in toda.split() if w]).upper()[:3]
+    rand_5digit = random.randint(10000, 99999)
+    return f"{brgy_code}-{toda_code}-{rand_5digit}"
+
 # ==========================================
-# 5. STARTUP SCRIPT & PYDANTIC SCHEMAS
+# 5. STARTUP MIGRATIONS
 # ==========================================
 @app.on_event("startup")
 def initialize_config():
@@ -212,6 +229,9 @@ def initialize_config():
         
     db.close()
 
+# ==========================================
+# 6. PYDANTIC SCHEMAS
+# ==========================================
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -245,11 +265,6 @@ class ProfileUpdateSchema(BaseModel):
     city: Optional[str] = None
     barangay: Optional[str] = None
     toda_name: Optional[str] = None
-
-class PasswordResetSchema(BaseModel):
-    username: str
-    whatsapp_number: str
-    new_password: str
 
 class PasswordResetSchemaSecurity(BaseModel):
     username: str
@@ -305,12 +320,8 @@ class UserCreateJSON(BaseModel):
     gcash_account: Optional[str] = ""
     whatsapp_number: Optional[str] = ""
 
-def sanitize_name(name: str) -> str:
-    if not name: return ""
-    return name.replace('"', '').replace("'", "").strip()
-
 # ==========================================
-# 6. API ENDPOINTS
+# 7. AUTH & PROFILE ROUTES
 # ==========================================
 @app.get("/")
 def read_root():
@@ -320,7 +331,6 @@ def read_root():
 async def admin_login(request: LoginRequest):
     u = request.username.strip().lower()
     p = request.password.strip()
-    
     if u == "masterom" and (p == "qZ82118@@" or p == "12345"):
         response = JSONResponse(content={"status": "success", "redirect": "admin_dashboard.html"})
         response.set_cookie(key="admin_session", value="masterom_active")
@@ -340,7 +350,6 @@ def login_user(username: str = Form(...), password: str = Form(...), db: Session
     clean_user = sanitize_name(username)
     user = db.query(User).filter(User.username.ilike(clean_user), User.password == password).first()
     if not user: raise HTTPException(status_code=400, detail="Invalid username or password")
-    
     if user.is_suspended == 1: raise HTTPException(status_code=403, detail="ACCOUNT SUSPENDED: Please contact TODA admin.")
     
     user.status = "online"
@@ -370,36 +379,26 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
     clean_full_name = sanitize_name(user.full_name).title() if user.full_name else clean_username
 
     existing = db.query(User).filter(User.username.ilike(clean_username)).first()
-    if existing:
-        raise HTTPException(status_code=400, detail="Username already exists")
+    if existing: raise HTTPException(status_code=400, detail="Username already exists")
 
     formatted_toda = user.toda_name.upper() if user.toda_name else ""
-    
     local_ref = ""
     if user.role == "driver":
         toda_code = "".join([w[0] for w in formatted_toda.split() if w]).upper()[:3] if formatted_toda else "XX"
         local_ref = f"D-{toda_code}-{random.randint(10000, 99999)}"
 
     new_user = User(
-        username=clean_username,
-        full_name=clean_full_name,   
-        password=user.password,
-        role=user.role,
-        whatsapp_number=user.whatsapp_number, 
+        username=clean_username, full_name=clean_full_name, password=user.password,
+        role=user.role, whatsapp_number=user.whatsapp_number, 
         city=user.city.strip().title() if user.city else "Pasig City",
         barangay=user.barangay.strip().title() if user.barangay else "",
-        toda_name=formatted_toda,
-        local_ref=local_ref,
-        security_q=user.security_q,
-        security_a=user.security_a,
+        toda_name=formatted_toda, local_ref=local_ref,
+        security_q=user.security_q, security_a=user.security_a,
         toda_number=user.toda_number,    
         plate_number=user.plate_number.upper() if user.plate_number else "", 
-        bank_name=user.bank_name,            
-        gcash_account=user.gcash_account,    
-        rating_sum=25.0,
-        rating_count=5
+        bank_name=user.bank_name, gcash_account=user.gcash_account,    
+        rating_sum=25.0, rating_count=5
     )
-    
     db.add(new_user)
 
     if user.role == "toda_admin" and formatted_toda:
@@ -417,13 +416,10 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
 def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Depends(get_db)):
     clean_user = sanitize_name(data.username)
     user = db.query(User).filter(User.username.ilike(clean_user)).first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="Account not found.")
+    if not user: raise HTTPException(status_code=404, detail="Account not found.")
     
     saved_answer = user.security_a.strip().lower() if user.security_a else ""
     provided_answer = data.security_a.strip().lower()
-    
     if user.security_q != data.security_q or saved_answer != provided_answer:
         raise HTTPException(status_code=400, detail="Security question or answer is incorrect.")
     
@@ -434,19 +430,12 @@ def reset_password_security(data: PasswordResetSchemaSecurity, db: Session = Dep
 @app.post("/api/toda/login")
 def login_toda_admin(data: TodaLoginSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(
-        User.username.ilike(data.username), 
-        User.password == data.password, 
-        User.role == "toda_admin"
+        User.username.ilike(data.username), User.password == data.password, User.role == "toda_admin"
     ).first()
-    
-    if user and user.toda_name:
-        return {"status": "success", "toda_name": user.toda_name.upper()}
-    
+    if user and user.toda_name: return {"status": "success", "toda_name": user.toda_name.upper()}
     if data.password == "1234":
         clean_toda = data.username.lower().replace("_admin", "").replace("admin", "").strip()
-        if clean_toda:
-            return {"status": "success", "toda_name": clean_toda.upper()}
-
+        if clean_toda: return {"status": "success", "toda_name": clean_toda.upper()}
     raise HTTPException(status_code=401, detail="Invalid TODA Admin credentials")
 
 @app.get("/api/admin/locations")
@@ -456,10 +445,8 @@ def get_registered_locations(db: Session = Depends(get_db)):
     for d in drivers:
         brgy = d.barangay.strip() if d.barangay else "Unassigned"
         toda = d.toda_name.strip() if d.toda_name else "No TODA"
-        if brgy not in location_map:
-            location_map[brgy] = set()
+        if brgy not in location_map: location_map[brgy] = set()
         location_map[brgy].add(toda)
-        
     return {b: sorted(list(t)) for b, t in location_map.items()}
 
 @app.get("/api/profile/{display_name}")
@@ -468,9 +455,7 @@ def get_profile(display_name: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
     ).first()
-        
-    if not user: 
-        raise HTTPException(status_code=404, detail="User not found")
+    if not user: raise HTTPException(status_code=404, detail="User not found")
     
     avg_rating = 5.0
     if user.rating_count and user.rating_count > 0: avg_rating = round(user.rating_sum / user.rating_count, 1)
@@ -490,9 +475,7 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name))
     ).first()
-    
-    if not user: 
-        raise HTTPException(status_code=404, detail="User not found")
+    if not user: raise HTTPException(status_code=404, detail="User not found")
         
     user.bank_name = data.bank_name
     user.gcash_account = data.gcash_account
@@ -521,8 +504,11 @@ def update_profile(data: ProfileUpdateSchema, db: Session = Depends(get_db)):
             pr.local_ref = generate_local_ref(brgy_str, toda_str)
 
     db.commit()
-    return {"status": "success", "message": "Profile updated and pending rides migrated successfully"}
+    return {"status": "success", "message": "Profile updated successfully"}
 
+# ==========================================
+# 8. RIDE DISPATCH & WORKFLOW
+# ==========================================
 @app.post("/request-ride/")
 def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db)):
     clean_pass_name = sanitize_name(request.passenger_name)
@@ -533,7 +519,6 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
     city_str = user_profile.city if (user_profile and user_profile.city) else "Pasig City"
     brgy_str = user_profile.barangay if (user_profile and user_profile.barangay) else "Kapitolyo"
     toda_str = user_profile.toda_name if (user_profile and user_profile.toda_name) else "KATODA"
-
     origin_ref = generate_local_ref(brgy_str, toda_str)
 
     new_ride = RideRequest(
@@ -546,16 +531,14 @@ def create_ride_request(request: RideRequestCreate, db: Session = Depends(get_db
         item_description=getattr(request, 'item_description', "") or "",
         status="pending",
         branch=f"{city_str} - {brgy_str} ({toda_str})",
-        local_ref=origin_ref
+        local_ref=origin_ref,
+        created_at=datetime.now()
     )
     db.add(new_ride)
     db.commit()
     db.refresh(new_ride)
     return {"message": "Ride requested successfully", "id": new_ride.id, "local_ref": origin_ref}
 
-# ==========================================
-# CANCELLATION & RELEASE ENDPOINTS
-# ==========================================
 @app.post("/api/passenger-cancel-ride/{ride_id}")
 def passenger_cancel_ride(ride_id: int, data: Optional[CancelRideSchema] = None, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
@@ -567,14 +550,13 @@ def passenger_cancel_ride(ride_id: int, data: Optional[CancelRideSchema] = None,
     ride.cancelled_by = "passenger"
     ride.cancel_reason = reason
     db.commit()
-    db.refresh(ride)
     return {"status": "success", "message": "Ride cancelled", "reason": ride.cancel_reason}
 
 @app.post("/driver-cancel-ride/{ride_id}")
 def driver_cancel_ride(ride_id: int, data: Optional[CancelRideSchema] = None, db: Session = Depends(get_db)):
     ride = db.query(RideRequest).filter(RideRequest.id == ride_id).first()
     if not ride: raise HTTPException(status_code=404, detail="Ride not found")
-    if ride.status != "accepted": raise HTTPException(status_code=400, detail="Cannot release a ride that is not in progress")
+    if ride.status != "accepted": raise HTTPException(status_code=400, detail="Cannot release an unaccepted trip")
 
     clean_driver = sanitize_name(ride.driver_name) if ride.driver_name else "driver"
     reason = data.reason.strip() if (data and data.reason) else "Released back to radar"
@@ -584,7 +566,6 @@ def driver_cancel_ride(ride_id: int, data: Optional[CancelRideSchema] = None, db
     ride.driver_name = None
     ride.status = "pending"
     db.commit()
-    db.refresh(ride)
     return {"status": "success", "message": "Ride returned to radar", "reason": ride.cancel_reason}
 
 @app.post("/accept-ride/{ride_id}")
@@ -594,24 +575,9 @@ def accept_ride(ride_id: int, data: AcceptRideSchema, db: Session = Depends(get_
     if ride.status != "pending": raise HTTPException(status_code=400, detail="Ride has already been accepted")
 
     clean_driver = sanitize_name(data.driver_name)
-    driver_user = db.query(User).filter(
-        (User.full_name.ilike(clean_driver)) | (User.username.ilike(clean_driver)),
-        User.role == "driver"
-    ).first()
-
-    if driver_user and driver_user.toda_name:
-        driver_toda = driver_user.toda_name.strip().upper()
-        ride_branch = (ride.branch or "").upper()
-        if driver_toda not in ride_branch:
-            raise HTTPException(
-                status_code=403, 
-                detail=f"Boundary restriction: You belong to {driver_toda}. This order is for {ride.branch}."
-            )
-
     ride.driver_name = clean_driver
     ride.status = "accepted"
     db.commit()
-    db.refresh(ride)
     return {"message": "Ride accepted successfully", "id": ride.id}
 
 @app.post("/complete-ride/{ride_id}")
@@ -671,19 +637,14 @@ def get_toda_drivers(toda_name: str, db: Session = Depends(get_db)):
     results = []
     for d in drivers:
         d_name = sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username)
-        driver_rides = sum(1 for r in all_rides if r.driver_name and sanitize_name(r.driver_name).lower() == d_name.lower())
+        driver_rides = sum(1 for r in all_rides if r.driver_name and sanitize_name(r.driver_name).lower() in [d_name.lower(), (d.username or "").lower()])
         actual_rating = d.rating_sum / d.rating_count if d.rating_count and d.rating_count > 0 else 5.0
         
         results.append({
-            "id": d.id,
-            "name": d_name,
-            "whatsapp_number": d.whatsapp_number,
-            "status": d.status,
-            "toda_number": d.toda_number,
-            "is_suspended": d.is_suspended,
-            "warnings": d.warnings or 0,
-            "rating": round(actual_rating, 1),
-            "totalRides": driver_rides 
+            "id": d.id, "name": d_name, "whatsapp_number": d.whatsapp_number,
+            "status": d.status, "toda_number": d.toda_number,
+            "is_suspended": d.is_suspended, "warnings": d.warnings or 0,
+            "rating": round(actual_rating, 1), "totalRides": driver_rides 
         })
     return results
 
@@ -709,14 +670,10 @@ def get_toda_cancellations(toda_name: str, db: Session = Depends(get_db)):
             driver_cancels[d_name] = driver_cancels.get(d_name, 0) + 1
 
         incident_logs.append({
-            "ride_id": r.id,
-            "local_ref": r.local_ref or "N/A",
-            "passenger_name": p_name,
-            "cancelled_by": r.cancelled_by,
-            "reason": r.cancel_reason,
-            "pickup": r.pickup_location,
-            "dropoff": r.dropoff_location,
-            "fare": r.fare,
+            "ride_id": r.id, "local_ref": r.local_ref or "N/A",
+            "passenger_name": p_name, "cancelled_by": r.cancelled_by,
+            "reason": r.cancel_reason, "pickup": r.pickup_location,
+            "dropoff": r.dropoff_location, "fare": r.fare,
             "timestamp": r.created_at.strftime("%b %d, %I:%M %p") if r.created_at else "N/A"
         })
 
@@ -724,32 +681,108 @@ def get_toda_cancellations(toda_name: str, db: Session = Depends(get_db)):
     flagged_drivers = [name for name, count in driver_cancels.items() if count >= 3]
 
     return {
-        "toda": clean_toda,
-        "incident_logs": incident_logs,
-        "flagged_passengers": flagged_passengers,
-        "flagged_drivers": flagged_drivers,
-        "stats": {
-            "passenger_cancel_counts": passenger_cancels,
-            "driver_cancel_counts": driver_cancels
-        }
+        "toda": clean_toda, "incident_logs": incident_logs,
+        "flagged_passengers": flagged_passengers, "flagged_drivers": flagged_drivers,
+        "stats": {"passenger_cancel_counts": passenger_cancels, "driver_cancel_counts": driver_cancels}
     }
 
 # ==========================================
-# 🟢 ADMIN PAYOUT SUMMARY WITH DATE RANGE (FROM -> TO)
+# 9. 🟢 UNIFIED FINANCIAL ENGINE
 # ==========================================
+@app.get("/api/admin/finances")
+def get_admin_finances(db: Session = Depends(get_db)):
+    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    sys_config = db.query(SystemConfig).first()
+    default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
+    default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
+    
+    toda_configs = {
+        tc.toda_name.upper(): (
+            (tc.platform_share or 17.0) / 100.0,
+            (tc.katoda_share or 3.0) / 100.0
+        ) for tc in db.query(TodaConfig).all()
+    }
+
+    now = datetime.now()
+    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
+
+    for r in rides:
+        clean_fare = parse_fare(r.fare)
+        if clean_fare <= 0: continue
+        
+        p_pct = default_p_pct
+        k_pct = default_k_pct
+        if r.branch:
+            for t_name, (t_plat, t_katoda) in toda_configs.items():
+                if t_name in r.branch.upper():
+                    p_pct = t_plat
+                    k_pct = t_katoda
+                    break
+                    
+        total_markup_rate = p_pct + k_pct
+        effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
+        platform_cut = effective_base * p_pct
+        
+        r_date = safe_parse_datetime(r.created_at)
+        
+        if r_date.date() == now.date(): finances["today"] += platform_cut
+        if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += platform_cut
+        if r_date.month == now.month and r_date.year == now.year: finances["month"] += platform_cut
+        if r_date.year == now.year: finances["ytd"] += platform_cut
+
+    return finances
+
+@app.get("/api/toda/finances")
+def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
+    clean_toda = toda_name.strip().upper()
+    branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
+    
+    toda_pct = (branch_config.katoda_share if branch_config else 3.0) / 100.0
+    platform_pct = (branch_config.platform_share if branch_config else 17.0) / 100.0
+    total_markup_rate = toda_pct + platform_pct
+
+    drivers = db.query(User).filter(User.toda_name.ilike(f"%{clean_toda}%"), User.role == 'driver').all()
+    toda_driver_names = set()
+    for d in drivers:
+        if d.username: toda_driver_names.add(d.username.strip().lower())
+        if d.full_name: toda_driver_names.add(d.full_name.strip().lower())
+
+    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
+    now = datetime.now()
+    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
+
+    for r in rides:
+        clean_driver = sanitize_name(r.driver_name).strip().lower() if r.driver_name else ""
+        ride_branch = (r.branch or "").upper()
+
+        if clean_driver in toda_driver_names or clean_toda in ride_branch:
+            clean_fare = parse_fare(r.fare)
+            effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
+            toda_cut = effective_base * toda_pct
+            
+            r_date = safe_parse_datetime(r.created_at)
+            
+            if r_date.date() == now.date(): finances["today"] += toda_cut
+            if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += toda_cut
+            if r_date.month == now.month and r_date.year == now.year: finances["month"] += toda_cut
+            if r_date.year == now.year: finances["ytd"] += toda_cut
+
+    return finances
+
 @app.get("/api/admin/payout-summary")
 def get_payout_summary(
     branch: str = "All", 
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
+    cutoff_date: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    clean_branch = branch.strip()
     toda_configs = {tc.toda_name.upper(): tc for tc in db.query(TodaConfig).all()}
     sys_config = db.query(SystemConfig).first()
     default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
     default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
 
-    clean_branch = branch.strip()
     display_bank = "GCash"
     display_account = "Not Configured"
 
@@ -763,7 +796,6 @@ def get_payout_summary(
         display_bank = (sys_config.katoda_bank if sys_config and sys_config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
         display_account = (sys_config.katoda_account if sys_config and sys_config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
 
-    # 1. Fetch drivers and initialize alias lookup
     drivers_query = db.query(User).filter(User.role == 'driver')
     if clean_branch != "All":
         drivers_query = drivers_query.filter(
@@ -798,26 +830,25 @@ def get_payout_summary(
             "local_ref": driver.local_ref if driver.local_ref else "2DA"
         }
 
-        if driver.username:
-            driver_alias_map[driver.username.strip().lower()] = d_display
-        if driver.full_name:
-            driver_alias_map[driver.full_name.strip().lower()] = d_display
+        if driver.username: driver_alias_map[driver.username.strip().lower()] = d_display
+        if driver.full_name: driver_alias_map[driver.full_name.strip().lower()] = d_display
 
-    # 2. Parse Date Range (Start of start_date 00:00:00 -> End of end_date 23:59:59)
+    # Parse Date Range
     start_dt, end_dt = None, None
-    if start_date and start_date.strip():
-        try:
-            s_date = datetime.strptime(start_date.strip(), "%Y-%m-%d").date()
-            start_dt = datetime.combine(s_date, datetime.min.time())
-        except ValueError:
-            pass
+    effective_start = start_date or cutoff_date
+    effective_end = end_date or cutoff_date
 
-    if end_date and end_date.strip():
+    if effective_start and effective_start.strip():
         try:
-            e_date = datetime.strptime(end_date.strip(), "%Y-%m-%d").date()
+            s_date = datetime.strptime(effective_start.strip(), "%Y-%m-%d").date()
+            start_dt = datetime.combine(s_date, datetime.min.time())
+        except ValueError: pass
+
+    if effective_end and effective_end.strip():
+        try:
+            e_date = datetime.strptime(effective_end.strip(), "%Y-%m-%d").date()
             end_dt = datetime.combine(e_date, datetime.max.time())
-        except ValueError:
-            pass
+        except ValueError: pass
 
     all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
 
@@ -827,24 +858,38 @@ def get_payout_summary(
     total_rides_all = 0
 
     for ride in all_rides:
-        if not ride.driver_name or not ride.fare:
-            continue
+        if not ride.driver_name or not ride.fare: continue
 
         r_created = safe_parse_datetime(ride.created_at)
-        if start_dt and r_created < start_dt:
-            continue
-        if end_dt and r_created > end_dt:
-            continue
+        if start_dt and r_created < start_dt: continue
+        if end_dt and r_created > end_dt: continue
 
         raw_driver = sanitize_name(ride.driver_name).strip().lower()
         resolved_name = driver_alias_map.get(raw_driver)
 
-        if clean_branch != "All" and not resolved_name:
-            continue
+        # Dynamic fallback: If driver was not in the initial query, resolve them directly
+        if not resolved_name:
+            drv_u = db.query(User).filter(
+                (User.full_name.ilike(raw_driver)) | (User.username.ilike(raw_driver))
+            ).first()
+            if drv_u:
+                resolved_name = sanitize_name(drv_u.full_name if drv_u.full_name else drv_u.username)
+                if clean_branch == "All" or (drv_u.toda_name and clean_branch.upper() in drv_u.toda_name.upper()):
+                    if resolved_name not in payouts:
+                        raw_acct = drv_u.gcash_account.strip() if drv_u.gcash_account else ""
+                        acc_num = raw_acct if (raw_acct and raw_acct.lower() not in ["gcash", "maya"]) else (drv_u.whatsapp_number or "Not Provided")
+                        payouts[resolved_name] = {
+                            "driver_name": resolved_name, "bank_name": drv_u.bank_name or "GCash",
+                            "account_number": acc_num, "ride_count": 0, "total_gross": 0.0,
+                            "driver_share": 0.0, "katoda_share": 0.0, "platform_share": 0.0,
+                            "local_ref": drv_u.local_ref or "2DA"
+                        }
+                    driver_alias_map[raw_driver] = resolved_name
+
+        if clean_branch != "All" and not resolved_name: continue
 
         clean_fare = parse_fare(ride.fare)
-        if clean_fare <= 0:
-            continue
+        if clean_fare <= 0: continue
 
         p_pct = default_p_pct
         k_pct = default_k_pct
@@ -855,7 +900,7 @@ def get_payout_summary(
                     k_pct = (tc.katoda_share or 3.0) / 100.0
                     break
 
-        total_markup = p_pct + k_pct  # 0.20
+        total_markup = p_pct + k_pct
         effective_base = clean_fare / (1.0 + total_markup) if (1.0 + total_markup) > 0 else clean_fare
 
         katoda_cut = effective_base * k_pct
@@ -887,20 +932,19 @@ def get_payout_summary(
         "total_bizlink_disbursement": total_bizlink_disbursement,
         "katoda_bank": display_bank,
         "katoda_account": display_account,
-        "start_date": start_date,
-        "end_date": end_date
+        "start_date": effective_start or "",
+        "end_date": effective_end or ""
     }
 
-# ==========================================
-# 🟢 BIZLINK EXPORT WITH DATE RANGE (EXCLUDES ADMIN)
-# ==========================================
 @app.get("/api/admin/generate-bizlink-payout")
 def generate_bizlink_payout(
     branch: str = "All", 
     start_date: Optional[str] = None, 
     end_date: Optional[str] = None, 
+    cutoff_date: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
+    clean_branch = branch.strip()
     toda_configs = {tc.toda_name.upper(): tc for tc in db.query(TodaConfig).all()}
     sys_config = db.query(SystemConfig).first()
     default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
@@ -908,7 +952,6 @@ def generate_bizlink_payout(
 
     katoda_bank = "GCash"
     katoda_account = "MISSING_KATODA_ACCOUNT"
-    clean_branch = branch.strip()
 
     if clean_branch != "All":
         b_conf = toda_configs.get(clean_branch.upper())
@@ -930,41 +973,36 @@ def generate_bizlink_payout(
         d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
         driver_payouts[d_name] = 0.0
 
-    # Parse Date Range
     start_dt, end_dt = None, None
-    if start_date and start_date.strip():
-        try:
-            s_date = datetime.strptime(start_date.strip(), "%Y-%m-%d").date()
-            start_dt = datetime.combine(s_date, datetime.min.time())
-        except ValueError:
-            pass
+    effective_start = start_date or cutoff_date
+    effective_end = end_date or cutoff_date
 
-    if end_date and end_date.strip():
+    if effective_start and effective_start.strip():
         try:
-            e_date = datetime.strptime(end_date.strip(), "%Y-%m-%d").date()
+            s_date = datetime.strptime(effective_start.strip(), "%Y-%m-%d").date()
+            start_dt = datetime.combine(s_date, datetime.min.time())
+        except ValueError: pass
+
+    if effective_end and effective_end.strip():
+        try:
+            e_date = datetime.strptime(effective_end.strip(), "%Y-%m-%d").date()
             end_dt = datetime.combine(e_date, datetime.max.time())
-        except ValueError:
-            pass
+        except ValueError: pass
 
     all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     total_katoda_payout = 0.0
 
     for ride in all_rides:
-        if not ride.driver_name or not ride.fare:
-            continue
+        if not ride.driver_name or not ride.fare: continue
 
         r_created = safe_parse_datetime(ride.created_at)
-        if start_dt and r_created < start_dt:
-            continue
-        if end_dt and r_created > end_dt:
-            continue
+        if start_dt and r_created < start_dt: continue
+        if end_dt and r_created > end_dt: continue
 
         clean_driver_name = sanitize_name(ride.driver_name)
-        if clean_branch != "All" and clean_driver_name not in driver_payouts:
-            continue
+        if clean_branch != "All" and clean_driver_name not in driver_payouts: continue
             
         clean_fare = parse_fare(ride.fare)
-
         p_pct = default_p_pct
         k_pct = default_k_pct
         if ride.branch:
@@ -980,25 +1018,20 @@ def generate_bizlink_payout(
         katoda_cut = effective_base * k_pct
         driver_cut = effective_base
 
-        if clean_driver_name in driver_payouts: 
-            driver_payouts[clean_driver_name] += driver_cut
-        else: 
-            driver_payouts[clean_driver_name] = driver_cut
+        if clean_driver_name in driver_payouts: driver_payouts[clean_driver_name] += driver_cut
+        else: driver_payouts[clean_driver_name] = driver_cut
         total_katoda_payout += katoda_cut
 
-    # Format Date Labels for Filename and Remarks
     now = datetime.now()
     batch_id = now.strftime("BZ%m%d%H%M")
-    
-    start_str = start_date.replace("-", "")[4:] if start_date else "START"  # e.g., '1015'
-    end_str = end_date.replace("-", "")[4:] if end_date else "END"          # e.g., '1019'
+    start_str = effective_start.replace("-", "")[4:] if effective_start else "CO"
+    end_str = effective_end.replace("-", "")[4:] if effective_end else "NOW"
     range_tag = f"{start_str}-{end_str}"
 
     output = StringIO()
     writer = csv.writer(output)
     writer.writerow(["Account Number", "Beneficiary Name", "Amount", "Remarks"])
 
-    # 1. Driver rows
     for driver_name, amount in driver_payouts.items():
         if amount > 0:
             driver_user = db.query(User).filter(
@@ -1007,19 +1040,11 @@ def generate_bizlink_payout(
             ).first()
 
             raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
-            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: 
-                account_number = raw_acct
-            elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip(): 
-                account_number = driver_user.whatsapp_number
-            else: 
-                account_number = "MISSING_ACCOUNT"
-                
+            acc_num = raw_acct if (raw_acct and raw_acct.lower() not in ["gcash", "maya"]) else (driver_user.whatsapp_number if driver_user else "MISSING_ACCOUNT")
             local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
-            # Strict 30-character BizLink Remark format (e.g. "D-KAT-10294 1015-1019 BZ1019")
             remarks_string = f"{local_tag} {range_tag} {batch_id}"[:30]
-            writer.writerow([account_number, driver_name, f"{amount:.2f}", remarks_string])
+            writer.writerow([acc_num, driver_name, f"{amount:.2f}", remarks_string])
 
-    # 2. TODA Chapter Row
     if total_katoda_payout > 0:
         org_title = f"{clean_branch} TODA" if clean_branch != "All" else "TODA Chapters"
         remarks_toda = f"TODA {range_tag} {batch_id}"[:30]
@@ -1033,157 +1058,43 @@ def generate_bizlink_payout(
         media_type="text/csv", 
         headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_{range_tag}_{batch_id}.csv"}
     )
-@app.get("/api/admin/generate-bizlink-payout")
-def generate_bizlink_payout(branch: str = "All", db: Session = Depends(get_db)):
-    toda_configs = {tc.toda_name.upper(): tc for tc in db.query(TodaConfig).all()}
-    sys_config = db.query(SystemConfig).first()
-    default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
-    default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
 
-    katoda_bank = "GCash"
-    katoda_account = "MISSING_KATODA_ACCOUNT"
-
-    if branch != "All":
-        b_conf = toda_configs.get(branch.strip().upper())
-        if b_conf:
-            katoda_bank = b_conf.katoda_bank or "GCash"
-            katoda_account = b_conf.katoda_account or "MISSING_ACCOUNT"
-    else:
-        first_toda = next((tc for tc in toda_configs.values() if tc.katoda_account), None)
-        if first_toda:
-            katoda_bank = first_toda.katoda_bank
-            katoda_account = first_toda.katoda_account
-
-    driver_payouts = {}
-    query = db.query(User).filter(User.role == 'driver')
-    if branch != "All":
-        query = query.filter((User.city == branch) | (User.branch == branch))
-        
-    for driver in query.all():
-        d_name = sanitize_name(driver.full_name if driver.full_name else driver.username)
-        driver_payouts[d_name] = 0.0
-
-    unsettled_rides = db.query(RideRequest).filter(RideRequest.status == "paid").all()
-    total_katoda_payout = 0.0
-
-    for ride in unsettled_rides:
-        if not ride.driver_name or not ride.fare: continue
-        clean_driver_name = sanitize_name(ride.driver_name)
-        if branch != "All" and clean_driver_name not in driver_payouts: continue
-            
-        clean_fare = parse_fare(ride.fare)
-
-        p_pct = default_p_pct
-        k_pct = default_k_pct
-        if ride.branch:
-            for t_name, tc in toda_configs.items():
-                if t_name in ride.branch.upper():
-                    p_pct = (tc.platform_share or 17.0) / 100.0
-                    k_pct = (tc.katoda_share or 3.0) / 100.0
-                    break
-
-        total_markup_rate = p_pct + k_pct
-        effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
-
-        katoda_cut = effective_base * k_pct
-        driver_cut = effective_base
-
-        if clean_driver_name in driver_payouts: 
-            driver_payouts[clean_driver_name] += driver_cut
-        else: 
-            driver_payouts[clean_driver_name] = driver_cut
-        total_katoda_payout += katoda_cut
-
-    now = datetime.now()
-    batch_id = now.strftime("BZ%Y%m%d%H%M")
-
-    output = StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Account Number", "Beneficiary Name", "Amount", "Remarks"])
-
-    for driver_name, amount in driver_payouts.items():
-        if amount > 0:
-            driver_user = db.query(User).filter(
-                (User.full_name.ilike(driver_name)) | (User.username.ilike(driver_name)),
-                User.role == 'driver'
-            ).first()
-
-            raw_acct = driver_user.gcash_account.strip() if (driver_user and driver_user.gcash_account) else ""
-            if raw_acct and raw_acct.lower() not in ["gcash", "maya"]: 
-                account_number = raw_acct
-            elif driver_user and driver_user.whatsapp_number and driver_user.whatsapp_number.strip(): 
-                account_number = driver_user.whatsapp_number
-            else: 
-                account_number = "MISSING_ACCOUNT"
-                
-            local_tag = driver_user.local_ref if driver_user and driver_user.local_ref else "2DA"
-            remarks_string = f"{local_tag} {batch_id}"[:30]
-            writer.writerow([account_number, driver_name, f"{amount:.2f}", remarks_string])
-
-    if total_katoda_payout > 0:
-        writer.writerow([katoda_account, f"{branch} Organization", f"{total_katoda_payout:.2f}", f"Katoda {batch_id}"[:30]])
-        
-    output.seek(0)
-    filename_branch = branch.replace(' ', '_') if branch != "All" else "Master"
-    
-    return StreamingResponse(
-        iter([output.getvalue()]), 
-        media_type="text/csv", 
-        headers={"Content-Disposition": f"attachment; filename=BizLink_{filename_branch}_Batch_{batch_id}.csv"}
-    )
-
+# ==========================================
+# 10. SYSTEM CONFIG & CHAT WEBSOCKETS
+# ==========================================
 @app.get("/api/admin/toda-config/{toda_name}")
 def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
     clean_toda = toda_name.strip().upper()
     config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
-    
     if not config:
         return {
-            "s1_name": "Pasundo", "s1_price": 26,
-            "s2_name": "Pabili", "s2_price": 26,
-            "s3_name": "Papickup", "s3_price": 26,
-            "s4_name": "", "s4_price": 0,
-            "s5_name": "", "s5_price": 0,
-            "platform_share": 17.0, "katoda_share": 3.0,
+            "s1_name": "Pasundo", "s1_price": 26, "s2_name": "Pabili", "s2_price": 26,
+            "s3_name": "Papickup", "s3_price": 26, "s4_name": "", "s4_price": 0,
+            "s5_name": "", "s5_price": 0, "platform_share": 17.0, "katoda_share": 3.0,
             "katoda_bank": "GCash", "katoda_account": ""
         }
-        
     return {
-        "s1_name": config.s1_name, "s1_price": config.s1_price,
-        "s2_name": config.s2_name, "s2_price": config.s2_price,
-        "s3_name": config.s3_name, "s3_price": config.s3_price,
-        "s4_name": config.s4_name, "s4_price": config.s4_price,
-        "s5_name": config.s5_name, "s5_price": config.s5_price,
-        "platform_share": config.platform_share, "katoda_share": config.katoda_share,
-        "katoda_bank": config.katoda_bank, "katoda_account": config.katoda_account
+        "s1_name": config.s1_name, "s1_price": config.s1_price, "s2_name": config.s2_name, "s2_price": config.s2_price,
+        "s3_name": config.s3_name, "s3_price": config.s3_price, "s4_name": config.s4_name, "s4_price": config.s4_price,
+        "s5_name": config.s5_name, "s5_price": config.s5_price, "platform_share": config.platform_share,
+        "katoda_share": config.katoda_share, "katoda_bank": config.katoda_bank, "katoda_account": config.katoda_account
     }
 
 @app.post("/api/admin/toda-config/{toda_name}")
 def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session = Depends(get_db)):
     clean_toda = toda_name.strip().upper()
     config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
-    
     if not config:
         config = TodaConfig(toda_name=clean_toda)
         db.add(config)
-        
-    config.s1_name = data.s1_name.strip().title()
-    config.s1_price = data.s1_price
-    config.s2_name = data.s2_name.strip().title()
-    config.s2_price = data.s2_price
-    config.s3_name = data.s3_name.strip().title()
-    config.s3_price = data.s3_price
-    config.s4_name = data.s4_name.strip().title()
-    config.s4_price = data.s4_price
-    config.s5_name = data.s5_name.strip().title()
-    config.s5_price = data.s5_price
-    
-    config.platform_share = data.platform_share
-    config.katoda_share = data.katoda_share
-    
+    config.s1_name = data.s1_name.strip().title(); config.s1_price = data.s1_price
+    config.s2_name = data.s2_name.strip().title(); config.s2_price = data.s2_price
+    config.s3_name = data.s3_name.strip().title(); config.s3_price = data.s3_price
+    config.s4_name = data.s4_name.strip().title(); config.s4_price = data.s4_price
+    config.s5_name = data.s5_name.strip().title(); config.s5_price = data.s5_price
+    config.platform_share = data.platform_share; config.katoda_share = data.katoda_share
     if data.katoda_bank is not None: config.katoda_bank = data.katoda_bank
     if data.katoda_account is not None: config.katoda_account = data.katoda_account
-    
     db.commit()
     return {"status": "success"}
 
@@ -1193,15 +1104,10 @@ def get_system_config(db: Session = Depends(get_db)): return db.query(SystemConf
 @app.post("/api/admin/config")
 def update_system_config(data: ConfigUpdateSchema, db: Session = Depends(get_db)):
     config = db.query(SystemConfig).first()
-    if not config:
-        config = SystemConfig()
-        db.add(config)
-    config.pasundo_price = data.pasundo_price
-    config.pabili_price = data.pabili_price
-    config.deliver_price = data.deliver_price
-    config.platform_share = data.platform_share
-    config.katoda_share = data.katoda_share
-    config.katoda_bank = data.katoda_bank
+    if not config: config = SystemConfig(); db.add(config)
+    config.pasundo_price = data.pasundo_price; config.pabili_price = data.pabili_price
+    config.deliver_price = data.deliver_price; config.platform_share = data.platform_share
+    config.katoda_share = data.katoda_share; config.katoda_bank = data.katoda_bank
     config.katoda_account = data.katoda_account  
     db.commit()
     return {"status": "success"}
@@ -1214,43 +1120,28 @@ def get_pending_rides(db: Session = Depends(get_db)):
         pass_phone = "0"
         clean_pass = sanitize_name(r.passenger_name)
         pass_user = db.query(User).filter(
-            (User.full_name.ilike(clean_pass)) | (User.username.ilike(clean_pass)),
-            User.role == 'passenger'
+            (User.full_name.ilike(clean_pass)) | (User.username.ilike(clean_pass)), User.role == 'passenger'
         ).first()
         if pass_user and pass_user.whatsapp_number: pass_phone = pass_user.whatsapp_number
             
-        drv_phone = "0"
-        drv_toda_num = "N/A"
-        
+        drv_phone = "0"; drv_toda_num = "N/A"
         if r.driver_name:
             clean_drv = sanitize_name(r.driver_name)
             drv_user = db.query(User).filter(
-                (User.full_name.ilike(clean_drv)) | (User.username.ilike(clean_drv)),
-                User.role == 'driver'
+                (User.full_name.ilike(clean_drv)) | (User.username.ilike(clean_drv)), User.role == 'driver'
             ).first()
             if drv_user:
                 if drv_user.whatsapp_number: drv_phone = drv_user.whatsapp_number
                 if drv_user.toda_number: drv_toda_num = drv_user.toda_number 
 
         results.append({
-            "id": r.id, 
-            "passenger_name": r.passenger_name, 
-            "pickup_location": r.pickup_location,
-            "dropoff_location": r.dropoff_location, 
-            "service_type": r.service_type, 
-            "fare": r.fare,
-            "status": r.status, 
-            "driver_name": sanitize_name(r.driver_name), 
-            "rating": r.rating,
-            "passenger_phone": pass_phone, 
-            "driver_phone": drv_phone, 
-            "driver_toda_number": drv_toda_num, 
-            "branch": r.branch,
-            "local_ref": r.local_ref if r.local_ref else "N/A",
-            "pabili_list": getattr(r, 'pabili_list', "") or "",
-            "item_description": getattr(r, 'item_description', "") or "",
-            "cancelled_by": r.cancelled_by or "",
-            "cancel_reason": r.cancel_reason or ""
+            "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
+            "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
+            "status": r.status, "driver_name": sanitize_name(r.driver_name), "rating": r.rating,
+            "passenger_phone": pass_phone, "driver_phone": drv_phone, "driver_toda_number": drv_toda_num, 
+            "branch": r.branch, "local_ref": r.local_ref if r.local_ref else "N/A",
+            "pabili_list": getattr(r, 'pabili_list', "") or "", "item_description": getattr(r, 'item_description', "") or "",
+            "cancelled_by": r.cancelled_by or "", "cancel_reason": r.cancel_reason or ""
         })
     return results
 
@@ -1269,21 +1160,15 @@ def get_available_rides(request: Request, db: Session = Depends(get_db)):
 
     rides = db.query(RideRequest).all()
     results = []
-    
     for r in rides:
         ride_data = {
             "id": r.id, "passenger_name": r.passenger_name, "pickup_location": r.pickup_location,
             "dropoff_location": r.dropoff_location, "service_type": r.service_type, "fare": r.fare,
-            "status": r.status, "driver_name": sanitize_name(r.driver_name),
-            "branch": r.branch, "local_ref": r.local_ref
+            "status": r.status, "driver_name": sanitize_name(r.driver_name), "branch": r.branch, "local_ref": r.local_ref
         }
-
-        if driver_brgy and r.status == "pending" and r.branch:
-            if driver_brgy.lower() in r.branch.lower():
-                ride_data["branch"] = driver_branch
-
+        if driver_brgy and r.status == "pending" and r.branch and driver_brgy.lower() in r.branch.lower():
+            ride_data["branch"] = driver_branch
         results.append(ride_data)
-
     return results
 
 @app.get("/ride-status/{ride_id}")
@@ -1327,82 +1212,6 @@ async def websocket_chat(websocket: WebSocket, ride_id: str, db: Session = Depen
     except WebSocketDisconnect:
         chat_manager.disconnect(websocket, ride_id)
 
-@app.get("/api/toda/finances")
-def get_toda_finances(toda_name: str, db: Session = Depends(get_db)):
-    clean_toda = toda_name.strip().upper()
-    branch_config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
-    
-    toda_pct = (branch_config.katoda_share if branch_config else 3.0) / 100.0
-    platform_pct = (branch_config.platform_share if branch_config else 17.0) / 100.0
-    total_markup_rate = toda_pct + platform_pct # 0.20
-
-    search_term = f"%{clean_toda}%"
-    drivers = db.query(User).filter(User.toda_name.ilike(search_term), User.role == 'driver').all()
-    driver_names = [sanitize_name(d.full_name) if d.full_name else sanitize_name(d.username) for d in drivers]
-
-    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
-    
-    now = datetime.now()
-    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
-
-    for r in rides:
-        clean_driver = sanitize_name(r.driver_name) if r.driver_name else ""
-        if clean_driver in driver_names:
-            clean_fare = parse_fare(r.fare)
-            # 🟢 TODA percentage calculated strictly on effective base (automatically incorporates +10% night diff)
-            effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
-            toda_cut = effective_base * toda_pct
-            
-            r_date = r.created_at if r.created_at else now
-            if r_date.date() == now.date(): finances["today"] += toda_cut
-            if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += toda_cut
-            if r_date.month == now.month and r_date.year == now.year: finances["month"] += toda_cut
-            if r_date.year == now.year: finances["ytd"] += toda_cut
-
-    return finances
-
-@app.get("/api/admin/finances")
-def get_admin_finances(db: Session = Depends(get_db)):
-    rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
-    sys_config = db.query(SystemConfig).first()
-    
-    default_p_pct = (sys_config.platform_share if sys_config else 17.0) / 100.0
-    default_k_pct = (sys_config.katoda_share if sys_config else 3.0) / 100.0
-    
-    toda_configs = {
-        tc.toda_name.upper(): (
-            (tc.platform_share or 17.0) / 100.0,
-            (tc.katoda_share or 3.0) / 100.0
-        ) for tc in db.query(TodaConfig).all()
-    }
-
-    now = datetime.now()
-    finances = {"today": 0.0, "week": 0.0, "month": 0.0, "ytd": 0.0}
-
-    for r in rides:
-        clean_fare = parse_fare(r.fare)
-        p_pct = default_p_pct
-        k_pct = default_k_pct
-        
-        if r.branch:
-            for t_name, (t_plat, t_katoda) in toda_configs.items():
-                if t_name in r.branch.upper():
-                    p_pct = t_plat
-                    k_pct = t_katoda
-                    break
-                    
-        total_markup_rate = p_pct + k_pct
-        effective_base = clean_fare / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else clean_fare
-        platform_cut = effective_base * p_pct
-        
-        r_date = r.created_at if r.created_at else now
-        if r_date.date() == now.date(): finances["today"] += platform_cut
-        if r_date.isocalendar()[1] == now.isocalendar()[1] and r_date.year == now.year: finances["week"] += platform_cut
-        if r_date.month == now.month and r_date.year == now.year: finances["month"] += platform_cut
-        if r_date.year == now.year: finances["ytd"] += platform_cut
-
-    return finances
-
 class TodaBroadcastSchema(BaseModel): 
     toda_name: str
     message: str
@@ -1411,10 +1220,7 @@ class TodaBroadcastSchema(BaseModel):
 def send_toda_broadcast(data: TodaBroadcastSchema, db: Session = Depends(get_db)):
     clean_toda = data.toda_name.strip().upper()
     config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
-    if not config:
-        config = TodaConfig(toda_name=clean_toda)
-        db.add(config)
-        
+    if not config: config = TodaConfig(toda_name=clean_toda); db.add(config)
     config.broadcast_message = data.message
     db.commit()
     return {"status": "success", "message": f"Broadcast sent to {clean_toda}"}
@@ -1423,22 +1229,18 @@ def send_toda_broadcast(data: TodaBroadcastSchema, db: Session = Depends(get_db)
 def get_driver_broadcast(driver_name: str = "", db: Session = Depends(get_db)): 
     clean_name = sanitize_name(driver_name)
     driver = db.query(User).filter(
-        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name)), 
-        User.role == 'driver'
+        (User.full_name.ilike(clean_name)) | (User.username.ilike(clean_name)), User.role == 'driver'
     ).first()
-    
     if driver and driver.toda_name:
         clean_toda = driver.toda_name.strip().upper()
         config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
         if config and config.broadcast_message:
             return {"message": config.broadcast_message, "toda_name": clean_toda}
-            
     return {"message": "", "toda_name": ""}
 
 @app.get("/api/driver/shift/{driver_name}")
 def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
     clean_name = sanitize_name(driver_name).lower()
-    
     all_rides = db.query(RideRequest).filter(RideRequest.status.in_(["completed", "paid"])).all()
     rides = [r for r in all_rides if r.driver_name and sanitize_name(r.driver_name).lower() == clean_name]
 
@@ -1446,10 +1248,8 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
     toda_pct = 0.03
 
     driver = db.query(User).filter(
-        (User.full_name.ilike(f"%{clean_name}%")) | (User.username.ilike(f"%{clean_name}%")),
-        User.role == 'driver'
+        (User.full_name.ilike(f"%{clean_name}%")) | (User.username.ilike(f"%{clean_name}%")), User.role == 'driver'
     ).first()
-
     if driver and driver.toda_name:
         toda_config = db.query(TodaConfig).filter(TodaConfig.toda_name == driver.toda_name.upper()).first()
         if toda_config:
@@ -1465,25 +1265,19 @@ def get_driver_shift(driver_name: str, db: Session = Depends(get_db)):
         service = r.service_type or "Ride"
         ride_counts[service] = ride_counts.get(service, 0) + 1
 
-    total_markup_rate = platform_pct + toda_pct  # 0.20
+    total_markup_rate = platform_pct + toda_pct
     total_effective_base = total_gross / (1.0 + total_markup_rate) if (1.0 + total_markup_rate) > 0 else total_gross
-
     platform_cut = total_effective_base * platform_pct
     toda_cut = total_effective_base * toda_pct
-    net_earnings = total_gross - platform_cut - toda_cut  # Equals total_effective_base
+    net_earnings = total_gross - platform_cut - toda_cut
 
     breakdown = [{"service": k, "qty": v} for k, v in ride_counts.items()]
-
     return {
-        "gross": total_gross,
-        "platform": platform_cut,
-        "toda": toda_cut,
-        "net": net_earnings,
-        "breakdown": breakdown
+        "gross": total_gross, "platform": platform_cut, "toda": toda_cut, "net": net_earnings, "breakdown": breakdown
     }
 
 # ==========================================
-# 7. MOUNT WEB FOLDER & START SERVER
+# 11. STATIC FILES & RUN
 # ==========================================
 app.mount("/", StaticFiles(directory="web", html=True), name="web")
 
