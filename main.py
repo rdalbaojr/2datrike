@@ -1097,7 +1097,7 @@ def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
         "katoda_share": config.katoda_share,
         "katoda_bank": config.katoda_bank or "GCash",
         "katoda_account": config.katoda_account or ""
-    }}
+    }
 
 @app.post("/api/admin/toda-config/{toda_name}")
 def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session = Depends(get_db)):
