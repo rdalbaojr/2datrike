@@ -252,24 +252,25 @@
         }
 
         async function handleMasterLogin(event) {
-    event.preventDefault();
-    const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
-    const p = (document.getElementById('masterPass').value || "").trim();
+            event.preventDefault();
+            const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
+            const p = (document.getElementById('masterPass').value || "").trim();
 
-    if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
-        document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
-        const overlay = document.getElementById('lockOverlay');
-        if (overlay) {
-            overlay.style.transition = "opacity 0.3s ease";
-            overlay.style.opacity = "0";
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
+                document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
+                const overlay = document.getElementById('lockOverlay');
+                if (overlay) {
+                    overlay.style.transition = "opacity 0.3s ease";
+                    overlay.style.opacity = "0";
+                    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+                }
+                await loadLocations();
+                await loadAdminPlatformFinances();
+                await loadPayoutSummary();
+            } else {
+                alert("❌ Invalid credentials.");
+            }
         }
-        loadAdminPlatformFinances();
-        loadPayoutSummary();
-    } else {
-        alert("❌ Invalid credentials. Please use username: masterom and password: 12345 or qZ82118@@");
-    }
-}
 
         function lockDashboard() {
             document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -317,9 +318,64 @@
             }
         }
 
+        async function loadLocations() {
+            try {
+                const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
+                if (locRes.ok) {
+                    const data = await locRes.json();
+                    const selector = document.getElementById('branchSelector');
+                    const configSelector = document.getElementById('config-branch-select');
+                    
+                    if (!selector || !configSelector) return;
+
+                    const prevBranch = selector.value || 'All';
+                    const prevConfig = configSelector.value || '';
+
+                    selector.innerHTML = '<option value="All">🌐 All Branches</option>';
+                    configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
+                    
+                    const uniqueTodas = new Set();
+
+                    for (const [brgy, todas] of Object.entries(data)) {
+                        const group = document.createElement('optgroup');
+                        group.label = `📍 Brgy. ${brgy}`;
+                        
+                        todas.forEach(toda => {
+                            if (!toda || toda === "No TODA") return;
+                            const opt = document.createElement('option');
+                            opt.value = toda; 
+                            opt.textContent = toda; 
+                            group.appendChild(opt);
+                            uniqueTodas.add(toda);
+                        });
+                        if (group.children.length > 0) {
+                            selector.appendChild(group);
+                        }
+                    }
+
+                    uniqueTodas.forEach(toda => {
+                        const opt = document.createElement('option');
+                        opt.value = toda;
+                        opt.textContent = toda;
+                        configSelector.appendChild(opt);
+                    });
+
+                    if (prevBranch && selector.querySelector(`option[value="${prevBranch}"]`)) {
+                        selector.value = prevBranch;
+                    }
+                    if (prevConfig && configSelector.querySelector(`option[value="${prevConfig}"]`)) {
+                        configSelector.value = prevConfig;
+                    }
+                }
+            } catch (e) {
+                console.error("Could not load dynamic locations", e);
+            }
+        }
+
         window.onload = async function() {
             if (getCookie('admin_session') === 'masterom_active') {
-                document.getElementById('lockOverlay').style.display = 'none';
+                const overlay = document.getElementById('lockOverlay');
+                if (overlay) overlay.style.display = 'none';
             }
 
             // Manila Local Date Handling
@@ -329,52 +385,24 @@
             const day = String(now.getDate()).padStart(2, '0');
             const todayStr = `${year}-${month}-${day}`;
 
-            // Default FROM to yesterday or today, TO to today
-            const startInput = document.getElementById('startDateInput');
-            const endInput = document.getElementById('endDateInput');
-            if (startInput) startInput.value = "2026-10-18";
-            if (endInput) endInput.value = todayStr;
+            // Calculate 7 days ago
+            const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const pYear = past.getFullYear();
+            const pMonth = String(past.getMonth() + 1).padStart(2, '0');
+            const pDay = String(past.getDate()).padStart(2, '0');
+            const pastStr = `${pYear}-${pMonth}-${pDay}`;
 
-            try {
-                const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
-                if (locRes.ok) {
-                    const data = await locRes.json();
-                    const selector = document.getElementById('branchSelector');
-                    const configSelector = document.getElementById('config-branch-select');
-                    
-                    selector.innerHTML = '<option value="All">🌐 All Branches</option>';
-                    configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
-                    
-                    let uniqueTodas = new Set(); 
+            const startEl = document.getElementById('startDateInput');
+            const endEl = document.getElementById('endDateInput');
+            if (startEl && !startEl.value) startEl.value = pastStr;
+            if (endEl && !endEl.value) endEl.value = todayStr;
 
-                    for (const [brgy, todas] of Object.entries(data)) {
-                        const group = document.createElement('optgroup');
-                        group.label = `📍 Brgy. ${brgy}`;
-                        
-                        todas.forEach(toda => {
-                            const opt = document.createElement('option');
-                            opt.value = toda; 
-                            opt.textContent = toda; 
-                            group.appendChild(opt);
-                            if(toda && toda !== "No TODA") uniqueTodas.add(toda);
-                        });
-                        selector.appendChild(group);
-                    }
+            await loadLocations();
+            await loadAdminPlatformFinances();
+            await loadPayoutSummary();
 
-                    uniqueTodas.forEach(toda => {
-                        const opt = document.createElement('option');
-                        opt.value = toda;
-                        opt.textContent = toda;
-                        configSelector.appendChild(opt);
-                    });
-                }
-            } catch (e) {
-                console.error("Could not load dynamic locations", e);
-            }
-
-            loadAdminPlatformFinances();
-            loadPayoutSummary();
             setInterval(loadAdminPlatformFinances, 10000);
+            setInterval(loadPayoutSummary, 15000);
         };
 
         async function loadBranchConfig() {
@@ -443,7 +471,8 @@
 
                 if (response.ok) {
                     alert(`✅ Branch Configuration successfully saved for ${selectedToda}!`);
-                    loadPayoutSummary(); 
+                    await loadLocations();
+                    await loadPayoutSummary(); 
                 } else {
                     alert("❌ Failed to save configuration.");
                 }
@@ -455,13 +484,18 @@
         }
 
         async function loadPayoutSummary() {
-            const selectedBranch = document.getElementById('branchSelector').value;
-            const startDate = document.getElementById('startDateInput').value;
-            const endDate = document.getElementById('endDateInput').value;
-            const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
-            
+            const branchEl = document.getElementById('branchSelector');
+            const startEl = document.getElementById('startDateInput');
+            const endEl = document.getElementById('endDateInput');
+
+            const selectedBranch = branchEl ? branchEl.value : "All";
+            const startDate = startEl ? startEl.value : "";
+            const endDate = endEl ? endEl.value : "";
+
             const todaColHeader = document.getElementById('toda-col-header');
-            if (todaColHeader) todaColHeader.innerText = todaLabel;
+            if (todaColHeader) {
+                todaColHeader.innerText = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
+            }
 
             const exportBtn = document.getElementById('exportBizLinkBtn');
             if (exportBtn) {
@@ -471,7 +505,7 @@
             const tbody = document.getElementById('payout-table-body');
 
             try {
-                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&t=${new Date().getTime()}`);
                 if (!response.ok) {
                     const errDetail = await response.text();
                     console.error("Payout API response error:", errDetail);
@@ -495,9 +529,9 @@
                         <td class="py-3 px-4 font-bold text-[#0f172a]">
                             <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
                         </td>
-                        <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
-                        <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
-                        <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
+                        <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name || 'GCash'}</td>
+                        <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number || 'N/A'}</td>
+                        <td class="py-3 px-4 text-center font-bold">${driver.ride_count || 0}</td>
                         <td class="py-3 px-4 text-right text-slate-600">₱${(driver.total_gross || 0).toFixed(2)}</td>
                         <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${(driver.driver_share || 0).toFixed(2)}</td>
                         <td class="py-3 px-4 text-right font-bold text-amber-700">₱${(driver.katoda_share || 0).toFixed(2)}</td>
