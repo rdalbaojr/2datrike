@@ -53,32 +53,34 @@
         </div>
 
         <!-- UNIFIED CONTENT CONTAINER -->
-        <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-10">
-           <!-- ================= ADMIN PLATFORM REVENUE CARDS ================= -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
-    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
-        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">Today's Revenue</p>
-        <h3 id="adm-fin-today" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
-        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
-    </div>
-    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
-        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Week</p>
-        <h3 id="adm-fin-week" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
-        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
-    </div>
-    <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
-        <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Month</p>
-        <h3 id="adm-fin-month" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
-        <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
-    </div>
-    <div class="bg-[#78350f] border border-amber-950 rounded-2xl p-4 shadow-sm text-white relative overflow-hidden">
-        <p class="text-[10px] font-extrabold text-amber-200 uppercase tracking-wider mb-1">YTD Profit</p>
-        <h3 id="adm-fin-ytd" class="text-xl font-extrabold">₱0.00</h3>
-        <span class="text-[9px] font-bold text-amber-300">Total Retained</span>
-    </div>
-</div>
+        <div class="bg-[#F5E6D3] border border-[#d4aa7c] rounded-[24px] p-6 sm:p-8 shadow-inner flex flex-col gap-8">
+            
+            <!-- ADMIN PLATFORM REVENUE CARDS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">Today's Revenue</p>
+                    <h3 id="adm-fin-today" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+                    <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+                </div>
+                <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Week</p>
+                    <h3 id="adm-fin-week" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+                    <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+                </div>
+                <div class="bg-white border border-[#c99c6b] rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                    <p class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider mb-1">This Month</p>
+                    <h3 id="adm-fin-month" class="text-xl font-extrabold text-[#0f172a]">₱0.00</h3>
+                    <span class="text-[9px] font-bold text-slate-500">Platform Share</span>
+                </div>
+                <div class="bg-[#78350f] border border-amber-950 rounded-2xl p-4 shadow-sm text-white relative overflow-hidden">
+                    <p class="text-[10px] font-extrabold text-amber-200 uppercase tracking-wider mb-1">YTD Profit</p>
+                    <h3 id="adm-fin-ytd" class="text-xl font-extrabold">₱0.00</h3>
+                    <span class="text-[9px] font-bold text-amber-300">Total Retained</span>
+                </div>
+            </div>
 
-<hr class="border-[#c99c6b]"> 
+            <hr class="border-[#c99c6b]">
+
             <!-- SECTION 1: BRANCH CONFIGURATOR -->
             <form onsubmit="saveBranchConfig(event)" class="w-full">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-[#c99c6b]/50">
@@ -168,7 +170,7 @@
 
             <hr class="border-[#c99c6b]">
 
-            <!-- SECTION 2: PAYOUT TABLE WITH CUTOFF DATE & EXCLUSION -->
+            <!-- SECTION 2: PAYOUT TABLE -->
             <div class="w-full">
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
                     <div class="flex items-center gap-3">
@@ -182,37 +184,37 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-    <!-- Cutoff Date Range: FROM -->
-    <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
-        <label for="startDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
-            <i class="fa-solid fa-calendar-day mr-1"></i> From:
-        </label>
-        <input type="date" id="startDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
-    </div>
+                        <!-- Cutoff FROM -->
+                        <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="startDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+                                <i class="fa-solid fa-calendar-day mr-1"></i> From:
+                            </label>
+                            <input type="date" id="startDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+                        </div>
 
-    <!-- Cutoff Date Range: TO -->
-    <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
-        <label for="endDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
-            <i class="fa-solid fa-calendar-check mr-1"></i> To:
-        </label>
-        <input type="date" id="endDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
-    </div>
+                        <!-- Cutoff TO -->
+                        <div class="flex items-center gap-1.5 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="endDateInput" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+                                <i class="fa-solid fa-calendar-check mr-1"></i> To:
+                            </label>
+                            <input type="date" id="endDateInput" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+                        </div>
 
-    <!-- Branch Selector -->
-    <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
-        <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
-            <i class="fa-solid fa-location-dot mr-1"></i> Branch:
-        </label>
-        <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
-            <option value="All">🌐 All Branches</option>
-        </select>
-    </div>
+                        <!-- Branch Selector -->
+                        <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#c99c6b] shadow-sm">
+                            <label for="branchSelector" class="text-[10px] font-extrabold text-[#78350f] uppercase tracking-wider whitespace-nowrap">
+                                <i class="fa-solid fa-location-dot mr-1"></i> Branch:
+                            </label>
+                            <select id="branchSelector" onchange="loadPayoutSummary()" class="text-xs font-bold text-[#0f172a] outline-none bg-transparent cursor-pointer">
+                                <option value="All">🌐 All Branches</option>
+                            </select>
+                        </div>
 
-    <!-- Export BizLink Button -->
-    <a id="exportBizLinkBtn" href="#" class="bg-[#175d33] hover:bg-[#114626] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer">
-        <i class="fa-solid fa-download"></i> Export for BizLink
-    </a>
-</div>
+                        <!-- Export BizLink -->
+                        <a id="exportBizLinkBtn" href="#" class="bg-[#175d33] hover:bg-[#114626] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                            <i class="fa-solid fa-download"></i> Export for BizLink
+                        </a>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto rounded-2xl border border-[#c99c6b] table-scroll bg-white shadow-sm">
@@ -248,27 +250,13 @@
             if (match) return match[2];
             return null;
         }
-async function loadAdminPlatformFinances() {
-    try {
-        const response = await fetch(`/api/admin/finances?t=${new Date().getTime()}`);
-        if (response.ok) {
-            const data = await response.json();
-            document.getElementById('adm-fin-today').innerText = `₱${(data.today || 0).toFixed(2)}`;
-            document.getElementById('adm-fin-week').innerText = `₱${(data.week || 0).toFixed(2)}`;
-            document.getElementById('adm-fin-month').innerText = `₱${(data.month || 0).toFixed(2)}`;
-            document.getElementById('adm-fin-ytd').innerText = `₱${(data.ytd || 0).toFixed(2)}`;
-        }
-    } catch (e) {
-        console.error("Could not load admin finances", e);
-    }
-}
+
         async function handleMasterLogin(event) {
             event.preventDefault();
             const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
             const p = (document.getElementById('masterPass').value || "").trim();
-            const btn = event.target.querySelector('button[type="submit"]');
 
-            if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
+            if (u === "masterom" && (p === "qZ82118@@" or p === "12345")) {
                 document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
                 const overlay = document.getElementById('lockOverlay');
                 overlay.style.transition = "opacity 0.3s ease";
@@ -305,166 +293,275 @@ async function loadAdminPlatformFinances() {
             document.getElementById('cfg-plat').value = p.toFixed(1);
         }
 
+        async function loadAdminPlatformFinances() {
+            try {
+                const response = await fetch(`/api/admin/finances?t=${new Date().getTime()}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const elToday = document.getElementById('adm-fin-today');
+                    const elWeek = document.getElementById('adm-fin-week');
+                    const elMonth = document.getElementById('adm-fin-month');
+                    const elYtd = document.getElementById('adm-fin-ytd');
+
+                    if (elToday) elToday.innerText = `₱${(data.today || 0).toFixed(2)}`;
+                    if (elWeek) elWeek.innerText = `₱${(data.week || 0).toFixed(2)}`;
+                    if (elMonth) elMonth.innerText = `₱${(data.month || 0).toFixed(2)}`;
+                    if (elYtd) elYtd.innerText = `₱${(data.ytd || 0).toFixed(2)}`;
+                }
+            } catch (e) {
+                console.error("Could not load admin platform finances:", e);
+            }
+        }
+
         window.onload = async function() {
-    if (getCookie('admin_session') === 'masterom_active') {
-        document.getElementById('lockOverlay').style.display = 'none';
-    }
-
-    // Set Default Cutoff Range: (Today to Today in Manila Time)
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
-
-    // You can also default startDate to the 1st of the month or 7 days ago if preferred:
-    const startInput = document.getElementById('startDateInput');
-    const endInput = document.getElementById('endDateInput');
-    if (startInput) startInput.value = todayStr;
-    if (endInput) endInput.value = todayStr;
-
-    try {
-        const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
-        if (locRes.ok) {
-            const data = await locRes.json();
-            const selector = document.getElementById('branchSelector');
-            const configSelector = document.getElementById('config-branch-select');
-            
-            selector.innerHTML = '<option value="All">🌐 All Branches</option>';
-            configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
-            
-            let uniqueTodas = new Set(); 
-
-            for (const [brgy, todas] of Object.entries(data)) {
-                const group = document.createElement('optgroup');
-                group.label = `📍 Brgy. ${brgy}`;
-                
-                todas.forEach(toda => {
-                    const opt = document.createElement('option');
-                    opt.value = toda; 
-                    opt.textContent = toda; 
-                    group.appendChild(opt);
-                    if(toda && toda !== "No TODA") uniqueTodas.add(toda);
-                });
-                selector.appendChild(group);
+            if (getCookie('admin_session') === 'masterom_active') {
+                document.getElementById('lockOverlay').style.display = 'none';
             }
 
-            uniqueTodas.forEach(toda => {
-                const opt = document.createElement('option');
-                opt.value = toda;
-                opt.textContent = toda;
-                configSelector.appendChild(opt);
-            });
+            // Manila Local Date Handling
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const todayStr = `${year}-${month}-${day}`;
+
+            // Default FROM to yesterday or today, TO to today
+            const startInput = document.getElementById('startDateInput');
+            const endInput = document.getElementById('endDateInput');
+            if (startInput) startInput.value = "2026-10-18";
+            if (endInput) endInput.value = todayStr;
+
+            try {
+                const locRes = await fetch(`/api/admin/locations?t=${new Date().getTime()}`);
+                if (locRes.ok) {
+                    const data = await locRes.json();
+                    const selector = document.getElementById('branchSelector');
+                    const configSelector = document.getElementById('config-branch-select');
+                    
+                    selector.innerHTML = '<option value="All">🌐 All Branches</option>';
+                    configSelector.innerHTML = '<option value="">-- Choose TODA --</option>';
+                    
+                    let uniqueTodas = new Set(); 
+
+                    for (const [brgy, todas] of Object.entries(data)) {
+                        const group = document.createElement('optgroup');
+                        group.label = `📍 Brgy. ${brgy}`;
+                        
+                        todas.forEach(toda => {
+                            const opt = document.createElement('option');
+                            opt.value = toda; 
+                            opt.textContent = toda; 
+                            group.appendChild(opt);
+                            if(toda && toda !== "No TODA") uniqueTodas.add(toda);
+                        });
+                        selector.appendChild(group);
+                    }
+
+                    uniqueTodas.forEach(toda => {
+                        const opt = document.createElement('option');
+                        opt.value = toda;
+                        opt.textContent = toda;
+                        configSelector.appendChild(opt);
+                    });
+                }
+            } catch (e) {
+                console.error("Could not load dynamic locations", e);
+            }
+
+            loadAdminPlatformFinances();
+            loadPayoutSummary();
+            setInterval(loadAdminPlatformFinances, 10000);
+        };
+
+        async function loadBranchConfig() {
+            const selectedToda = document.getElementById('config-branch-select').value;
+            if (!selectedToda) {
+                for (let i = 1; i <= 5; i++) {
+                    document.getElementById(`s${i}-name`).value = '';
+                    document.getElementById(`s${i}-price`).value = '';
+                }
+                document.getElementById('cfg-plat').value = '';
+                document.getElementById('cfg-toda').value = '';
+                document.getElementById('cfg-acct').value = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`);
+                if (response.ok) {
+                    const config = await response.json();
+                    for (let i = 1; i <= 5; i++) {
+                        document.getElementById(`s${i}-name`).value = config[`s${i}_name`] || '';
+                        document.getElementById(`s${i}-price`).value = config[`s${i}_price`] || '';
+                    }
+                    document.getElementById('cfg-plat').value = config.platform_share !== undefined ? config.platform_share : 17.0;
+                    document.getElementById('cfg-toda').value = config.katoda_share !== undefined ? config.katoda_share : 3.0;
+                    document.getElementById('cfg-bank').value = config.katoda_bank || 'GCash';
+                    document.getElementById('cfg-acct').value = config.katoda_account || '';
+                }
+            } catch (error) {
+                console.error("Failed to load specific TODA config");
+            }
         }
-    } catch (e) {
-        console.error("Could not load dynamic locations", e);
-    }
 
-    loadPayoutSummary();
-};
+        async function saveBranchConfig(event) {
+            event.preventDefault();
+            const selectedToda = document.getElementById('config-branch-select').value;
+            if (!selectedToda) return alert("Please select a Branch to edit first!");
 
-async function loadPayoutSummary() {
-    const selectedBranch = document.getElementById('branchSelector').value;
-    const startDate = document.getElementById('startDateInput').value;
-    const endDate = document.getElementById('endDateInput').value;
-    const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
-    
-    document.getElementById('toda-col-header').innerText = todaLabel;
+            const btn = event.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
 
-    // Update BizLink Export Link with both dates
-    document.getElementById('exportBizLinkBtn').href = 
-        `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+            const payload = {
+                s1_name: document.getElementById('s1-name').value,
+                s1_price: parseInt(document.getElementById('s1-price').value) || 0,
+                s2_name: document.getElementById('s2-name').value,
+                s2_price: parseInt(document.getElementById('s2-price').value) || 0,
+                s3_name: document.getElementById('s3-name').value,
+                s3_price: parseInt(document.getElementById('s3-price').value) || 0,
+                s4_name: document.getElementById('s4-name').value,
+                s4_price: parseInt(document.getElementById('s4-price').value) || 0,
+                s5_name: document.getElementById('s5-name').value,
+                s5_price: parseInt(document.getElementById('s5-price').value) || 0,
+                platform_share: parseFloat(document.getElementById('cfg-plat').value) || 17.0,
+                katoda_share: parseFloat(document.getElementById('cfg-toda').value) || 3.0,
+                katoda_bank: document.getElementById('cfg-bank').value,
+                katoda_account: document.getElementById('cfg-acct').value.trim()
+            };
 
-    try {
-        const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        const tbody = document.getElementById('payout-table-body');
-        tbody.innerHTML = '';
+            try {
+                const response = await fetch(`/api/admin/toda-config/${encodeURIComponent(selectedToda)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        if (!data.drivers || data.drivers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No completed rides recorded between selected dates.</td></tr>';
-            return;
+                if (response.ok) {
+                    alert(`✅ Branch Configuration successfully saved for ${selectedToda}!`);
+                    loadPayoutSummary(); 
+                } else {
+                    alert("❌ Failed to save configuration.");
+                }
+            } catch (error) {
+                alert("Network error.");
+            } finally {
+                btn.innerHTML = originalText;
+            }
         }
 
-        // 1. Driver rows
-        data.drivers.forEach(driver => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="py-3 px-4 font-bold text-[#0f172a]">
-                    <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
-                </td>
-                <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
-                <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
-                <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
-                <td class="py-3 px-4 text-right text-slate-600">₱${driver.total_gross.toFixed(2)}</td>
-                <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${driver.driver_share.toFixed(2)}</td>
-                <td class="py-3 px-4 text-right font-bold text-amber-700">₱${driver.katoda_share.toFixed(2)}</td>
-                <td class="py-3 px-4 text-right font-medium text-slate-400">₱${driver.platform_share.toFixed(2)}</td>
-            `;
-            tbody.appendChild(row);
-        });
+        async function loadPayoutSummary() {
+            const selectedBranch = document.getElementById('branchSelector').value;
+            const startDate = document.getElementById('startDateInput').value;
+            const endDate = document.getElementById('endDateInput').value;
+            const todaLabel = selectedBranch === "All" ? "TODA Remittance" : `${selectedBranch.toUpperCase()} Share`;
+            
+            const todaColHeader = document.getElementById('toda-col-header');
+            if (todaColHeader) todaColHeader.innerText = todaLabel;
 
-        // 2. TODA Chapter Row
-        const todaRow = document.createElement('tr');
-        todaRow.className = "bg-amber-100/50 border-t-2 border-[#d4aa7c] font-bold";
-        todaRow.innerHTML = `
-            <td class="py-3.5 px-4 font-black text-amber-950 uppercase">
-                <i class="fa-solid fa-users-gear mr-1.5 text-amber-800"></i>${selectedBranch === "All" ? "TODA Chapters Total" : selectedBranch.toUpperCase() + " TODA Org"}
-            </td>
-            <td class="py-3.5 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
-            <td class="py-3.5 px-4 text-xs font-mono font-bold text-[#78350f]">${data.katoda_account || 'Not Configured'}</td>
-            <td class="py-3.5 px-4 text-center">--</td>
-            <td class="py-3.5 px-4 text-right text-slate-500">--</td>
-            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-            <td class="py-3.5 px-4 text-right font-black text-amber-900 text-base">₱${data.total_katoda.toFixed(2)}</td>
-            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-        `;
-        tbody.appendChild(todaRow);
+            const exportBtn = document.getElementById('exportBizLinkBtn');
+            if (exportBtn) {
+                exportBtn.href = `/api/admin/generate-bizlink-payout?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+            }
 
-        // 3. Platform Revenue Row (Excluded from BizLink)
-        const platformRow = document.createElement('tr');
-        platformRow.className = "bg-slate-100 border-t border-slate-300 font-bold";
-        platformRow.innerHTML = `
-            <td class="py-3.5 px-4 font-black text-slate-800 uppercase flex items-center gap-1.5">
-                <i class="fa-solid fa-building-columns text-slate-600"></i> 2DA Platform Revenue (Admin)
-            </td>
-            <td class="py-3.5 px-4 text-xs font-bold text-slate-600">BPI Corporate</td>
-            <td class="py-3.5 px-4 text-xs font-mono text-slate-500">RETAINED IN 2DA ACCT</td>
-            <td class="py-3.5 px-4 text-center">--</td>
-            <td class="py-3.5 px-4 text-right text-slate-500">--</td>
-            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-            <td class="py-3.5 px-4 text-right text-slate-400">--</td>
-            <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
-                ₱${data.total_platform.toFixed(2)}
-                <span class="block text-[8px] font-black text-rose-700 uppercase tracking-tighter">EXCLUDED FROM BIZLINK</span>
-            </td>
-        `;
-        tbody.appendChild(platformRow);
+            const tbody = document.getElementById('payout-table-body');
 
-        // 4. Batch Debit Total
-        const totalRow = document.createElement('tr');
-        totalRow.className = "bg-[#78350f] text-white font-extrabold border-t-2 border-amber-950";
-        totalRow.innerHTML = `
-            <td colspan="3" class="py-4 px-4 uppercase text-xs tracking-wider">
-                <i class="fa-solid fa-file-export mr-1.5 text-amber-300"></i> BIZLINK BATCH DEBIT TOTAL (Drivers + TODA):
-            </td>
-            <td class="py-4 px-4 text-center font-black">${data.total_rides}</td>
-            <td class="py-4 px-4 text-right font-medium text-amber-200">₱${data.total_gross.toFixed(2)}</td>
-            <td colspan="2" class="py-4 px-4 text-right font-black text-lg text-green-300">
-                ₱${data.total_bizlink_disbursement.toFixed(2)}
-            </td>
-            <td class="py-4 px-4 text-right text-[10px] uppercase font-bold text-amber-200">
-                Period: ${startDate} to ${endDate}
-            </td>
-        `;
-        tbody.appendChild(totalRow);
+            try {
+                const response = await fetch(`/api/admin/payout-summary?branch=${encodeURIComponent(selectedBranch)}&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+                if (!response.ok) {
+                    const errDetail = await response.text();
+                    console.error("Payout API response error:", errDetail);
+                    if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-700 font-bold">⚠️ Server error (${response.status}). Could not fetch payouts.</td></tr>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                if (!tbody) return;
+                tbody.innerHTML = '';
 
-    } catch (error) {
-        console.error("Error loading payouts summary:", error);
-    }
-} 
+                if (!data.drivers || data.drivers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center italic text-[#78350f]/70">No completed rides recorded between selected dates.</td></tr>';
+                    return;
+                }
+
+                // 1. Driver rows
+                data.drivers.forEach(driver => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-bold text-[#0f172a]">
+                            <i class="fa-solid fa-motorcycle mr-1.5 text-amber-800"></i>${driver.driver_name}
+                        </td>
+                        <td class="py-3 px-4 text-xs font-bold text-amber-700">${driver.bank_name}</td>
+                        <td class="py-3 px-4 text-xs font-mono text-[#78350f]">${driver.account_number}</td>
+                        <td class="py-3 px-4 text-center font-bold">${driver.ride_count}</td>
+                        <td class="py-3 px-4 text-right text-slate-600">₱${(driver.total_gross || 0).toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-black text-[#175d33]">₱${(driver.driver_share || 0).toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-bold text-amber-700">₱${(driver.katoda_share || 0).toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right font-medium text-slate-400">₱${(driver.platform_share || 0).toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // 2. TODA Chapter Row
+                const todaRow = document.createElement('tr');
+                todaRow.className = "bg-amber-100/50 border-t-2 border-[#d4aa7c] font-bold";
+                todaRow.innerHTML = `
+                    <td class="py-3.5 px-4 font-black text-amber-950 uppercase">
+                        <i class="fa-solid fa-users-gear mr-1.5 text-amber-800"></i>${selectedBranch === "All" ? "TODA Chapters Total" : selectedBranch.toUpperCase() + " TODA Org"}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-bold text-amber-700">${data.katoda_bank || 'GCash'}</td>
+                    <td class="py-3.5 px-4 text-xs font-mono font-bold text-[#78350f]">${data.katoda_account || 'Not Configured'}</td>
+                    <td class="py-3.5 px-4 text-center">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right font-black text-amber-900 text-base">₱${(data.total_katoda || 0).toFixed(2)}</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                `;
+                tbody.appendChild(todaRow);
+
+                // 3. Platform Revenue Row (Excluded from BizLink)
+                const platformRow = document.createElement('tr');
+                platformRow.className = "bg-slate-100 border-t border-slate-300 font-bold";
+                platformRow.innerHTML = `
+                    <td class="py-3.5 px-4 font-black text-slate-800 uppercase flex items-center gap-1.5">
+                        <i class="fa-solid fa-building-columns text-slate-600"></i> 2DA Platform Revenue (Admin)
+                    </td>
+                    <td class="py-3.5 px-4 text-xs font-bold text-slate-600">BPI Corporate</td>
+                    <td class="py-3.5 px-4 text-xs font-mono text-slate-500">RETAINED IN 2DA ACCT</td>
+                    <td class="py-3.5 px-4 text-center">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-500">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right text-slate-400">--</td>
+                    <td class="py-3.5 px-4 text-right font-black text-slate-900 text-base">
+                        ₱${(data.total_platform || 0).toFixed(2)}
+                        <span class="block text-[8px] font-black text-rose-700 uppercase tracking-tighter">EXCLUDED FROM BIZLINK</span>
+                    </td>
+                `;
+                tbody.appendChild(platformRow);
+
+                // 4. Batch Debit Total
+                const totalRow = document.createElement('tr');
+                totalRow.className = "bg-[#78350f] text-white font-extrabold border-t-2 border-amber-950";
+                totalRow.innerHTML = `
+                    <td colspan="3" class="py-4 px-4 uppercase text-xs tracking-wider">
+                        <i class="fa-solid fa-file-export mr-1.5 text-amber-300"></i> BIZLINK BATCH DEBIT TOTAL (Drivers + TODA):
+                    </td>
+                    <td class="py-4 px-4 text-center font-black">${data.total_rides || 0}</td>
+                    <td class="py-4 px-4 text-right font-medium text-amber-200">₱${(data.total_gross || 0).toFixed(2)}</td>
+                    <td colspan="2" class="py-4 px-4 text-right font-black text-lg text-green-300">
+                        ₱${(data.total_bizlink_disbursement || 0).toFixed(2)}
+                    </td>
+                    <td class="py-4 px-4 text-right text-[10px] uppercase font-bold text-amber-200">
+                        Period: ${startDate} to ${endDate}
+                    </td>
+                `;
+                tbody.appendChild(totalRow);
+
+            } catch (error) {
+                console.error("Error loading payouts summary:", error);
+                if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-700 font-bold">⚠️ Network error connecting to server.</td></tr>`;
+            }
+        } 
     </script>
 </body>
 </html>
