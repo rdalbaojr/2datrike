@@ -788,18 +788,19 @@ def get_payout_summary(
     display_account = "Not Configured"
 
     if clean_branch != "All":
-        # Inside get_payout_summary():
-    if clean_branch != "All":
         b_conf = toda_configs.get(clean_branch.upper())
         if b_conf and b_conf.katoda_account:
             display_bank = b_conf.katoda_bank or "GCash"
             display_account = b_conf.katoda_account
         else:
-            # 🟢 Fallback to TODA Admin user record
             t_admin = db.query(User).filter(User.toda_name.ilike(clean_branch), User.role == 'toda_admin').first()
             if t_admin and t_admin.gcash_account:
                 display_bank = t_admin.bank_name or "GCash"
                 display_account = t_admin.gcash_account
+    else:
+        first_toda = next((tc for tc in toda_configs.values() if tc.katoda_account), None)
+        display_bank = (sys_config.katoda_bank if sys_config and sys_config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
+        display_account = (sys_config.katoda_account if sys_config and sys_config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
 
     drivers_query = db.query(User).filter(User.role == 'driver')
     if clean_branch != "All":
