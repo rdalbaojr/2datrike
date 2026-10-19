@@ -401,13 +401,15 @@ def register_user_json(user: UserCreateJSON, db: Session = Depends(get_db)):
     )
     db.add(new_user)
 
+    # Inside register_user_json() right after db.add(new_user):
     if user.role == "toda_admin" and formatted_toda:
         config = db.query(TodaConfig).filter(TodaConfig.toda_name == formatted_toda).first()
         if not config:
             config = TodaConfig(toda_name=formatted_toda)
             db.add(config)
-        config.katoda_bank = user.bank_name
-        config.katoda_account = user.gcash_account
+        # 🟢 Automatically capture chapter bank details from signup
+        config.katoda_bank = user.bank_name or "GCash"
+        config.katoda_account = (user.gcash_account or "").strip()
 
     db.commit()
     return {"status": "success"}
@@ -786,14 +788,18 @@ def get_payout_summary(
     display_account = "Not Configured"
 
     if clean_branch != "All":
+        # Inside get_payout_summary():
+    if clean_branch != "All":
         b_conf = toda_configs.get(clean_branch.upper())
-        if b_conf:
+        if b_conf and b_conf.katoda_account:
             display_bank = b_conf.katoda_bank or "GCash"
-            display_account = b_conf.katoda_account or "Not Configured"
-    else:
-        first_toda = next((tc for tc in toda_configs.values() if tc.katoda_account), None)
-        display_bank = (sys_config.katoda_bank if sys_config and sys_config.katoda_bank else None) or (first_toda.katoda_bank if first_toda else "GCash")
-        display_account = (sys_config.katoda_account if sys_config and sys_config.katoda_account else None) or (first_toda.katoda_account if first_toda else "Not Configured")
+            display_account = b_conf.katoda_account
+        else:
+            # 🟢 Fallback to TODA Admin user record
+            t_admin = db.query(User).filter(User.toda_name.ilike(clean_branch), User.role == 'toda_admin').first()
+            if t_admin and t_admin.gcash_account:
+                display_bank = t_admin.bank_name or "GCash"
+                display_account = t_admin.gcash_account
 
     drivers_query = db.query(User).filter(User.role == 'driver')
     if clean_branch != "All":
@@ -1066,18 +1072,32 @@ def get_toda_config(toda_name: str, db: Session = Depends(get_db)):
     clean_toda = toda_name.strip().upper()
     config = db.query(TodaConfig).filter(TodaConfig.toda_name == clean_toda).first()
     if not config:
-        return {
-            "s1_name": "Pasundo", "s1_price": 26, "s2_name": "Pabili", "s2_price": 26,
-            "s3_name": "Papickup", "s3_price": 26, "s4_name": "", "s4_price": 0,
-            "s5_name": "", "s5_price": 0, "platform_share": 17.0, "katoda_share": 3.0,
-            "katoda_bank": "GCash", "katoda_account": ""
-        }
+        config = TodaConfig(toda_name=clean_toda)
+        db.add(config)
+        db.commit()
+
+    # 🟢 Auto-sync from TODA Admin user registration if config has no account
+    if not config.katoda_account or config.katoda_account.strip() == "":
+        admin_user = db.query(User).filter(
+            User.toda_name.ilike(clean_toda),
+            User.role == 'toda_admin'
+        ).first()
+        if admin_user and admin_user.gcash_account:
+            config.katoda_bank = admin_user.bank_name or "GCash"
+            config.katoda_account = admin_user.gcash_account.strip()
+            db.commit()
+
     return {
-        "s1_name": config.s1_name, "s1_price": config.s1_price, "s2_name": config.s2_name, "s2_price": config.s2_price,
-        "s3_name": config.s3_name, "s3_price": config.s3_price, "s4_name": config.s4_name, "s4_price": config.s4_price,
-        "s5_name": config.s5_name, "s5_price": config.s5_price, "platform_share": config.platform_share,
-        "katoda_share": config.katoda_share, "katoda_bank": config.katoda_bank, "katoda_account": config.katoda_account
-    }
+        "s1_name": config.s1_name, "s1_price": config.s1_price,
+        "s2_name": config.s2_name, "s2_price": config.s2_price,
+        "s3_name": config.s3_name, "s3_price": config.s3_price,
+        "s4_name": config.s4_name, "s4_price": config.s4_price,
+        "s5_name": config.s5_name, "s5_price": config.s5_price,
+        "platform_share": config.platform_share,
+        "katoda_share": config.katoda_share,
+        "katoda_bank": config.katoda_bank or "GCash",
+        "katoda_account": config.katoda_account or ""
+    }}
 
 @app.post("/api/admin/toda-config/{toda_name}")
 def update_toda_config(toda_name: str, data: TodaConfigUpdateSchema, db: Session = Depends(get_db)):
