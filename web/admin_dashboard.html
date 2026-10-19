@@ -252,20 +252,24 @@
         }
 
         async function handleMasterLogin(event) {
-            event.preventDefault();
-            const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
-            const p = (document.getElementById('masterPass').value || "").trim();
+    event.preventDefault();
+    const u = (document.getElementById('masterUser').value || "").trim().toLowerCase();
+    const p = (document.getElementById('masterPass').value || "").trim();
 
-            if (u === "masterom" && (p === "qZ82118@@" or p === "12345")) {
-                document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
-                const overlay = document.getElementById('lockOverlay');
-                overlay.style.transition = "opacity 0.3s ease";
-                overlay.style.opacity = "0";
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            } else {
-                alert("❌ Invalid credentials.");
-            }
+    if (u === "masterom" && (p === "qZ82118@@" || p === "12345")) {
+        document.cookie = "admin_session=masterom_active; path=/; max-age=86400";
+        const overlay = document.getElementById('lockOverlay');
+        if (overlay) {
+            overlay.style.transition = "opacity 0.3s ease";
+            overlay.style.opacity = "0";
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
         }
+        loadAdminPlatformFinances();
+        loadPayoutSummary();
+    } else {
+        alert("❌ Invalid credentials. Please use username: masterom and password: 12345 or qZ82118@@");
+    }
+}
 
         function lockDashboard() {
             document.cookie = "admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
